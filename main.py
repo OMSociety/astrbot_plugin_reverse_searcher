@@ -203,6 +203,7 @@ class ReverseSearcherPlugin(Star):
         else:
             self.trigger_keywords = ["以图搜图"]
         self.auto_send_text_results = config.get("auto_send_text_results", False)
+        self.enable_keyword_trigger = config.get("enable_keyword_trigger", True)
         engine_keywords_config = keyword_config.get("engine_keywords", {})
         self.engine_keywords = {}
         for engine in ALL_ENGINES:
@@ -223,6 +224,14 @@ class ReverseSearcherPlugin(Star):
             "waiting_image": self._handle_waiting_image,
             "waiting_mode_selection": self._handle_waiting_mode_selection,
         }
+
+        # 注册 LLM 工具
+        try:
+            from ReverseSearcher.tools.search_tools import register_search_tools
+            register_search_tools(self)
+        except Exception as e:
+            import sys
+            sys.stderr.write(f"[ReverseSearcher] 工具注册失败: {e}\n")
 
 
     @staticmethod
@@ -1148,8 +1157,10 @@ f"引擎 '{message_text}' 不存在，请回复有效的引擎名（如{example_
         user_id = event.get_sender_id()
         message_text = get_message_text(event.message_obj)
         
-        # 检查是否以任意一个触发关键词开头
+        # 检查是否以任意一个触发关键词开头（且开关开启）
         if any(message_text.strip().startswith(keyword) for keyword in self.trigger_keywords):
+            if not self.enable_keyword_trigger:
+                return  # 关键词触发已关闭
             async for result in self._handle_initial_search_command(event, user_id):
                 yield result
             return

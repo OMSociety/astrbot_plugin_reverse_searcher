@@ -1,4 +1,10 @@
 {
+    "enable_keyword_trigger": {
+        "description": "启用关键词触发搜索",
+        "type": "bool",
+        "hint": "关闭后用户仍可通过 LLM 工具搜图，但不再响应「以图搜图」等关键词",
+        "default": true
+    },
     "proxies": {
         "description": "代理服务器地址",
         "type": "string",
