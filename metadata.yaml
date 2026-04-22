@@ -1,5 +1,5 @@
 name: "astrbot_plugin_reverse_searcher"
 display_name: "图片反搜助手"
 author: "Slandre & Flandre"
-description: "支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 的图片反向搜索"
-version: "2.1.0"
+description: "支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 的图片反向搜索，以及 LLM 主动搜图工具"
+version: "1.0.0"
