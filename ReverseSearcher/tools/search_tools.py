@@ -84,73 +84,38 @@ def decide_engine(intent: Optional[str] = None, explicit_engine: Optional[str] =
 
 def format_search_result(result: dict, engine: str) -> str:
     """格式化搜索结果为文本"""
+    if isinstance(result, str):
+        label = ENGINE_MAP.get(engine, {}).get("label", engine)
+        return f"🔍 [{label}]\n{result[:500]}"
+    
     images = result.get("images", [])
     extra_text = result.get("extra_text", "")
     error_msg = result.get("error", "")
     
     if error_msg:
-        return f"[{engine}] 搜索失败：{error_msg}"
+        return f"❌ [{ENGINE_MAP.get(engine, {}).get('label', engine)}] 搜索失败：{error_msg}"
     
     if not images:
-        return f"[{ENGINE_MAP.get(engine, {}).get('label', engine)}] 未找到结果"
+        return f"🔍 [{ENGINE_MAP.get(engine, {}).get('label', engine)}] 未找到结果"
     
-    lines = [f"[{ENGINE_MAP.get(engine, {}).get('label', engine)}] 找到 {len(images)} 个结果："]
+    label = ENGINE_MAP.get(engine, {}).get("label", engine)
+    lines_out = [f"🔍 [{label}] 找到 {len(images)} 个结果"]
+    
     for i, img in enumerate(images[:5], 1):
-        lines.append(f"{i}. {img.get('source', '未知来源')}")
-        if img.get("similarity"):
-            lines.append(f"   相似度: {img['similarity']}")
+        source = img.get("source", "未知来源")
+        similarity = img.get("similarity", "")
+        img_url = img.get("url", "")
+        
+        lines_out.append(f"\n{i}. {source}")
+        if similarity:
+            lines_out.append(f"   📊 相似度: {similarity}")
+        if img_url:
+            lines_out.append(f"   🔗 {img_url[:80]}")
+    
     if extra_text:
-        lines.append(f"\n{extra_text}")
+        lines_out.append(f"\n📝 {extra_text}")
     
-    return "\n".join(lines)
-
-
-# ============ Tool 定义 ============
-
-@dataclass(config=dict(arbitrary_types_allowed=True))
-class ReverseSearchTool(FunctionTool[AstrAgentContext]):
-    """通用搜图工具
-    
-    当你想知道图片里的角色/作品来源，或者找相似图片时调用。
-    芙兰会自主判断最合适的搜索引擎。
-    """
-    
-    name: str = "reverse_search"
-    description: str = """以图搜图工具。当你想知道图片里的角色是谁、找出处、找相似图、找原图时调用。
-
-引擎选择建议：
-- 想了解角色/人物 → 推荐 animetrace（动漫角色识别最强）
-- 想找出处/来源/画师 → 推荐 saucenao（综合出处搜索）
-- 想搜同人本/R18内容 → 推荐 ehentai
-- 想找相似图片 → 推荐 yandex
-- 想找原图/综合搜索 → 推荐 google
-
-芙兰应根据图片内容和对话意图自主选择引擎，不必每次都问用户。"""
-    parameters: dict = Field(
-        default_factory=lambda: {
-            "type": "object",
-            "properties": {
-                "image_base64": {
-                    "type": "string",
-                    "description": "图片的 base64 编码（不含 data:image 前缀）。如果当前对话中有图片，可以从 context 中获取。",
-                },
-                "image_url": {
-                    "type": "string",
-                    "description": "或直接提供图片 URL（二选一，与 base64 互斥）",
-                },
-                "engine": {
-                    "type": "string",
-                    "description": "可选，指定搜索引擎。可选值：animetrace/saucenao/ehentai/google/yandex。不填则由助手自动判断。",
-                    "enum": ["animetrace", "saucenao", "ehentai", "google", "yandex"],
-                },
-                "intent": {
-                    "type": "string",
-                    "description": "搜索意图，用于自动选引擎。例如：「找角色」「找出处」「找相似图」。不填则自动判断。",
-                },
-            },
-            "required": [],
-        }
-    )
+    return "\n".join(lines_out)
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -171,36 +136,42 @@ class ReverseSearchTool(FunctionTool[AstrAgentContext]):
         
         # 尝试从上下文获取图片
         if not base64 and not url:
-            # 先看看消息里有没有图片
-            event_obj = context.context.event
-            if event_obj and hasattr(event_obj, 'message_obj'):
-                msg = event_obj.message_obj
-                if hasattr(msg, 'image_list') and msg.image_list:
-                    url = msg.image_list[0]
-                elif hasattr(msg, 'content'):
+            # 方法1: 从 message.image_list 获取（兼容旧格式）
+            msg = getattr(context.context, 'message', None) or                   (context.context.event.message_obj if hasattr(context.context, 'event') else None)
+            if msg and hasattr(msg, 'image_list') and msg.image_list:
+                url = msg.image_list[0]
+            # 方法2: 从 context.messages 获取最新用户消息中的图片
+            elif hasattr(context.context, 'messages'):
+                from astrbot.core.agent.message import UserMessageSegment
+                for msg_seg in reversed(context.context.messages):
+                    if isinstance(msg_seg, UserMessageSegment):
+                        for part in msg_seg.content:
+                            if part.type == "image_url":
+                                url = part.image_url.get("url", "") if isinstance(part.image_url, dict) else str(part.image_url)
+                                break
+                        if url:
+                            break
+            # 方法3: 从 event.message_obj.content 中正则匹配
+            if not url and hasattr(context.context, 'event'):
+                event = context.context.event
+                if hasattr(event, 'message_obj') and hasattr(event.message_obj, 'content'):
                     import re
-                    img_matches = re.findall(r'https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)', msg.content)
+                    img_matches = re.findall(r'https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)', event.message_obj.content)
                     if img_matches:
                         url = img_matches[0]
         
         if not base64 and not url:
-            return ToolExecResult("请提供图片（image_base64 或 image_url 参数）")
+            return ToolExecResult("未找到图片。请附上图片再调用此工具。")
         
         # 决定引擎
         chosen_engine = decide_engine(intent, explicit_engine)
-        logger.info(f"[reverse_search] engine={chosen_engine}, intent={intent}")
+        logger.info(f"[reverse_search] engine={chosen_engine}, intent={intent}, url={url[:50] if url else 'base64'}")
         
         try:
             if base64:
-                result = await self.search_model.search(
-                    api=chosen_engine,
-                    base64=base64,
-                )
+                result = await self.search_model.search(api=chosen_engine, base64=base64)
             else:
-                result = await self.search_model.search(
-                    api=chosen_engine,
-                    url=url,
-                )
+                result = await self.search_model.search(api=chosen_engine, url=url)
             
             text = format_search_result(result, chosen_engine)
             return ToolExecResult(text)
@@ -257,25 +228,34 @@ class ReverseSearchWithEngineTool(FunctionTool[AstrAgentContext]):
         engine = kwargs.get("engine")
         
         if not base64 and not url:
-            # 尝试从上下文获取
-            event_obj = context.context.event
-            if event_obj and hasattr(event_obj, 'message_obj'):
-                msg = event_obj.message_obj
-                if hasattr(msg, 'image_list') and msg.image_list:
-                    url = msg.image_list[0]
-                elif hasattr(msg, 'content'):
+            msg = getattr(context.context, 'message', None) or                   (context.context.event.message_obj if hasattr(context.context, 'event') else None)
+            if msg and hasattr(msg, 'image_list') and msg.image_list:
+                url = msg.image_list[0]
+            elif hasattr(context.context, 'messages'):
+                from astrbot.core.agent.message import UserMessageSegment
+                for msg_seg in reversed(context.context.messages):
+                    if isinstance(msg_seg, UserMessageSegment):
+                        for part in msg_seg.content:
+                            if part.type == "image_url":
+                                url = part.image_url.get("url", "") if isinstance(part.image_url, dict) else str(part.image_url)
+                                break
+                        if url:
+                            break
+            if not url and hasattr(context.context, 'event'):
+                event = context.context.event
+                if hasattr(event, 'message_obj') and hasattr(event.message_obj, 'content'):
                     import re
-                    img_matches = re.findall(r'https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)', msg.content)
+                    img_matches = re.findall(r'https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)', event.message_obj.content)
                     if img_matches:
                         url = img_matches[0]
         
         if not base64 and not url:
-            return ToolExecResult("请提供图片（image_base64 或 image_url）")
+            return ToolExecResult("未找到图片。请附上图片再调用此工具。")
         
         if not engine:
-            return ToolExecResult("请指定 engine 参数")
+            return ToolExecResult("请指定 engine 参数（animetrace/saucenao/ehentai/google/yandex）")
         
-        logger.info(f"[reverse_search_with_engine] engine={engine}")
+        logger.info(f"[reverse_search_with_engine] engine={engine}, url={url[:50] if url else 'base64'}")
         
         try:
             if base64:
