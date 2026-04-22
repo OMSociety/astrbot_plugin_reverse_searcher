@@ -117,6 +117,52 @@ def format_search_result(result: dict, engine: str) -> str:
     
     return "\n".join(lines_out)
 
+
+@dataclass(config=dict(arbitrary_types_allowed=True))
+class ReverseSearchTool(FunctionTool[AstrAgentContext]):
+    """通用搜图工具
+    
+    当你想知道图片里的角色/作品来源，或者找相似图片时调用。
+    芙兰会自主判断最合适的搜索引擎。
+    """
+    
+    name: str = "reverse_search"
+    description: str = """以图搜图工具。当你想知道图片里的角色是谁、找出处、找相似图、找原图时调用。
+
+【引擎选择建议】
+- 想了解角色/人物 → animetrace（动漫角色识别最强，返回作品名+角色名）
+- 想找出处/来源/画师 → saucenao（综合出处搜索，返回作者+链接）
+- 想搜同人本/R18内容 → ehentai
+- 想找相似图片 → yandex
+- 想找原图/综合搜索 → google
+
+芙兰应根据图片内容和对话意图自主选择引擎，不必每次都问用户。如果图片中有角色特征（角、翅膀、服装风格等），优先用 animetrace。如果搜索失败会自动重试。"""
+    parameters: dict = Field(
+        default_factory=lambda: {
+            "type": "object",
+            "properties": {
+                "image_base64": {
+                    "type": "string",
+                    "description": "图片的 base64 编码（不含 data:image 前缀）。如果当前对话中有图片，可以从 context 中获取。",
+                },
+                "image_url": {
+                    "type": "string",
+                    "description": "或直接提供图片 URL（二选一，与 base64 互斥）",
+                },
+                "engine": {
+                    "type": "string",
+                    "description": "可选，指定搜索引擎。可选值：animetrace/saucenao/ehentai/google/yandex。不填则由助手自动判断。",
+                    "enum": ["animetrace", "saucenao", "ehentai", "google", "yandex"],
+                },
+                "intent": {
+                    "type": "string",
+                    "description": "搜索意图，用于自动选引擎。例如：「找角色」「找出处」「找相似图」。不填则自动判断。",
+                },
+            },
+            "required": [],
+        }
+    )
+
     def __init__(self, **data):
         super().__init__(**data)
         self.search_model = None
@@ -134,13 +180,10 @@ def format_search_result(result: dict, engine: str) -> str:
         explicit_engine = kwargs.get("engine")
         intent = kwargs.get("intent")
         
-        # 尝试从上下文获取图片
         if not base64 and not url:
-            # 方法1: 从 message.image_list 获取（兼容旧格式）
             msg = getattr(context.context, 'message', None) or                   (context.context.event.message_obj if hasattr(context.context, 'event') else None)
             if msg and hasattr(msg, 'image_list') and msg.image_list:
                 url = msg.image_list[0]
-            # 方法2: 从 context.messages 获取最新用户消息中的图片
             elif hasattr(context.context, 'messages'):
                 from astrbot.core.agent.message import UserMessageSegment
                 for msg_seg in reversed(context.context.messages):
@@ -151,7 +194,6 @@ def format_search_result(result: dict, engine: str) -> str:
                                 break
                         if url:
                             break
-            # 方法3: 从 event.message_obj.content 中正则匹配
             if not url and hasattr(context.context, 'event'):
                 event = context.context.event
                 if hasattr(event, 'message_obj') and hasattr(event.message_obj, 'content'):
@@ -163,7 +205,6 @@ def format_search_result(result: dict, engine: str) -> str:
         if not base64 and not url:
             return ToolExecResult("未找到图片。请附上图片再调用此工具。")
         
-        # 决定引擎
         chosen_engine = decide_engine(intent, explicit_engine)
         logger.info(f"[reverse_search] engine={chosen_engine}, intent={intent}, url={url[:50] if url else 'base64'}")
         
