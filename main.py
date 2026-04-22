@@ -229,9 +229,11 @@ class ReverseSearcherPlugin(Star):
         try:
             from ReverseSearcher.tools.search_tools import register_search_tools
             register_search_tools(self)
+            logger.info("[ReverseSearcher] LLM 搜图工具注册完成")
         except Exception as e:
-            import sys
-            sys.stderr.write(f"[ReverseSearcher] 工具注册失败: {e}\n")
+            logger.error(f"[ReverseSearcher] 工具注册失败: {e}")
+            import traceback
+            traceback.print_exc()
 
 
     @staticmethod
