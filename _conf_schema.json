@@ -1,0 +1,258 @@
+{
+    "proxies": {
+        "description": "代理服务器地址",
+        "type": "string",
+        "hint": "http://host:port，例如：http://127.0.0.1:7890",
+        "default": null
+    },
+    "auto_send_text_results": {
+        "description": "是否自动发送文本格式搜索结果",
+        "type": "bool",
+        "hint": "搜索完成后是否自动发送文本格式搜索结果，无需用户确认",
+        "default": false
+    },
+    "timeout_settings": {
+        "description": "超时配置",
+        "type": "object",
+        "items": {
+            "search_params_timeout": {
+                "description": "等待搜索参数（引擎名、图片等）的时间（秒）",
+                "type": "int",
+                "hint": "用户在发送'以图搜图'命令后，等待提供引擎名称和图片的最大时间",
+                "default": 30
+            },
+            "text_confirm_timeout": {
+                "description": "等待确认是否需要文本格式结果的时间（秒）",
+                "type": "int",
+                "hint": "搜索完成后，等待用户确认是否需要文本格式结果的最大时间",
+                "default": 30
+            }
+        }
+    },
+    "keyword": {
+        "description": "关键词",
+        "type": "object",
+        "hint": "配置触发搜索的关键词和各搜索引擎的自定义关键词",
+        "items": {
+            "trigger_keywords": {
+                "description": "触发搜索的关键词列表",
+                "type": "list",
+                "hint": "用户发送任意一个关键词时触发图片搜索功能，留空则使用默认关键词",
+                "default": [
+                    "以图搜图"
+                ]
+            },
+            "engine_keywords": {
+                "description": "各搜索引擎的自定义关键词（别名）",
+                "type": "object",
+                "hint": "为每个搜索引擎配置自定义关键词，用户可以使用这些关键词指定引擎，留空则使用默认引擎名",
+                "items": {
+                    "animetrace": {
+                        "description": "AnimeTrace",
+                        "type": "string",
+                        "default": "a"
+                    },
+                    "ehentai": {
+                        "description": "E-Hentai",
+                        "type": "string",
+                        "default": "e"
+                    },
+                    "google": {
+                        "description": "Google",
+                        "type": "string",
+                        "default": "g"
+                    },
+                    "yandex": {
+                        "description": "Yandex",
+                        "type": "string",
+                        "default": "y"
+                    },
+                    "saucenao": {
+                        "description": "SauceNAO",
+                        "type": "string",
+                        "default": "s"
+                    }
+                }
+            }
+        }
+    },
+    "available_apis": {
+        "description": "启用状态",
+        "type": "object",
+        "items": {
+            "animetrace": {
+                "description": "AnimeTrace",
+                "type": "bool",
+                "default": true
+            },
+            "ehentai": {
+                "description": "E-Hentai/ExHentai",
+                "type": "bool",
+                "default": true
+            },
+            "google": {
+                "description": "Google Lens",
+                "type": "bool",
+                "default": true
+            },
+            "yandex": {
+                "description": "Yandex",
+                "type": "bool",
+                "default": true
+            },
+            "saucenao": {
+                "description": "SauceNAO",
+                "type": "bool",
+                "default": true
+            }
+        }
+    },
+    "default_params": {
+        "description": "默认参数",
+        "type": "object",
+        "items": {
+            "animetrace": {
+                "description": "AnimeTrace",
+                "type": "object",
+                "items": {
+                    "model": {
+                        "description": "识别模型（默认：full_game_model_kira）",
+                        "type": "string",
+                        "hint": "可选模型: anime_model_lovelive, pre_stable, anime, full_game_model_kira",
+                        "default": "full_game_model_kira"
+                    },
+                    "is_multi": {
+                        "description": "多角色搜索模式",
+                        "type": "int",
+                        "hint": "检测图片中的多个角色",
+                        "default": null
+                    },
+                    "ai_detect": {
+                        "description": "AI检测模式",
+                        "type": "int",
+                        "hint": "检测图片是否为AI生成",
+                        "default": null
+                    }
+                }
+            },
+            "ehentai": {
+                "description": "EHentai",
+                "type": "object",
+                "items": {
+                    "is_ex": {
+                        "description": "是否使用ExHentai而不是E-Hentai",
+                        "type": "bool",
+                        "hint": "需要ExHentai账号和有效Cookie",
+                        "default": false
+                    },
+                    "covers": {
+                        "description": "是否包含封面搜索结果",
+                        "type": "bool",
+                        "default": false
+                    },
+                    "similar": {
+                        "description": "是否包含相似结果",
+                        "type": "bool",
+                        "default": true
+                    },
+                    "exp": {
+                        "description": "是否启用实验性搜索模式",
+                        "type": "bool",
+                        "default": false
+                    },
+                    "cookies": {
+                        "description": "E-Hentai Cookies",
+                        "type": "string",
+                        "hint": "格式如: ipb_member_id=...; ipb_pass_hash=...; igneous=.... ExHentai搜索必需。",
+                        "default": null
+                    }
+                }
+            },
+            "google": {
+                "description": "Google API",
+                "type": "object",
+                "items": {
+                    "serpapi_key": {
+                        "description": "SerpApi API Key",
+                        "type": "string",
+                        "hint": "可选 (推荐). 从 https://serpapi.com/ 申请. 使用Google Lens实现。",
+                        "default": null
+                    },
+                    "zenserp_key": {
+                        "description": "Zenserp API Key",
+                        "type": "string",
+                        "hint": "可选 (备用). 从 https://zenserp.com/ 申请. 使用Google Reverse Image实现。",
+                        "default": null
+                    },
+                    "hl": {
+                        "description": "语言 (Language)",
+                        "type": "string",
+                        "hint": "Google界面语言代码 (如: zh-CN, en, ja)",
+                        "default": "zh-CN"
+                    },
+                    "country": {
+                        "description": "国家/地区 (Country)",
+                        "type": "string",
+                        "hint": "搜索结果针对的国家/地区代码 (如: cn, us, jp)",
+                        "default": "HK"
+                    },
+                    "max_results": {
+                        "description": "最大结果数",
+                        "type": "int",
+                        "hint": "API返回的最大结果数量 (注意: SerpApi/Zenserp分页可能耗费额度)",
+                        "default": 10
+                    }
+                }
+            },
+            "saucenao": {
+                "description": "SauceNAO",
+                "type": "object",
+                "items": {
+                    "api_key": {
+                        "description": "SauceNAO API密钥",
+                        "type": "string",
+                        "hint": "用于访问SauceNAO API，免费账户每日限制150次，每30秒4次",
+                        "default": null
+                    },
+                    "hide": {
+                        "description": "隐藏级别",
+                        "type": "int",
+                        "default": 3
+                    },
+                    "numres": {
+                        "description": "返回结果数量",
+                        "type": "int",
+                        "default": 5
+                    },
+                    "minsim": {
+                        "description": "最低相似度",
+                        "type": "int",
+                        "default": 30
+                    },
+                    "output_type": {
+                        "description": "输出类型(2表示JSON输出)",
+                        "type": "int",
+                        "default": 2
+                    }
+                }
+            },
+            "yandex": {
+                "description": "Yandex",
+                "type": "object",
+                "items": {
+                    "max_results": {
+                        "description": "最大结果数",
+                        "type": "int",
+                        "default": 10
+                    },
+                    "use_ru_fallback": {
+                        "description": "启用 .ru 域名回退",
+                        "type": "bool",
+                        "hint": "当 .com 访问失败时尝试使用 yandex.ru",
+                        "default": true
+                    }
+                }
+            }
+        }
+    }
+}

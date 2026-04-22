@@ -1,0 +1,6 @@
+httpx>=0.23.0
+Pillow>=9.0.0
+pyquery
+typing_extensions
+curl_cffi>=0.5.10
+requests>=2.31.0

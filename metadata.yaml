@@ -1,0 +1,5 @@
+name: "img_reverse_searcher"
+display_name: "图片反搜助手"
+author: "Flandre Scarlet"
+description: "支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 的图片反向搜索"
+version: "2.1.0"
