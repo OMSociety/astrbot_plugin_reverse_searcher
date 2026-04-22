@@ -227,7 +227,7 @@ class ReverseSearcherPlugin(Star):
 
         # 注册 LLM 工具
         try:
-            from ReverseSearcher.tools.search_tools import register_search_tools
+            from .ReverseSearcher.tools.search_tools import register_search_tools
             register_search_tools(self)
             logger.info("[ReverseSearcher] LLM 搜图工具注册完成")
         except Exception as e:
