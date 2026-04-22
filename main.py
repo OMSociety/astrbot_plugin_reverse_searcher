@@ -221,8 +221,6 @@ class ReverseSearcherPlugin(Star):
             "waiting_engine": self._handle_waiting_engine,
             "waiting_both": self._handle_waiting_both,
             "waiting_image": self._handle_waiting_image,
-            "waiting_both": self._handle_waiting_both,
-            "waiting_image": self._handle_waiting_image,
             "waiting_mode_selection": self._handle_waiting_mode_selection,
         }
 
@@ -518,7 +516,7 @@ class ReverseSearcherPlugin(Star):
             draw = ImageDraw.Draw(img)
             workspace_root = Path(__file__).parent
             try:
-                font_path = str(workspace_root / "ReverseSearcher/resource/font/arialuni.ttf")
+                font_path = str(workspace_root / "resource/font/arialuni.ttf")
                 title_font = ImageFont.truetype(font_path, 24)
                 header_font = ImageFont.truetype(font_path, 18)
                 body_font = ImageFont.truetype(font_path, 16)
@@ -649,15 +647,10 @@ class ReverseSearcherPlugin(Star):
 
     async def _check_and_ask_mode(self, event: AstrMessageEvent, engine: str, img_buffer: io.BytesIO, user_id: str):
         """
-        检查是否需要询问模式
+        检查是否需要询问模式（预留接口，当前未使用）
         返回 True 表示已拦截并发送询问，False 表示直接继续
         """
-        state = self.user_states.get(user_id, {})
-        if state.get("mode_confirmed"):
-             return
-             return
-             
-        return
+        return False
 
     async def _perform_search(self, event: AstrMessageEvent, engine: str, img_buffer: io.BytesIO):
         """
@@ -841,10 +834,9 @@ class ReverseSearcherPlugin(Star):
                     await event.send(event.chain_result([nodes]))
                 except Exception as e:
                     yield event.plain_result(f"发送搜索结果失败: {str(e)}")
-            
-                else:
-                    del self.user_states[user_id]
-                    event.stop_event()
+            del self.user_states[user_id]
+            event.stop_event()
+            return
 
     async def _handle_waiting_engine(self, event: AstrMessageEvent, state: dict, user_id: str):
         """
@@ -1014,6 +1006,7 @@ f"引擎 '{message_text}' 不存在，请回复有效的引擎名（如{example_
             无
         """
         img_buffer = None
+        message_text = get_message_text(event.message_obj).strip()
         collected_imgs = await self._collect_input_images(event)
         if collected_imgs:
             img_buffer = collected_imgs[0]
@@ -1147,7 +1140,7 @@ f"引擎 '{message_text}' 不存在，请回复有效的引擎名（如{example_
             yield result
         event.stop_event()
 
-    @filter.event_message_type(filter.EventMessageType.ALL)
+    @filter.event_message_type(filter.EventMessageType.PRIVATE_MESSAGE)
     async def on_message(self, event: AstrMessageEvent):
         """
         插件消息收发主入口，处理各种状态下用户输入分发

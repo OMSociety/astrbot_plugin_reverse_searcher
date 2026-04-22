@@ -113,10 +113,6 @@ class BaseSearchModel:
                 "max_results": search_params.get("max_results", 10),
                 "use_ru_fallback": search_params.get("use_ru_fallback", True)
             }
-        elif api == "copyseeker":
-            engine_params = {
-                "copyseeker_api_key": search_params.get("copyseeker_api_key", "")
-            }
 
         return engine_params
     
@@ -209,21 +205,19 @@ class BaseSearchModel:
         engine_class = ENGINE_MAP[api]
         default_params = self.default_params.get(api, {})
         search_params = {**default_params, **kwargs}
+        # 复制一份避免 pop 修改原始 kwargs（影响后续传给 engine.search 的参数）
+        default_params = self.default_params.get(api, {})
+        search_params = {**default_params, **kwargs}
+        # 复制一份避免 pop 修改原始 kwargs（影响后续传给 engine.search 的参数）
+        engine_params = self._prepare_engine_params(api, dict(search_params))
         network_kwargs = {}
         if self.proxies:
             network_kwargs["proxies"] = self.proxies
         effective_cookies = None
         if api == "yandex":
             effective_cookies = await self._get_yandex_cookie()
-
-        # Fix: Check for E-Hentai cookies in search_params (from default_params or kwargs)
         elif api == "ehentai" and "cookies" in search_params:
-            effective_cookies = search_params.get("cookies") 
-            # Note: We don't pop it here because _prepare_engine_params might expect it, 
-            # or we can pop it. ehentai_req.py pops it in _prepare_engine_params effectively?
-            # No, _prepare_engine_params in model.py pops it. 
-            # So it's fine to just read it here.
-        
+            effective_cookies = search_params.get("cookies")
         elif api in self.default_cookies:
             effective_cookies = self.default_cookies.get(api)
         elif self.cookies:
@@ -232,10 +226,10 @@ class BaseSearchModel:
             network_kwargs["cookies"] = effective_cookies
         if self.timeout:
             network_kwargs["timeout"] = self.timeout
-        
+
         # NOTE: Exceptions are now propagated to caller (main.py) to distinguish from "No results"
         async with Network(**network_kwargs) as client:
-            engine_params = self._prepare_engine_params(api, search_params)
+            engine_instance = engine_class(client=client, **engine_params)
             engine_instance = engine_class(client=client, **engine_params)
             if api == "animetrace" and search_params.get("base64"):
                 response = await engine_instance.search(
