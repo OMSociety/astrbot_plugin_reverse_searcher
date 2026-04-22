@@ -16,7 +16,7 @@ import base64
 import socket
 import ipaddress
 from urllib.parse import urlparse
-from .ImgRevSearcher.model import BaseSearchModel
+from .ReverseSearcher.model import BaseSearchModel
 
 ALL_ENGINES = [
     "animetrace", "yandex", "ehentai", "google", "saucenao"
@@ -155,7 +155,7 @@ def get_message_text(message) -> str:
 
 
 @register("astrbot_plugin_img_rev_searcher", "drdon1234", "以图搜图，找出处", "3.4")
-class ImgRevSearcherPlugin(Star):
+class ReverseSearcherPlugin(Star):
     """
     以图搜图插件主类
 
@@ -518,7 +518,7 @@ class ImgRevSearcherPlugin(Star):
             draw = ImageDraw.Draw(img)
             workspace_root = Path(__file__).parent
             try:
-                font_path = str(workspace_root / "ImgRevSearcher/resource/font/arialuni.ttf")
+                font_path = str(workspace_root / "ReverseSearcher/resource/font/arialuni.ttf")
                 title_font = ImageFont.truetype(font_path, 24)
                 header_font = ImageFont.truetype(font_path, 18)
                 body_font = ImageFont.truetype(font_path, 16)
@@ -628,7 +628,7 @@ class ImgRevSearcherPlugin(Star):
         # 当前架构 _perform_search 是一次性调用
         # 这里我们直接调用 _perform_search 稍微麻烦，因为它需要 img_buffer
         # 我们可以把 img_buffer 暂时存在 state 已经被序列化了吗? No, state is dict.
-        # ImgRevSearcher 插件逻辑中 state 是存放在 self.user_states 内存中的
+        # ReverseSearcher 插件逻辑中 state 是存放在 self.user_states 内存中的
         # 所以我们可以把 BytesIO 暂存 (虽然不太好，暂时可行)
         
         img_buffer = state.get("img_buffer_ptr")
