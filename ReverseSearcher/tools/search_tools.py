@@ -83,21 +83,30 @@ def decide_engine(intent: Optional[str] = None, explicit_engine: Optional[str] =
     return "animetrace"  # 无法判断时默认
 
 
-def format_search_result(result: dict, engine: str) -> str:
+def format_search_result(result, engine: str) -> str:
     """格式化搜索结果为文本"""
-    if isinstance(result, str):
-        label = ENGINE_MAP.get(engine, {}).get("label", engine)
-        return f"🔍 [{label}]\n{result[:500]}"
+    label = ENGINE_MAP.get(engine, {}).get("label", engine)
     
-    images = result.get("images", [])
-    extra_text = result.get("extra_text", "")
-    error_msg = result.get("error", "")
+    # 处理 None 或空结果
+    if result is None or result == "":
+        return f"🔍 [{label}] 未找到结果"
+    
+    # 处理字符串结果（部分引擎直接返回文本）
+    if isinstance(result, str):
+        if result.strip():
+            return f"🔍 [{label}]\n{result[:500]}"
+        return f"🔍 [{label}] 未找到结果"
+    
+    # 处理字典结果
+    images = result.get("images", []) if isinstance(result, dict) else []
+    extra_text = result.get("extra_text", "") if isinstance(result, dict) else ""
+    error_msg = result.get("error", "") if isinstance(result, dict) else ""
     
     if error_msg:
-        return f"❌ [{ENGINE_MAP.get(engine, {}).get('label', engine)}] 搜索失败：{error_msg}"
+        return f"❌ [{label}] 搜索失败：{error_msg}"
     
     if not images:
-        return f"🔍 [{ENGINE_MAP.get(engine, {}).get('label', engine)}] 未找到结果"
+        return f"🔍 [{label}] 未找到结果"
     
     label = ENGINE_MAP.get(engine, {}).get("label", engine)
     lines_out = [f"🔍 [{label}] 找到 {len(images)} 个结果"]
@@ -221,12 +230,39 @@ class ReverseSearchTool(FunctionTool[AstrAgentContext]):
         logger.info(f"[reverse_search] engine={chosen_engine}, intent={intent}, url={url[:50] if url else 'base64'}")
         
         try:
-            # 处理本地文件路径（AstrBot 传入的 path /xxx/xxx.jpg）
-            if url and url.startswith('path '):
-                local_path = url[5:].strip()
-                with open(local_path, 'rb') as f:
-                    base64 = base64.b64encode(f.read()).decode()
-                url = None
+            # 处理图片参数：base64 / URL / 本地路径
+            local_path = None
+            
+            # 1. base64 优先
+            if not base64:
+                # 2. URL 字符串
+                if url and isinstance(url, str):
+                    if url.startswith('path '):
+                        local_path = url[5:].strip()
+                    elif url.startswith('http'):
+                        pass  # 直接用 URL
+                    else:
+                        local_path = url  # 当作本地路径
+                
+                # 3. 从上下文获取
+                if not base64 and not url:
+                    msg = getattr(context.context, 'message', None) or \
+                          (context.context.event.message_obj if hasattr(context.context, 'event') else None)
+                    if msg and hasattr(msg, 'image_list') and msg.image_list:
+                        url = msg.image_list[0]
+                
+                # 读取本地文件
+                if local_path:
+                    try:
+                        with open(local_path, 'rb') as f:
+                            base64 = base64.b64encode(f.read()).decode()
+                    except Exception:
+                        return ToolExecResult(f"无法读取图片文件：{local_path}")
+            
+            if not base64 and not (url and isinstance(url, str) and url.startswith('http')):
+                return ToolExecResult("未找到图片，请附上图片再搜图")
+            
+            logger.info(f"[reverse_search] engine={chosen_engine}, intent={intent}")
             
             if base64:
                 result = await self.search_model.search(api=chosen_engine, base64=base64)
@@ -329,12 +365,33 @@ class ReverseSearchWithEngineTool(FunctionTool[AstrAgentContext]):
         logger.info(f"[reverse_search_with_engine] engine={engine}, url={url[:50] if url else 'base64'}")
         
         try:
-            # 处理本地文件路径
-            if url and url.startswith('path '):
-                local_path = url[5:].strip()
-                with open(local_path, 'rb') as f:
-                    base64 = base64.b64encode(f.read()).decode()
-                url = None
+            local_path = None
+            
+            if not base64 and url and isinstance(url, str):
+                if url.startswith('path '):
+                    local_path = url[5:].strip()
+                elif url.startswith('http'):
+                    pass
+                else:
+                    local_path = url
+            
+            if not base64 and not url:
+                msg = getattr(context.context, 'message', None) or \
+                      (context.context.event.message_obj if hasattr(context.context, 'event') else None)
+                if msg and hasattr(msg, 'image_list') and msg.image_list:
+                    url = msg.image_list[0]
+            
+            if local_path:
+                try:
+                    with open(local_path, 'rb') as f:
+                        base64 = base64.b64encode(f.read()).decode()
+                except Exception:
+                    return ToolExecResult(f"无法读取图片文件：{local_path}")
+            
+            if not base64 and not (url and isinstance(url, str) and url.startswith('http')):
+                return ToolExecResult("未找到图片，请附上图片再搜图")
+            
+            logger.info(f"[reverse_search_with_engine] engine={engine}")
             
             if base64:
                 result = await self.search_model.search(api=engine, base64=base64)
