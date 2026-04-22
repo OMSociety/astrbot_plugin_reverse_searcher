@@ -77,7 +77,7 @@ class AnimeTraceResponse(BaseSearchResponse[AnimeTraceItem]):
         """
         self.code: int = resp_data["code"]
         self.ai: bool = resp_data.get("ai", False)
-        self.trace_id: str = resp_data["trace_id"]
+        self.trace_id: str = resp_data.get("trace_id", "")
         results = resp_data["data"]
         self.raw: list[AnimeTraceItem] = [AnimeTraceItem(item) for item in results]
         

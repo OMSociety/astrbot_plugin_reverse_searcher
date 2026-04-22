@@ -6,6 +6,7 @@
 
 芙兰会根据图片内容和用户意图自主选择最合适的搜索引擎。
 """
+import base64
 import io
 from typing import Optional
 from pydantic import Field
@@ -198,9 +199,20 @@ class ReverseSearchTool(FunctionTool[AstrAgentContext]):
                 event = context.context.event
                 if hasattr(event, 'message_obj') and hasattr(event.message_obj, 'content'):
                     import re
-                    img_matches = re.findall(r'https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)', event.message_obj.content)
-                    if img_matches:
-                        url = img_matches[0]
+                    # 支持本地文件路径：path /xxx/xxx.jpg
+                    content = event.message_obj.content
+                    path_match = re.search(r'path[/\s]+(/[^\s]+\.(?:jpg|jpeg|png|gif|webp))', content)
+                    if path_match:
+                        local_path = path_match.group(1)
+                        try:
+                            with open(local_path, 'rb') as f:
+                                base64 = base64.b64encode(f.read()).decode()
+                        except Exception:
+                            url = local_path  # fallback
+                    else:
+                        img_matches = re.findall(r'https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)', content)
+                        if img_matches:
+                            url = img_matches[0]
         
         if not base64 and not url:
             return ToolExecResult("未找到图片。请附上图片再调用此工具。")
@@ -209,6 +221,13 @@ class ReverseSearchTool(FunctionTool[AstrAgentContext]):
         logger.info(f"[reverse_search] engine={chosen_engine}, intent={intent}, url={url[:50] if url else 'base64'}")
         
         try:
+            # 处理本地文件路径（AstrBot 传入的 path /xxx/xxx.jpg）
+            if url and url.startswith('path '):
+                local_path = url[5:].strip()
+                with open(local_path, 'rb') as f:
+                    base64 = base64.b64encode(f.read()).decode()
+                url = None
+            
             if base64:
                 result = await self.search_model.search(api=chosen_engine, base64=base64)
             else:
@@ -218,7 +237,7 @@ class ReverseSearchTool(FunctionTool[AstrAgentContext]):
             return ToolExecResult(text)
         except Exception as e:
             logger.error(f"[reverse_search] Error: {e}")
-            return ToolExecResult(f"搜索出错：{str(e)}")
+            return ToolExecResult(f"搜索出错：{e}")
 
 
 @dataclass(config=dict(arbitrary_types_allowed=True))
@@ -286,9 +305,20 @@ class ReverseSearchWithEngineTool(FunctionTool[AstrAgentContext]):
                 event = context.context.event
                 if hasattr(event, 'message_obj') and hasattr(event.message_obj, 'content'):
                     import re
-                    img_matches = re.findall(r'https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)', event.message_obj.content)
-                    if img_matches:
-                        url = img_matches[0]
+                    # 支持本地文件路径：path /xxx/xxx.jpg
+                    content = event.message_obj.content
+                    path_match = re.search(r'path[/\s]+(/[^\s]+\.(?:jpg|jpeg|png|gif|webp))', content)
+                    if path_match:
+                        local_path = path_match.group(1)
+                        try:
+                            with open(local_path, 'rb') as f:
+                                base64 = base64.b64encode(f.read()).decode()
+                        except Exception:
+                            url = local_path  # fallback
+                    else:
+                        img_matches = re.findall(r'https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)', content)
+                        if img_matches:
+                            url = img_matches[0]
         
         if not base64 and not url:
             return ToolExecResult("未找到图片。请附上图片再调用此工具。")
@@ -299,6 +329,13 @@ class ReverseSearchWithEngineTool(FunctionTool[AstrAgentContext]):
         logger.info(f"[reverse_search_with_engine] engine={engine}, url={url[:50] if url else 'base64'}")
         
         try:
+            # 处理本地文件路径
+            if url and url.startswith('path '):
+                local_path = url[5:].strip()
+                with open(local_path, 'rb') as f:
+                    base64 = base64.b64encode(f.read()).decode()
+                url = None
+            
             if base64:
                 result = await self.search_model.search(api=engine, base64=base64)
             else:
@@ -308,7 +345,7 @@ class ReverseSearchWithEngineTool(FunctionTool[AstrAgentContext]):
             return ToolExecResult(text)
         except Exception as e:
             logger.error(f"[reverse_search_with_engine] Error: {e}")
-            return ToolExecResult(f"搜索出错：{str(e)}")
+            return ToolExecResult(f"搜索出错：{e}")
 
 
 # ============ 注册函数 ============
