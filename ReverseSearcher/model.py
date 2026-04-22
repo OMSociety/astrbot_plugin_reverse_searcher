@@ -79,7 +79,7 @@ class BaseSearchModel:
             }
         elif api == "saucenao":
             engine_params = {
-                "api_key": search_params.pop("api_key"),
+                "api_key": search_params.pop("api_key", None),
                 "hide": search_params.pop("hide", 3),
                 "numres": search_params.pop("numres", 5),
                 "minsim": search_params.pop("minsim", 30),
@@ -205,10 +205,6 @@ class BaseSearchModel:
         engine_class = ENGINE_MAP[api]
         default_params = self.default_params.get(api, {})
         search_params = {**default_params, **kwargs}
-        # 复制一份避免 pop 修改原始 kwargs（影响后续传给 engine.search 的参数）
-        default_params = self.default_params.get(api, {})
-        search_params = {**default_params, **kwargs}
-        # 复制一份避免 pop 修改原始 kwargs（影响后续传给 engine.search 的参数）
         engine_params = self._prepare_engine_params(api, dict(search_params))
         network_kwargs = {}
         if self.proxies:
@@ -229,7 +225,6 @@ class BaseSearchModel:
 
         # NOTE: Exceptions are now propagated to caller (main.py) to distinguish from "No results"
         async with Network(**network_kwargs) as client:
-            engine_instance = engine_class(client=client, **engine_params)
             engine_instance = engine_class(client=client, **engine_params)
             if api == "animetrace" and search_params.get("base64"):
                 response = await engine_instance.search(
