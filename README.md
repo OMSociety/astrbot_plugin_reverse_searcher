@@ -1,7 +1,5 @@
 # 图片反搜助手
 
-> 核心代码基于 [kitUIN/PicImageSearch](https://github.com/kitUIN/PicImageSearch)
-
 支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 的图片反向搜索，同时提供 LLM 主动搜图工具，让芙兰自己判断何时搜图、用哪个引擎。
 
 ---
@@ -19,7 +17,7 @@
 - 引擎别名：`a`=animetrace, `s`=saucenao, `e`=ehentai, `g`=google, `y`=yandex
 
 ### LLM 主动搜图
-芙兰可以根据对话意图自主调用搜图工具，例如：
+Bot可以根据对话意图自主调用搜图工具，例如：
 - "帮我看看这是哪个角色" → 自动用 animetrace
 - "这张图找出处" → 自动用 saucenao
 
@@ -47,9 +45,9 @@ pip install -r requirements.txt
 | 引擎 | 说明 | 备注 |
 |:----|:----|:----|
 | **animetrace** | 动漫角色识别 | 无需 API Key，返回作品名+角色名 |
-| **saucenao** | 综合出处搜索 | 免费 Key 够用，P Pixiv 插画首选 |
+| **saucenao** | 综合出处搜索 | 免费 Key 够用，Pixiv 插画首选 |
 | **google** | Google Lens | 需 SerpAPI Key（推荐），综合搜索兜底 |
-| **yandex** | 相似图片搜索 | 无需配置，俄罗斯引擎 |
+| **yandex** | 相似图片搜索 | 无需配置 |
 | **ehentai** | E-Hentai/ExHentai | 仅 ExHentai 需要 Cookie |
 
 ---
