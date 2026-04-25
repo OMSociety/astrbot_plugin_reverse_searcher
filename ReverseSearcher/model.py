@@ -226,8 +226,8 @@ class BaseSearchModel:
             network_kwargs["timeout"] = self.timeout
 
         # NOTE: Exceptions are now propagated to caller (main.py) to distinguish from "No results"
-        async with Network(**network_kwargs) as client:
-            engine_instance = engine_class(client=client, **engine_params)
+        async with Network(**network_kwargs) as network:
+            engine_instance = engine_class(network=network, **engine_params)
             if api == "animetrace" and search_params.get("base64"):
                 response = await engine_instance.search(
                     base64=search_params.pop("base64"),
