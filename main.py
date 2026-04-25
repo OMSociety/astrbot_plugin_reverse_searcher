@@ -205,7 +205,6 @@ class ReverseSearcherPlugin(Star):
             "waiting_engine": self._handle_waiting_engine,
             "waiting_both": self._handle_waiting_both,
             "waiting_image": self._handle_waiting_image,
-            "waiting_mode_selection": self._handle_waiting_mode_selection,
         }
 
         # 注册 LLM 工具
@@ -330,57 +329,31 @@ class ReverseSearcherPlugin(Star):
         return images
 
     async def _collect_input_images(self, event: AstrMessageEvent) -> List[io.BytesIO]:
-        """收集图片（BytesIO格式），支持直接发送和引用"""
+        """收集图片（BytesIO格式），支持直接发送和引用回复"""
         images = []
-        reply_id = None
-        reply_images_found = False
 
         # 1. 检查当前消息中的图片
-        # 兼容旧逻辑 get_img_urls
         curr_url = get_img_urls(event.message_obj)
         if curr_url:
             imgs = await self.get_imgs([curr_url])
             if imgs:
                 images.extend(imgs)
 
-        # 2. 检查引用
-        if hasattr(event, "message_obj") and event.message_obj and hasattr(event.message_obj, "message"):
-             for comp in event.message_obj.message:
-                # AstrBot 的 Reply 组件
-                if hasattr(comp, 'type') and comp.type == 'Reply': # Check type name if strict
-                    pass
-                # Check for Reply component structure
-                if isinstance(comp, Nodes): continue # Skip nodes
-                
-                # Check if it is a Reply object or has id/data['id']
-                # The user reference code checks isinstance(comp, Reply) but we don't have Reply imported easily? 
-                # Actually imported from astrbot.core.message.components but let's be duck-typed or check attributes
-                
-                c_id = getattr(comp, 'id', None)
-                if not c_id and hasattr(comp, 'data') and isinstance(comp.data, dict):
-                    c_id = comp.data.get('id')
-                
-                # In Astrbot, usually Repy component has .id
-                # Let's check if the component string repr has 'reply' logic or check event.message_obj for specific structure
-                pass
-
-        # Use robust extraction from raw_message for reply ID
-        # AstrBot/aiocqhttp logic: raw_event might be the dict we saw in logs
+        # 2. 检查引用回复
+        reply_id = None
         raw_evt = getattr(event, 'raw_event', None)
         if raw_evt and isinstance(raw_evt, dict):
-             msg_segs = raw_evt.get('message', [])
-             if isinstance(msg_segs, list):
-                 for seg in msg_segs:
-                     if seg.get('type') == 'reply':
-                         reply_id = seg.get('data', {}).get('id')
-                         break
-
+            msg_segs = raw_evt.get('message', [])
+            if isinstance(msg_segs, list):
+                for seg in msg_segs:
+                    if seg.get('type') == 'reply':
+                        reply_id = seg.get('data', {}).get('id')
+                        break
 
         if reply_id and not images:
-             # Fetch from API
-             fetched = await self._fetch_reply_images_via_api(event, reply_id)
-             if fetched:
-                 images.extend(fetched)
+            fetched = await self._fetch_reply_images_via_api(event, reply_id)
+            if fetched:
+                images.extend(fetched)
         
         return images
 
@@ -583,61 +556,6 @@ class ReverseSearcherPlugin(Star):
         img_bytes = await asyncio.to_thread(create_engine_intro_image)
         async for result in self._send_image(event, img_bytes):
                 yield result
-
-    async def _handle_waiting_mode_selection(self, event: AstrMessageEvent, state: dict, user_id: str):
-        """
-        处理模式选择输入 (ASCII2D/IQDB)
-        """
-        message_text = get_message_text(event.message_obj).strip().lower()
-        if not message_text:
-            return
-
-        engine = state.get("engine")
-        extra_params = state.get("search_extra_params", {})
-        
-        if message_text in ["2", "bovw", "特征"]:
-            extra_params["bovw"] = True
-            await event.send(event.plain_result("已选择: 特征搜索 (Bovw)"))
-        else:
-            await event.send(event.plain_result("无效输入，请回复 1 (颜色) 或 2 (特征)"))
-            return
-        
-        if message_text in ["2", "3d", "real"]:
-            extra_params["is_3d"] = True
-            await event.send(event.plain_result("已选择: 三次元 (3D)"))
-        else:
-            await event.send(event.plain_result("无效输入，请回复 1 (2D) 或 2 (3D)"))
-            return
-        
-        # 更新参数并清除等待状态
-        state["search_extra_params"] = extra_params
-        state["mode_confirmed"] = True
-        
-        # 恢复图片数据 (从 state 中?)
-        # 此时图片还没有被消费，或者需要重新获取?
-        # _perform_search 需要 img_buffer
-        # 我们需要在 _perform_search_check 中把 img_buffer 这里的逻辑串起来
-        # 当前架构 _perform_search 是一次性调用
-        # 这里我们直接调用 _perform_search 稍微麻烦，因为它需要 img_buffer
-        # 我们可以把 img_buffer 暂时存在 state 已经被序列化了吗? No, state is dict.
-        # ReverseSearcher 插件逻辑中 state 是存放在 self.user_states 内存中的
-        # 所以我们可以把 BytesIO 暂存 (虽然不太好，暂时可行)
-        
-        img_buffer = state.get("img_buffer_ptr")
-        if img_buffer:
-            img_buffer.seek(0)
-            async for result in self._perform_search(event, engine, img_buffer):
-                yield result
-        else:
-            yield event.plain_result("图片数据丢失，请重新搜索")
-        
-        # 清理: 仅当状态仍为 waiting_mode_selection 时才删除
-        # 如果 _perform_search 已经进入 waiting_text_confirm，则保留
-        current = self.user_states.get(user_id)
-        if current and current.get("step") == "waiting_mode_selection":
-            del self.user_states[user_id]
-        
-        event.stop_event()
 
     async def _check_and_ask_mode(self, event: AstrMessageEvent, engine: str, img_buffer: io.BytesIO, user_id: str):
         """
@@ -988,7 +906,6 @@ class ReverseSearcherPlugin(Star):
         
         # Original logic fallback specifically for text-embedded URL which _collect_input_images might not prioritizing if not in image component
         # But _collect_input_images does check get_img_urls.
-        # Let's check logic: _collect_input_images calls get_img_urls.
         # But here we also support "engine image_url" syntax in text parts[1] or parts[2].
         
         if collected_imgs:
