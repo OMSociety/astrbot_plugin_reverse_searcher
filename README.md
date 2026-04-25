@@ -1,6 +1,6 @@
 # 图片反搜助手
 
-支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 的图片反向搜索，同时提供 LLM 主动搜图工具，让芙兰自己判断何时搜图、用哪个引擎。
+支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 的图片反向搜索，同时提供 LLM 主动搜图工具，让Bot自己判断何时搜图、用哪个引擎。
 
 ---
 
