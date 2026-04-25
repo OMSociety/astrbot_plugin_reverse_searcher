@@ -18,8 +18,8 @@ class AnimeTrace(BaseSearchReq[AnimeTraceResponse]):
         self,
         base_url: str = "https://api.animetrace.com",
         endpoint: str = "v1/search",
-        is_multi: Optional[int] = None,
-        ai_detect: Optional[int] = None,
+        is_multi: Optional[bool] = None,
+        ai_detect: Optional[bool] = None,
         **request_kwargs: Any,
     ):
         """
@@ -34,8 +34,8 @@ class AnimeTrace(BaseSearchReq[AnimeTraceResponse]):
         """
         base_url = f"{base_url}/{endpoint}"
         super().__init__(base_url, **request_kwargs)
-        self.is_multi: Optional[int] = is_multi
-        self.ai_detect: Optional[int] = ai_detect
+        self.is_multi: Optional[bool] = is_multi
+        self.ai_detect: Optional[bool] = ai_detect
 
     @override
     async def search(
@@ -63,10 +63,10 @@ class AnimeTrace(BaseSearchReq[AnimeTraceResponse]):
             ValueError: 当未提供url、file或base64参数时抛出
         """
         params: dict[str, Any] = {}
-        if self.is_multi:
-            params["is_multi"] = self.is_multi
-        if self.ai_detect:
-            params["ai_detect"] = self.ai_detect
+        if self.is_multi is not None:
+            params["is_multi"] = 1 if self.is_multi else 0
+        if self.ai_detect is not None:
+            params["ai_detect"] = 1 if self.ai_detect else 0
         if model:
             params["response_parser"] = model
         if url:

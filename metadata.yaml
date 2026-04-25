@@ -3,4 +3,4 @@ display_name: "图片反搜助手"
 author: "Slandre & Flandre"
 description: "支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 的图片反向搜索，以及 LLM 主动搜图工具"
 repo: https://github.com/OMSociety/astrbot_plugin_reverse_searcher
-version: "1.0.0"
+version: "1.1.0"
