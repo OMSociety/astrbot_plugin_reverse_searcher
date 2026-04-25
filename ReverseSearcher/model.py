@@ -4,18 +4,20 @@ from typing import Any, Optional
 from PIL import Image, ImageDraw, ImageFont
 from .utils import Network
 from .utils.types import FileContent
-from .utils.api_request import AnimeTrace, EHentai, GoogleLens, SauceNAO, Yandex
+from .utils.render_card import ResultCardRenderer
+from .engine_registry import ENGINE_REGISTRY, inject_request_classes
+
+inject_request_classes()  # 注入请求类到注册表
+
 
 import asyncio
 from astrbot.api import logger
 
 
-ENGINE_MAP = {
-    "animetrace": AnimeTrace,
-    "yandex": Yandex,
-    "ehentai": EHentai,
-    "google": GoogleLens,
-    "saucenao": SauceNAO,
+ENGINE_MAP: dict[str, type] = {
+    name: def_.req_class
+    for name, def_ in ENGINE_REGISTRY.items()
+    if def_.req_class is not None
 }
 
 
@@ -291,9 +293,8 @@ class BaseSearchModel:
                 if self.timeout:
                     network_kwargs["timeout"] = self.timeout
                 async with Network(**network_kwargs) as client:
-                    response = await client.get(url)
-                    img_data = await response.aread()
-                    source_image = await asyncio.to_thread(lambda: Image.open(io.BytesIO(img_data)))
+                    resp = await client.download(url)
+                    source_image = await asyncio.to_thread(lambda d: Image.open(io.BytesIO(d)), resp)
             
             return await asyncio.to_thread(self.draw_results, api, result, source_image)
         except Exception:
@@ -328,19 +329,55 @@ class BaseSearchModel:
         return list(ENGINE_MAP.keys())
 
     def draw_results(self, api: str, result: str, source_image: Optional[Image.Image] = None) -> Image.Image:
-        """
-        绘制搜索结果图像
+        """绘制搜索结果图像（使用新卡片样式）"""
+        try:
+            renderer = ResultCardRenderer()
+            items = self._parse_result_text(result, api)
+            return renderer.render(api, items, source_image)
+        except Exception:
+            return self._draw_results_legacy(api, result, source_image)
 
-        将文本搜索结果渲染为图像，可选包含源图像
+    def _parse_result_text(self, result: str, api: str) -> list[dict]:
+        """从 show_result() 文本中解析出结构化结果列表"""
+        items = []
+        if not result:
+            return items
+        lines = result.split('\n')
+        current_item = {}
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith('=') or line.startswith('-'):
+                if current_item:
+                    items.append(current_item)
+                    current_item = {}
+                continue
+            if '作品名' in line or ('作品' in line and ':' in line):
+                current_item['title'] = line.split(':', 1)[-1].strip()
+            elif '角色名' in line:
+                current_item['source'] = line.split(':', 1)[-1].strip()
+            elif '画师' in line or '作者' in line.lower():
+                current_item['author'] = line.split(':', 1)[-1].strip()
+            elif '相似度' in line:
+                try:
+                    sim = line.split(':', 1)[-1].strip().replace('%', '').replace('\uff05', '')
+                    current_item['similarity'] = float(sim)
+                except Exception:
+                    pass
+            elif line.startswith('http'):
+                current_item['url'] = line
+            elif 'ai' in line.lower() and ('是' in line or '否' in line):
+                pass
+            elif '未找到' in line.lower():
+                pass
+            else:
+                if 'source' not in current_item:
+                    current_item['source'] = line
+        if current_item:
+            items.append(current_item)
+        return items
 
-        参数:
-            api: 搜索引擎API名称
-            result: 搜索结果文本
-            source_image: 源图像（可选）
-
-        返回:
-            Image.Image: 渲染后的结果图像
-        """
+    def _draw_results_legacy(self, api: str, result: str, source_image: Optional[Image.Image] = None) -> Image.Image:
+        """旧版文字渲染（回退用）"""
         margin = 20
         lines = result.split('\n')
         base_dir = Path(__file__).parent
@@ -351,7 +388,7 @@ class BaseSearchModel:
         except IOError:
             font = ImageFont.load_default()
             title_font = ImageFont.load_default()
-        title_text = f"{api.upper()} 搜索结果"
+        title_text = f"{api.upper()} search results"
         if hasattr(title_font, "getbbox"):
             title_width = title_font.getbbox(title_text)[2] + margin * 2
         else:
@@ -405,18 +442,13 @@ class BaseSearchModel:
         return img
 
     def draw_error(self, api: str, error_msg: str) -> Image.Image:
-        """
-        绘制错误信息图像
-
-        将错误信息渲染为图像
-
-        参数:
-            api: 搜索引擎API名称
-            error_msg: 错误消息文本
-
-        返回:
-            Image.Image: 渲染后的错误图像
-        """
+        """绘制错误图像（使用卡片样式）"""
+        try:
+            renderer = ResultCardRenderer()
+            return renderer.render_error(api, error_msg)
+        except Exception:
+            pass
+        # fallback
         width, height = 600, 200
         img = Image.new('RGB', (width, height), color='white')
         draw = ImageDraw.Draw(img)
@@ -430,6 +462,6 @@ class BaseSearchModel:
             font = ImageFont.load_default()
             title_font = ImageFont.load_default()
         margin = 20
-        draw.text((margin, margin), f"{api.upper()} 搜索失败", font=title_font, fill='white')
-        draw.text((margin, 80), f"错误信息: {error_msg}", font=font, fill='black')
+        draw.text((margin, margin), f"{api.upper()} search failed", font=title_font, fill='white')
+        draw.text((margin, 80), f"Error: {error_msg}", font=font, fill='black')
         return img
