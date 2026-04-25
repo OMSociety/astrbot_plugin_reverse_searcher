@@ -65,6 +65,22 @@ pip install -r requirements.txt
 | `cookies` | string | - | 仅使用 ExHentai 时需要 |
 | `proxies` | string | - | 代理服务器地址 |
 | `auto_send_text_results` | bool | `false` | 搜索完成后自动发送文本结果 |
+| `timeout_settings` | object | - | 超时配置（见下方详情） |
+
+### 超时配置 `timeout_settings`
+
+| 子配置 | 类型 | 默认值 | 说明 |
+|:----|:----|:----|:----|
+| `search_params_timeout` | int | `30` | 等待搜索参数的最大时间（秒） |
+| `text_confirm_timeout` | int | `30` | 等待确认结果格式的最大时间（秒） |
+
+### AnimeTrace 参数
+
+| 子配置 | 类型 | 默认值 | 说明 |
+|:----|:----|:----|:----|
+| `model` | string | `full_game_model_kira` | 识别模型 |
+| `is_multi` | bool | `false` | 多角色搜索模式 |
+| `ai_detect` | bool | `false` | AI 检测模式 |
 
 ---
 
