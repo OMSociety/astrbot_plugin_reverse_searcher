@@ -129,13 +129,13 @@
                     },
                     "is_multi": {
                         "description": "多角色搜索模式",
-                        "type": "boolean",
+                        "type": "bool",
                         "hint": "检测图片中的多个角色",
                         "default": false
                     },
                     "ai_detect": {
                         "description": "AI检测模式",
-                        "type": "boolean",
+                        "type": "bool",
                         "hint": "检测图片是否为AI生成",
                         "default": false
                     }
