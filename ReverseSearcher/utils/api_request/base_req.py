@@ -19,8 +19,14 @@ class BaseSearchReq(Network, ABC, Generic[T]):
 
     base_url: str = ""
 
-    def __init__(self, base_url: str = "", **request_kwargs: Any):
-        super().__init__(**request_kwargs)
+    def __init__(self, base_url: str = "", network: Optional[Network] = None, **request_kwargs: Any):
+        if network is not None:
+            # 使用外部传入的 Network 实例（复用其 client）
+            self._client = network._client
+            self._owned_client = False
+        else:
+            super().__init__(**request_kwargs)
+            self._owned_client = True
         self.base_url = base_url
 
     @abstractmethod
@@ -62,6 +68,16 @@ class BaseSearchReq(Network, ABC, Generic[T]):
                 continue
 
         raise RuntimeError(f"All image hosts failed, last error: {last_error}")
+
+    async def __aexit__(
+        self,
+        exc_type: Optional[type[BaseException]] = None,
+        exc_val: Optional[BaseException] = None,
+        exc_tb: Optional[Any] = None,
+    ) -> None:
+        # 只有自己创建的 client 才关闭，复用的不关闭
+        if getattr(self, "_owned_client", True):
+            await self._client.aclose()
 
     async def _send_request(
         self,
