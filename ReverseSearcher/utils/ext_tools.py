@@ -1,35 +1,7 @@
-import re
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Union
 from lxml.html import HTMLParser, fromstring
 from pyquery import PyQuery
-
-
-def deep_get(dictionary: dict[str, Any], keys: str) -> Optional[Any]:
-    """
-    深度获取字典中的嵌套值
-    
-    支持通过点号分隔的路径和数组索引获取嵌套字典中的值
-    
-    参数:
-        dictionary: 要查询的字典
-        keys: 以点号分隔的键路径，支持数组索引如 'key[0].subkey'
-        
-    返回:
-        Optional[Any]: 找到的值，如果路径不存在则返回None
-    """
-    for key in keys.split("."):
-        match = re.search(r"(\S+)?\[(\d+)]", key)
-        try:
-            if match:
-                if match[1]:
-                    dictionary = dictionary[match[1]]
-                dictionary = dictionary[int(match[2])]
-            else:
-                dictionary = dictionary[key]
-        except (KeyError, IndexError, TypeError):
-            return None
-    return dictionary
 
 
 def read_file(file: Union[str, bytes, Path]) -> bytes:
