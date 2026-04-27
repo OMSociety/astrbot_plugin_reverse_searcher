@@ -65,7 +65,8 @@ class EHentai(BaseSearchReq[EHentaiResponse]):
             # Add filename to tuple to enable Similarity Search
             files = {"sfile": ("image.jpg", await self.download(url), "application/octet-stream")}
         elif file:
-            files = {"sfile": ("image.jpg", read_file(file), "application/octet-stream")}
+            file_bytes = read_file(file)
+            files = {"sfile": ("image.jpg", file_bytes, "application/octet-stream")}
         else:
             raise ValueError("Either 'url' or 'file' must be provided")
         if self.covers:

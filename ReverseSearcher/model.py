@@ -1,3 +1,4 @@
+import base64
 import io
 from pathlib import Path
 from typing import Any, Optional
@@ -204,6 +205,24 @@ class BaseSearchModel:
             raise ValueError("file 和 url 参数不能同时提供")
         if file and not url and self._is_gif(file):
             file = await self._convert_gif_to_jpeg(file)
+
+        response = await self._search_engine(api, file=file, url=url, **kwargs)
+        return response.show_result()
+
+    async def _search_engine(self, api: str, file: FileContent = None,
+                             url: Optional[str] = None, **kwargs: Any):
+        """
+        执行搜索并返回完整的引擎响应对象
+
+        参数:
+            api: 搜索引擎API名称
+            file: 本地文件内容
+            url: 图像URL
+            **kwargs: 其他搜索参数
+
+        返回:
+            BaseSearchResponse: 引擎返回的完整响应对象
+        """
         engine_class = ENGINE_MAP[api]
         default_params = self.default_params.get(api, {})
         search_params = {**default_params, **kwargs}
@@ -224,8 +243,10 @@ class BaseSearchModel:
             network_kwargs["cookies"] = effective_cookies
         if self.timeout:
             network_kwargs["timeout"] = self.timeout
+        # 通用 base64 → file 转换（animetrace 直接接受 base64，其他引擎需传 bytes）
+        if search_params.get("base64") and api != "animetrace":
+            file = base64.b64decode(search_params.pop("base64"))
 
-        # NOTE: Exceptions are now propagated to caller (main.py) to distinguish from "No results"
         async with Network(**network_kwargs) as network:
             engine_instance = engine_class(network=network, **engine_params)
             if api == "animetrace" and search_params.get("base64"):
@@ -236,7 +257,7 @@ class BaseSearchModel:
                 )
             else:
                 response = await engine_instance.search(file=file, url=url, **search_params)
-            return response.show_result()
+            return response
 
     async def search_and_print(self, api: str, file: FileContent = None,
                                url: Optional[str] = None, **kwargs: Any) -> None:
@@ -273,9 +294,41 @@ class BaseSearchModel:
             Image.Image: 渲染后的结果图像
         """
         try:
-            result = await self.search(api=api, file=file, url=url, **kwargs)
+            response = await self._search_engine(api=api, file=file, url=url, **kwargs)
+            raw_items = getattr(response, 'raw', []) or []
+            items = self._build_items_from_raw(raw_items)
+
+            # 下载缩略图
+            network_kwargs = {}
+            if self.proxies:
+                network_kwargs["proxies"] = self.proxies
+            if self.timeout:
+                network_kwargs["timeout"] = self.timeout
+
+            async def download_all_thumbs():
+                async with Network(**network_kwargs) as client:
+                    tasks = []
+                    for item in items:
+                        url = item.get('thumbnail_url', '')
+                        if url:
+                            tasks.append(self._download_thumbnail(client, url))
+                        else:
+                            tasks.append(None)
+                    results = []
+                    for t in tasks:
+                        if t is not None:
+                            results.append(await t)
+                        else:
+                            results.append(None)
+                    return results
+
+            thumb_images = await download_all_thumbs()
+            for i, thumb in enumerate(thumb_images):
+                if i < len(items):
+                    items[i]['thumbnail_image'] = thumb
+
             source_image = None
-            
+
             def load_image():
                 if file is not None:
                     if isinstance(file, (str, Path)):
@@ -283,20 +336,17 @@ class BaseSearchModel:
                     elif isinstance(file, bytes):
                         return Image.open(io.BytesIO(file))
                 return None
-            
+
             if file is not None:
                 source_image = await asyncio.to_thread(load_image)
             elif url is not None:
-                network_kwargs = {}
-                if self.proxies:
-                    network_kwargs["proxies"] = self.proxies
-                if self.timeout:
-                    network_kwargs["timeout"] = self.timeout
                 async with Network(**network_kwargs) as client:
                     resp = await client.download(url)
-                    source_image = await asyncio.to_thread(lambda d: Image.open(io.BytesIO(d)), resp)
-            
-            return await asyncio.to_thread(self.draw_results, api, result, source_image)
+                    def load_from_url_bytes(d: bytes):
+                        return Image.open(io.BytesIO(d))
+                    source_image = await asyncio.to_thread(load_from_url_bytes, resp)
+
+            return await asyncio.to_thread(self.draw_results, api, items, source_image)
         except Exception:
             return await asyncio.to_thread(self.draw_error, api, "搜索失败")
 
@@ -328,57 +378,99 @@ class BaseSearchModel:
         """
         return list(ENGINE_MAP.keys())
 
-    def draw_results(self, api: str, result: str, source_image: Optional[Image.Image] = None) -> Image.Image:
+    def draw_results(self, api: str, items: list[dict], source_image: Optional[Image.Image] = None) -> Image.Image:
         """绘制搜索结果图像（使用新卡片样式）"""
         try:
             renderer = ResultCardRenderer()
-            items = self._parse_result_text(result, api)
             return renderer.render(api, items, source_image)
         except Exception:
-            return self._draw_results_legacy(api, result, source_image)
+            return self._draw_results_legacy(api, "渲染失败", source_image)
 
-    def _parse_result_text(self, result: str, api: str) -> list[dict]:
-        """从 show_result() 文本中解析出结构化结果列表"""
+    def _build_items_from_raw(self, raw_items: list) -> list[dict]:
+        """
+        将引擎 raw 解析结果转换为 dict（提取缩略图 URL 等信息）
+
+        参数:
+            raw_items: 引擎返回的原始解析结果列表
+
+        返回:
+            list[dict]: 结构化字典列表
+        """
         items = []
-        if not result:
-            return items
-        lines = result.split('\n')
-        current_item = {}
-        for line in lines:
-            line = line.strip()
-            if not line or line.startswith('=') or line.startswith('-'):
-                if current_item:
-                    items.append(current_item)
-                    current_item = {}
-                continue
-            if '作品名' in line or ('作品' in line and ':' in line):
-                current_item['title'] = line.split(':', 1)[-1].strip()
-            elif '角色名' in line:
-                current_item['source'] = line.split(':', 1)[-1].strip()
-            elif '画师' in line or '作者' in line.lower():
-                current_item['author'] = line.split(':', 1)[-1].strip()
-            elif '相似度' in line:
-                try:
-                    sim = line.split(':', 1)[-1].strip().replace('%', '').replace('\uff05', '')
-                    current_item['similarity'] = float(sim)
-                except Exception:
-                    pass
-            elif line.startswith('http'):
-                current_item['url'] = line
-            elif 'ai' in line.lower() and ('是' in line or '否' in line):
-                pass
-            elif '未找到' in line.lower():
-                pass
+        for item in raw_items[:5]:
+            # AnimeTrace 特殊处理：只有 characters / box，无缩略图
+            if hasattr(item, 'characters') and hasattr(item, 'box'):
+                chars = item.characters
+                titles = []
+                works = []
+                for c in chars:
+                    titles.append(c.name)
+                    if c.work:
+                        works.append(c.work)
+                items.append({
+                    'title': ' / '.join(titles) if titles else '',
+                    'url': '',
+                    'similarity': '',
+                    'source': ' / '.join(works) if works else 'AnimeTrace',
+                    'author': '',
+                    'thumbnail_url': '',
+                })
             else:
-                if 'source' not in current_item:
-                    current_item['source'] = line
-        if current_item:
-            items.append(current_item)
+                sim = getattr(item, 'similarity', 0)
+                items.append({
+                    'title': getattr(item, 'title', '') or '',
+                    'url': getattr(item, 'url', '') or '',
+                    'similarity': self._format_similarity(sim),
+                    'source': getattr(item, 'source', '') or getattr(item, 'index_name', '') or '',
+                    'author': getattr(item, 'author', '') or '',
+                    'thumbnail_url': getattr(item, 'thumbnail', '') or '',
+                })
         return items
 
-    def _draw_results_legacy(self, api: str, result: str, source_image: Optional[Image.Image] = None) -> Image.Image:
+    @staticmethod
+    def _format_similarity(sim) -> str:
+        """将相似度数值格式化为字符串"""
+        if isinstance(sim, (int, float)):
+            if sim > 0:
+                return f"{sim:.1f}%"
+        return str(sim) if sim else ""
+
+    async def _download_thumbnail(self, client: Network, url: str) -> Optional[Image.Image]:
+        """
+        异步下载缩略图并返回 PIL Image
+
+        参数:
+            client: Network 客户端实例
+            url: 缩略图 URL
+
+        返回:
+            Optional[Image.Image]: 下载的缩略图，失败时返回 None
+        """
+        if not url:
+            return None
+        try:
+            data = await client.download(url)
+            if data:
+                def load_from_bytes(d: bytes):
+                    return Image.open(io.BytesIO(d))
+                return await asyncio.to_thread(load_from_bytes, data)
+        except Exception:
+            pass
+        return None
+
+    def _draw_results_legacy(self, api: str, result: str | list, source_image: Optional[Image.Image] = None) -> Image.Image:
         """旧版文字渲染（回退用）"""
         margin = 20
+        if isinstance(result, list):
+            text_lines = []
+            for item in result:
+                parts = [f"标题: {item.get('title', '')}", f"来源: {item.get('source', '')}"]
+                if item.get('similarity'):
+                    parts.append(f"相似度: {item['similarity']}")
+                text_lines.append(" | ".join(parts))
+                text_lines.append(item.get('url', ''))
+                text_lines.append("---")
+            result = '\n'.join(text_lines)
         lines = result.split('\n')
         base_dir = Path(__file__).parent
         font_path = str(base_dir / "resource/font/arialuni.ttf")

@@ -483,7 +483,7 @@ class ReverseSearcherPlugin(Star):
             draw = ImageDraw.Draw(img)
             workspace_root = Path(__file__).parent
             try:
-                font_path = str(workspace_root / "resource/font/arialuni.ttf")
+                font_path = str(workspace_root / "ReverseSearcher/resource/font/NotoSansSC-Regular.otf")
                 title_font = ImageFont.truetype(font_path, 24)
                 header_font = ImageFont.truetype(font_path, 18)
                 body_font = ImageFont.truetype(font_path, 16)
@@ -580,43 +580,33 @@ class ReverseSearcherPlugin(Star):
         """
 
         file_bytes = img_buffer.getvalue()
-        
-        # 获取额外参数
         user_id = event.get_sender_id()
         state = self.user_states.get(user_id, {})
         extra_kwargs = state.get("search_extra_params", {})
-        
-        try:
-             result_text = await self.search_model.search(api=engine, file=file_bytes, **extra_kwargs)
-             if result_text is None:
-                 yield event.plain_result(f"[{engine}] 未找到相关结果")
-                 return
-        except Exception as e:
-             # Log the error for admin/debug
-             logger.error(f"[{engine}] Search failed: {e}")
-             import traceback
-             logger.error(traceback.format_exc())
-             
-             # Notify user about the specific error
-             yield event.plain_result(f"[{engine}] 搜索出错: {str(e)}")
-             return
-        img_buffer.seek(0)
-        
-        def process_image():
-            try:
-                source_image = Image.open(img_buffer)
-                result_img = self.search_model.draw_results(engine, result_text, source_image)
-            except Exception as e:
-                result_img = self.search_model.draw_error(engine, str(e))
+
+        # search_and_draw 内部已处理异常 → 返回错误图片
+        result_img = await self.search_model.search_and_draw(
+            api=engine, file=file_bytes, **extra_kwargs
+        )
+
+        def encode_image():
             output = io.BytesIO()
             result_img.save(output, format="JPEG", quality=85)
             output.seek(0)
             return output.getvalue()
-        
-        img_bytes = await asyncio.to_thread(process_image)
+
+        img_bytes = await asyncio.to_thread(encode_image)
         async for result in self._send_image(event, img_bytes):
-                yield result
+            yield result
+
         if self.auto_send_text_results:
+            try:
+                result_text = await self.search_model.search(
+                    api=engine, file=file_bytes, **extra_kwargs
+                )
+            except Exception as e:
+                yield event.plain_result(f"[{engine}] 获取文字结果出错: {str(e)}")
+                return
             text_parts = split_text_by_length(result_text)
             sender_name = "图片搜索bot"
             sender_id = event.get_self_id()

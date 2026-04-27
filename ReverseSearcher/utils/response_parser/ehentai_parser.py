@@ -103,11 +103,14 @@ class EHentaiResponse(BaseSearchResponse[EHentaiItem]):
         self.origin: PyQuery = data
         if "No unfiltered results" in resp_data:
             self.raw: list[EHentaiItem] = []
-        elif tr_items := data.find(".itg").children("tr").items():
-            self.raw = [EHentaiItem(i) for i in tr_items if i.children("td")]
         else:
-            gl1t_items = data.find(".itg").children(".gl1t").items()
-            self.raw = [EHentaiItem(i) for i in gl1t_items]
+            # .items() 返回生成器，生成器永远 truthy，必须先转 list 再判空
+            tr_items = list(data.find(".itg").children("tr").items())
+            if tr_items:
+                self.raw = [EHentaiItem(i) for i in tr_items if i.children("td")]
+            else:
+                gl1t_items = data.find(".itg").children(".gl1t").items()
+                self.raw = [EHentaiItem(i) for i in gl1t_items]
             
     def show_result(self, translations_file: str = "resource/translations/ehviewer_translations.json") -> Optional[str]:
         """

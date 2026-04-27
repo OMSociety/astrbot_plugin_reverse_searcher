@@ -43,7 +43,7 @@ class GoogleLensSerpApi(BaseSearchReq[GoogleLensResponse]):
             
             # For now, let's implement a quick temp host uploader here or use a common utility.
             # Better: Use the same Litterbox logic.
-            url = self._upload_to_litterbox(file)
+            url = await self._upload_image(file)
             params["url"] = url
         
         # Requests is blocking, wrap in thread if needed, but for now simple sync should be fine or use run_in_executor
@@ -59,8 +59,6 @@ class GoogleLensSerpApi(BaseSearchReq[GoogleLensResponse]):
         return GoogleLensResponse(
             resp_data=json.dumps(data), 
             resp_url=f"https://serpapi.com/search?engine={self.engine}", 
-            status_code=200, 
-            headers={},
             **kwargs
         )
 
@@ -68,17 +66,6 @@ class GoogleLensSerpApi(BaseSearchReq[GoogleLensResponse]):
         resp = requests.get("https://serpapi.com/search", params=params)
         resp.raise_for_status()
         return resp.json()
-
-    def _upload_to_litterbox(self, file: bytes) -> str:
-        # Simple upload implementation
-        files = {'fileToUpload': ('image.jpg', file, 'image/jpeg')}
-        data = {'reqtype': 'fileupload', 'time': '1h'}
-        resp = requests.post("https://litterbox.catbox.moe/resources/internals/api.php", files=files, data=data, timeout=30)
-        resp.raise_for_status()
-        url = resp.text
-        if not url.startswith("http"):
-            raise Exception(f"Upload failed: {url}")
-        return url
 
 
 class GoogleLensZenserp(BaseSearchReq[GoogleLensResponse]):
@@ -101,7 +88,7 @@ class GoogleLensZenserp(BaseSearchReq[GoogleLensResponse]):
         if url:
             params["image_url"] = url
         elif file:
-            url = self._upload_to_litterbox(file)
+            url = await self._upload_image(file)
             params["image_url"] = url
             
         import asyncio
@@ -110,8 +97,6 @@ class GoogleLensZenserp(BaseSearchReq[GoogleLensResponse]):
         return GoogleLensResponse(
             resp_data=json.dumps(data), 
             resp_url="https://app.zenserp.com/api/v2/search", 
-            status_code=200, 
-            headers={},
             **kwargs
         )
         
@@ -119,16 +104,6 @@ class GoogleLensZenserp(BaseSearchReq[GoogleLensResponse]):
         resp = requests.get("https://app.zenserp.com/api/v2/search", headers=headers, params=params)
         resp.raise_for_status()
         return resp.json()
-
-    def _upload_to_litterbox(self, file: bytes) -> str:
-        files = {'fileToUpload': ('image.jpg', file, 'image/jpeg')}
-        data = {'reqtype': 'fileupload', 'time': '1h'}
-        resp = requests.post("https://litterbox.catbox.moe/resources/internals/api.php", files=files, data=data, timeout=30)
-        resp.raise_for_status()
-        url = resp.text
-        if not url.startswith("http"):
-             raise Exception(f"Upload failed: {url}")
-        return url
 
 
 class GoogleLens(BaseSearchReq[GoogleLensResponse]):
