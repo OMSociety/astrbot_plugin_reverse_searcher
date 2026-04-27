@@ -80,9 +80,9 @@ def _draw_similarity_bar(
 
     text = f"{similarity:.1f}%"
     if hasattr(font, "getbbox"):
-        tw = font.getbbox(text)[2]
+        font.getbbox(text)[2]
     else:
-        tw = font.getsize(text)[0]
+        font.getsize(text)[0]
     draw.text((x + width + 8, y - 7), text, font=font, fill=text_color)
 
 

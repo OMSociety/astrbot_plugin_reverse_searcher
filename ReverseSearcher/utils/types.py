@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import Any, Union
+from typing import Any
 
 
 class DomainTag(str, Enum):
@@ -29,8 +29,8 @@ class SearchType(str, Enum):
 
 
 # 类型别名定义
-FilePath = Union[str, Path]
-FileContent = Union[str, bytes, FilePath, None]
+FilePath = str | Path
+FileContent = str | bytes | FilePath | None
 
 
 @dataclass

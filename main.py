@@ -1058,7 +1058,7 @@ class ReverseSearcherPlugin(Star):
         """
         example_engine = self.available_engines[0] if self.available_engines else None
         message_text = get_message_text(event.message_obj)
-        img_urls = get_img_urls(event.message_obj)
+        get_img_urls(event.message_obj)
         parts = message_text.strip().split()
         engine = None
         img_buffer = None

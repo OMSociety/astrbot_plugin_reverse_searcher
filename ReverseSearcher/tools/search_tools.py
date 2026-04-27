@@ -131,7 +131,7 @@ def _format_search_result(result: any, engine: str) -> str:
 # ============ 基类 ============
 
 
-@dataclass(config=dict(arbitrary_types_allowed=True))
+@dataclass(config={"arbitrary_types_allowed": True})
 class _BaseSearchTool(FunctionTool[AstrAgentContext]):
     """搜图工具基类，定义搜索流程模板"""
 
@@ -218,7 +218,7 @@ class _BaseSearchTool(FunctionTool[AstrAgentContext]):
 # ============ 通用搜图工具 ============
 
 
-@dataclass(config=dict(arbitrary_types_allowed=True))
+@dataclass(config={"arbitrary_types_allowed": True})
 class ReverseSearchTool(_BaseSearchTool):
     """通用搜图工具 — 自动判断引擎"""
 
@@ -245,7 +245,7 @@ class ReverseSearchTool(_BaseSearchTool):
         return IntentRouter.match(intent)
 
 
-@dataclass(config=dict(arbitrary_types_allowed=True))
+@dataclass(config={"arbitrary_types_allowed": True})
 class ReverseSearchWithEngineTool(_BaseSearchTool):
     """指定引擎搜图工具"""
 
@@ -284,7 +284,6 @@ class ReverseSearchWithEngineTool(_BaseSearchTool):
     ) -> str | None:
         engine = kwargs.get("engine")
         if not engine:
-
             return None
         return engine
 

@@ -126,9 +126,7 @@ class Network:
         )
         return RESP(resp.text, str(resp.url), resp.status_code, dict(resp.headers))
 
-    async def download(
-        self, url: str, headers: dict[str, str] | None = None
-    ) -> bytes:
+    async def download(self, url: str, headers: dict[str, str] | None = None) -> bytes:
         resp = await self._client.get(url, headers=headers)
         return resp.read()
 

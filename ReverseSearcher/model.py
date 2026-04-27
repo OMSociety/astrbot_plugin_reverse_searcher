@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import io
 from pathlib import Path
@@ -11,9 +12,6 @@ from .utils.render_card import ResultCardRenderer
 from .utils.types import FileContent
 
 inject_request_classes()  # 注入请求类到注册表
-
-
-import asyncio
 
 ENGINE_MAP: dict[str, type] = {
     name: def_.req_class
@@ -57,15 +55,17 @@ class BaseSearchModel:
         self._yandex_cookie_timestamp = 0
 
     def _prepare_engine_params(self, api: str, search_params: dict) -> dict:
-        """
-        根据API类型准备引擎参数
+        """从搜索参数中提取引擎专属配置。
+
+        每个引擎有各自的特殊参数（如 saucenao 的 dbmask、ehentai 的 is_ex），
+        本方法将它们从 search_params 中 pop 出来，组装为引擎构造参数。
 
         参数:
-            api: 搜索引擎API名称
-            search_params: 搜索参数字典
+            api: 搜索引擎名
+            search_params: 合并了默认参数+kwargs 的搜索参数字典 (会被修改)
 
         返回:
-            dict: 处理后的引擎参数字典
+            dict: 引擎专属参数字典，用于传递给引擎类的 __init__
         """
         engine_params = {}
 
@@ -83,9 +83,7 @@ class BaseSearchModel:
                 "covers": search_params.pop("covers", False),
                 "similar": search_params.pop("similar", True),
                 "exp": search_params.pop("exp", False),
-                "cookies": search_params.pop(
-                    "cookies", None
-                ),  # New location for EH cookie
+                "cookies": search_params.pop("cookies", None),
             }
         elif api == "saucenao":
             engine_params = {
@@ -101,11 +99,10 @@ class BaseSearchModel:
                 "dbs": search_params.pop("dbs", None),
             }
         elif api == "google":
-            # Extract keys directly from search_params as per schema
+            # API key 优先取顶层字段，兼容嵌套 api_keys dict
             serpapi_key = search_params.get("serpapi_key")
             zenserp_key = search_params.get("zenserp_key")
 
-            # Fallback to checking api_keys dict if user manually edited or testing
             if not serpapi_key and not zenserp_key:
                 api_keys = search_params.get("api_keys", {})
                 serpapi_key = api_keys.get("serpapi")
@@ -232,22 +229,26 @@ class BaseSearchModel:
         url: str | None = None,
         **kwargs: Any,
     ):
-        """
-        执行搜索并返回完整的引擎响应对象
+        """执行搜索并返回完整的引擎响应对象。
 
-        参数:
-            api: 搜索引擎API名称
-            file: 本地文件内容
-            url: 图像URL
-            **kwargs: 其他搜索参数
+        管道流程:
+            1. 获取引擎类 & 合并默认参数 + kwargs
+            2. 按引擎类型提取引擎专属参数 (如 saucenao 的 dbmask)
+            3. 解析 Cookie (yandex 动态获取 / ehentai 从参数取 / 全局默认)
+            4. base64 → bytes 转换 (animetrace 除外，它直接接受 base64)
+            5. 创建 Network 会话 → 实例化引擎 → 执行搜索
 
         返回:
             BaseSearchResponse: 引擎返回的完整响应对象
         """
         engine_class = ENGINE_MAP[api]
+        # 合并默认参数：default_params < kwargs，后者覆盖前者
         default_params = self.default_params.get(api, {})
         search_params = {**default_params, **kwargs}
+        # 提取引擎专属参数 (api_key, dbmask 等)，从 search_params 中弹出
         engine_params = self._prepare_engine_params(api, dict(search_params))
+
+        # ── Cookie 解析 ──
         network_kwargs = {}
         if self.proxies:
             network_kwargs["proxies"] = self.proxies
@@ -264,12 +265,14 @@ class BaseSearchModel:
             network_kwargs["cookies"] = effective_cookies
         if self.timeout:
             network_kwargs["timeout"] = self.timeout
-        # 通用 base64 → file 转换（animetrace 直接接受 base64，其他引擎需传 bytes）
+
+        # base64 → bytes: animetrace 原生支持 base64，其他引擎需要解码为 bytes
         if search_params.get("base64") and api != "animetrace":
             file = base64.b64decode(search_params.pop("base64"))
 
         async with Network(**network_kwargs) as network:
             engine_instance = engine_class(network=network, **engine_params)
+            # animetrace 特殊路径：传 base64 + model 参数
             if api == "animetrace" and search_params.get("base64"):
                 response = await engine_instance.search(
                     base64=search_params.pop("base64"),
@@ -436,18 +439,21 @@ class BaseSearchModel:
             return self._draw_results_legacy(api, "渲染失败", source_image)
 
     def _build_items_from_raw(self, raw_items: list) -> list[dict]:
-        """
-        将引擎 raw 解析结果转换为 dict（提取缩略图 URL 等信息）
+        """将引擎返回的原始解析结果转为统一的卡片数据结构。
+
+        特殊处理:
+            - AnimeTrace: 按角色拆分，每个角色一张卡片 (最多 10 张)
+            - 其他引擎: 提取 title/url/similarity/source/author/thumbnail
 
         参数:
-            raw_items: 引擎返回的原始解析结果列表
+            raw_items: 引擎返回的解析后对象列表
 
         返回:
-            list[dict]: 结构化字典列表
+            list[dict]: 结构化字典列表，供 render_card 使用
         """
         items = []
         for item in raw_items[:5]:
-            # AnimeTrace 特殊处理：按角色拆分，每个角色一张卡片
+            # AnimeTrace: 一个结果可能含多个角色，逐个展开
             if hasattr(item, "characters") and hasattr(item, "box"):
                 for c in item.characters:
                     if len(items) >= 10:
