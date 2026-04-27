@@ -128,7 +128,7 @@ pip install -r requirements.txt
 
 ## 🙏 致谢
 
-- 核心代码基于 [kitUIN/PicImageSearch](https://github.com/kitUIN/PicImageSearch)
+核心代码基于 [kitUIN/PicImageSearch](https://github.com/kitUIN/PicImageSearch)
 
 ---
 
