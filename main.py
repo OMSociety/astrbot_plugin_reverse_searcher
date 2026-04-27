@@ -905,7 +905,6 @@ class ReverseSearcherPlugin(Star):
         
         # Original logic fallback specifically for text-embedded URL which _collect_input_images might not prioritizing if not in image component
         # But _collect_input_images does check get_img_urls.
-        # Let's check logic: _collect_input_images calls get_img_urls.
         # But here we also support "engine image_url" syntax in text parts[1] or parts[2].
         
         if collected_imgs:

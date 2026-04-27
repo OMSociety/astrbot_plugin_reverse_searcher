@@ -55,7 +55,7 @@ pip install -r requirements.txt
 | **animetrace** | 动漫角色识别 | 无需 API Key，返回作品名+角色名 |
 | **saucenao** | 综合出处搜索 | 免费 Key 够用，Pixiv 插画首选 |
 | **google** | Google Lens | 需 SerpAPI Key（推荐），综合搜索兜底 |
-| **yandex** | 相似图片搜索 | 无需配置，俄罗斯引擎 |
+| **yandex** | 相似图片搜索 | 无需配置 |
 | **ehentai** | E-Hentai/ExHentai | 仅 ExHentai 需要 Cookie |
 
 ---
