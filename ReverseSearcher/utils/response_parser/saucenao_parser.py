@@ -215,13 +215,20 @@ class SauceNAOResponse(BaseSearchResponse[SauceNAOItem]):
                     break
         if not has_valid_results:
             return None
-        result = [f"相似度: {self.raw[0].similarity}%", f"标题: {self.raw[0].title}", f"作者: {self.raw[0].author}",
-                  f"作者链接: {self.raw[0].author_url}", f"作者链接（备用）: {self.raw[0].source}",
-                  f"作品链接: {self.raw[0].url}"]
-        if self.raw[0].ext_urls:
-            result.append("更多相关链接:")
-            for i, url in enumerate(self.raw[0].ext_urls, 1):
-                result.append(f"  #{i} {url}")
-        else:
-            result.append("更多相关链接: 无")
+        result = []
+        for idx, item in enumerate(self.raw[:5], 1):
+            result.append(f"━━━ 结果 #{idx} ━━━")
+            result.append(f"相似度: {item.similarity}%")
+            result.append(f"标题: {item.title}")
+            result.append(f"作者: {item.author}")
+            result.append(f"作者链接: {item.author_url}")
+            result.append(f"作者链接（备用）: {item.source}")
+            result.append(f"作品链接: {item.url}")
+            if item.ext_urls:
+                result.append("更多相关链接:")
+                for j, url in enumerate(item.ext_urls, 1):
+                    result.append(f"  #{j} {url}")
+            else:
+                result.append("更多相关链接: 无")
+            result.append("")
         return "\n".join(result)

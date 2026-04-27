@@ -40,7 +40,7 @@ ENGINE_REGISTRY: dict[str, EngineDef] = {
         desc="动漫角色识别（最强）",
         url="https://www.animetrace.com/",
         anime_focused=True,
-        color=(67, 99, 216),
+        color=(99, 102, 241),     # #6366F1 靛蓝紫
         fallback=["saucenao"],
     ),
     "saucenao": EngineDef(
@@ -49,7 +49,7 @@ ENGINE_REGISTRY: dict[str, EngineDef] = {
         desc="综合出处搜索",
         url="https://saucenao.com/",
         anime_focused=True,
-        color=(238, 130, 59),
+        color=(30, 30, 46),       # #1E1E2E 暗炭黑
         fallback=["google"],
     ),
     "ehentai": EngineDef(
@@ -58,7 +58,7 @@ ENGINE_REGISTRY: dict[str, EngineDef] = {
         desc="同人本/汉化组搜索",
         url="https://e-hentai.org/",
         anime_focused=True,
-        color=(180, 60, 80),
+        color=(220, 55, 75),      # #DC374B 绯红
     ),
     "google": EngineDef(
         name="google",

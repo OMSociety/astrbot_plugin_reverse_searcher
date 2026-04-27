@@ -346,7 +346,9 @@ class BaseSearchModel:
                         return Image.open(io.BytesIO(d))
                     source_image = await asyncio.to_thread(load_from_url_bytes, resp)
 
-            return await asyncio.to_thread(self.draw_results, api, items, source_image)
+            # AnimeTrace: 提取 AI 检测结果
+            ai_detect = getattr(response, 'ai', None)
+            return await asyncio.to_thread(self.draw_results, api, items, source_image, ai_detect=ai_detect)
         except Exception:
             return await asyncio.to_thread(self.draw_error, api, "搜索失败")
 
@@ -378,11 +380,11 @@ class BaseSearchModel:
         """
         return list(ENGINE_MAP.keys())
 
-    def draw_results(self, api: str, items: list[dict], source_image: Optional[Image.Image] = None) -> Image.Image:
+    def draw_results(self, api: str, items: list[dict], source_image: Optional[Image.Image] = None, ai_detect: Optional[bool] = None) -> Image.Image:
         """绘制搜索结果图像（使用新卡片样式）"""
         try:
             renderer = ResultCardRenderer()
-            return renderer.render(api, items, source_image)
+            return renderer.render(api, items, source_image, ai_detect=ai_detect)
         except Exception:
             return self._draw_results_legacy(api, "渲染失败", source_image)
 
@@ -398,23 +400,21 @@ class BaseSearchModel:
         """
         items = []
         for item in raw_items[:5]:
-            # AnimeTrace 特殊处理：只有 characters / box，无缩略图
+            # AnimeTrace 特殊处理：按角色拆分，每个角色一张卡片
             if hasattr(item, 'characters') and hasattr(item, 'box'):
-                chars = item.characters
-                titles = []
-                works = []
-                for c in chars:
-                    titles.append(c.name)
-                    if c.work:
-                        works.append(c.work)
-                items.append({
-                    'title': ' / '.join(titles) if titles else '',
-                    'url': '',
-                    'similarity': '',
-                    'source': ' / '.join(works) if works else 'AnimeTrace',
-                    'author': '',
-                    'thumbnail_url': '',
-                })
+                for c in item.characters:
+                    if len(items) >= 10:
+                        break
+                    items.append({
+                        'title': f"角色: {c.name}",
+                        'url': '',
+                        'similarity': '',
+                        'source': f"作品: {c.work}" if c.work else 'AnimeTrace',
+                        'author': '',
+                        'thumbnail_url': '',
+                    })
+                if len(items) >= 10:
+                    break
             else:
                 sim = getattr(item, 'similarity', 0)
                 items.append({

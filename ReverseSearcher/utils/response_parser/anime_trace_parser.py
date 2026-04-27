@@ -76,7 +76,7 @@ class AnimeTraceResponse(BaseSearchResponse[AnimeTraceItem]):
             **kwargs: 其他解析参数
         """
         self.code: int = resp_data["code"]
-        self.ai: bool = resp_data.get("ai", False)
+        self.ai: Optional[bool] = resp_data.get("ai")  # None 表示未请求 AI 检测
         self.trace_id: str = resp_data.get("trace_id", "")
         results = resp_data["data"]
         self.raw: list[AnimeTraceItem] = [AnimeTraceItem(item) for item in results]
@@ -96,7 +96,12 @@ class AnimeTraceResponse(BaseSearchResponse[AnimeTraceItem]):
                     break
         if not has_characters:
             return None
-        lines = [f"是否为 AI 生成: {'是' if self.ai else '否'}", "-" * 50]
+        lines = []
+        if self.ai is not None:
+            lines.append(f"是否为 AI 生成: {'是' if self.ai else '否'}")
+        else:
+            lines.append("是否为 AI 生成: 未检测")
+        lines.append("-" * 50)
         if self.raw:
             for _, item in enumerate(self.raw, 1):
                 if characters := item.characters:

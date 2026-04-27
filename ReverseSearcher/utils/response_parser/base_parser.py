@@ -48,6 +48,8 @@ class BaseSearchResponse(ABC, Generic[T]):
     解析完整搜索响应的基类，包含多个搜索结果项
     """
     
+    raw: list[T]  # 类型声明，不设默认值避免共享
+    
     def __init__(self, resp_data: Any, resp_url: str, **kwargs: Any):
         """
         初始化搜索响应解析器
@@ -59,7 +61,7 @@ class BaseSearchResponse(ABC, Generic[T]):
         """
         self.origin: Any = resp_data
         self.url: str = resp_url
-        self.raw: list[T] = []
+        self.raw = []  # 实例属性初始化
         self._parse_response(resp_data, resp_url=resp_url, **kwargs)
 
     @abstractmethod
