@@ -95,7 +95,8 @@ class SauceNAO(BaseSearchReq[SauceNAOResponse]):
         if url:
             params = params.add("url", url)
         elif file:
-            files = {"file": read_file(file)}
+            file_bytes = read_file(file)
+            files = {"file": file_bytes}
         else:
             raise ValueError("Either 'url' or 'file' must be provided")
         resp = await self._send_request(

@@ -48,7 +48,6 @@ class GoogleLensResponse(BaseSearchResponse[GoogleLensItem]):
 
     def _parse_serpapi(self, data: dict):
         # 1. AI Overview
-        # 1. AI Overview
         if "ai_overview" in data:
             ai_data = data["ai_overview"]
             if isinstance(ai_data, str):
@@ -166,7 +165,7 @@ class GoogleLensResponse(BaseSearchResponse[GoogleLensItem]):
             try:
                 from urllib.parse import urlparse
                 source = urlparse(url).netloc.replace("www.", "")
-            except:
+            except Exception:
                 pass
 
         item = GoogleLensItem(

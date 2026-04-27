@@ -42,31 +42,38 @@ class EHentaiItem(BaseResParser):
         参数:
             data: 包含结果项HTML的PyQuery对象
         """
-        glink = data.find(".glink")
-        self.title: str = glink.text()
+        glink = data.find(".gllink")
+        if len(glink) == 0:
+            self.title = ""
+            self.url = ""
+            self.thumbnail = ""
+            self.type = ""
+            self.date = ""
+            self.pages = "解析失败"
+            self.tags = []
+            return
+        self.title = glink.text()
         if glink.parent("div"):
-            self.url: str = glink.parent("div").parent("a").attr("href")
+            self.url = glink.parent("div").parent("a").attr("href") or ""
         else:
-            self.url = glink.parent("a").attr("href")
+            self.url = glink.parent("a").attr("href") or ""
         thumbnail = data.find(".glthumb img") or data.find(".gl1e img") or data.find(".gl3t img")
-        self.thumbnail: str = thumbnail.attr("data-src") or thumbnail.attr("src")
+        self.thumbnail = thumbnail.attr("data-src") or thumbnail.attr("src") or ""
         _type = data.find(".cs") or data.find(".cn")
-        self.type: str = _type.eq(0).text() or ""
-        self.date: str = data.find("[id^='posted']").eq(0).text() or ""
-        self.pages: str = "解析失败"
-        if glink and len(glink) > 0:
-            try:
-                tr_element = glink.parent().parent().parent()
-                if len(tr_element) > 0:
-                    pages_div = tr_element.find(".gl4c div").filter(
-                        lambda i, e: "pages" in PyQuery(e).text()
-                    )
-                    if len(pages_div) > 0:
-                        pages_text = pages_div.eq(0).text().strip()
-                        self.pages = pages_text.split()[0] if pages_text else "解析失败"
-            except Exception:
-                pass
-        self.tags: list[str] = []
+        self.type = _type.eq(0).text() or ""
+        self.date = data.find("[id^='posted']").eq(0).text() or ""
+        self.pages = "解析失败"
+        try:
+            tr_element = glink.parent().parent().parent()
+            pages_div = tr_element.find(".gl4c div").filter(
+                lambda i, e: "pages" in PyQuery(e).text()
+            )
+            if len(pages_div) > 0:
+                pages_text = pages_div.eq(0).text().strip()
+                self.pages = pages_text.split()[0] if pages_text else "解析失败"
+        except Exception:
+            pass
+        self.tags = []
         for i in data.find("div[class=gt],div[class=gtl]").items():
             if tag := i.attr("title"):
                 self.tags.append(tag)
@@ -103,11 +110,14 @@ class EHentaiResponse(BaseSearchResponse[EHentaiItem]):
         self.origin: PyQuery = data
         if "No unfiltered results" in resp_data:
             self.raw: list[EHentaiItem] = []
-        elif tr_items := data.find(".itg").children("tr").items():
-            self.raw = [EHentaiItem(i) for i in tr_items if i.children("td")]
         else:
-            gl1t_items = data.find(".itg").children(".gl1t").items()
-            self.raw = [EHentaiItem(i) for i in gl1t_items]
+            # .items() 返回生成器，生成器永远 truthy，必须先转 list 再判空
+            tr_items = list(data.find(".itg").children("tr").items())
+            if tr_items:
+                self.raw = [EHentaiItem(i) for i in tr_items if i.children("td")]
+            else:
+                gl1t_items = data.find(".itg").children(".gl1t").items()
+                self.raw = [EHentaiItem(i) for i in gl1t_items]
             
     def show_result(self, translations_file: str = "resource/translations/ehviewer_translations.json") -> Optional[str]:
         """
@@ -136,23 +146,31 @@ class EHentaiResponse(BaseSearchResponse[EHentaiItem]):
                     break
         if not has_valid_results:
             return None
-        categorized_tags = {}
-        for tag in self.raw[0].tags:
-            if ':' in tag:
-                category, tag_name = tag.split(':', 1)
-                category_cn = translations.get('rows', {}).get(category, category)
-                tag_name_cn = tag_name
-                if category in translations:
-                    tag_name_cn = translations[category].get(tag_name, tag_name)
-                if category_cn not in categorized_tags:
-                    categorized_tags[category_cn] = []
-                categorized_tags[category_cn].append(tag_name_cn)
-        tag_lines = []
-        for category, tags in categorized_tags.items():
-            tag_line = f"{category}: {'; '.join(tags)}"
-            tag_lines.append(tag_line)
-        type_cn = translations.get('reclass', {}).get(self.raw[0].type.lower(), self.raw[0].type)
-        lines = [f"结果 #1", f"链接: {self.raw[0].url}", f"上传时间: {self.raw[0].date}",
-                f"标题: {self.raw[0].title}", f"类型: {type_cn}", f"页数: {self.raw[0].pages}", "标签:"]
-        lines.extend([f"  {tag_line}" for tag_line in tag_lines])
+        lines = []
+        for idx, item in enumerate(self.raw[:5], 1):
+            categorized_tags = {}
+            for tag in item.tags:
+                if ':' in tag:
+                    category, tag_name = tag.split(':', 1)
+                    category_cn = translations.get('rows', {}).get(category, category)
+                    tag_name_cn = tag_name
+                    if category in translations:
+                        tag_name_cn = translations[category].get(tag_name, tag_name)
+                    if category_cn not in categorized_tags:
+                        categorized_tags[category_cn] = []
+                    categorized_tags[category_cn].append(tag_name_cn)
+            tag_lines = []
+            for category, tags in categorized_tags.items():
+                tag_line = f"{category}: {'; '.join(tags)}"
+                tag_lines.append(tag_line)
+            type_cn = translations.get('reclass', {}).get(item.type.lower(), item.type)
+            lines.append(f"━━━ 结果 #{idx} ━━━")
+            lines.append(f"链接: {item.url}")
+            lines.append(f"上传时间: {item.date}")
+            lines.append(f"标题: {item.title}")
+            lines.append(f"类型: {type_cn}")
+            lines.append(f"页数: {item.pages}")
+            lines.append("标签:")
+            lines.extend([f"  {tag_line}" for tag_line in tag_lines])
+            lines.append("")
         return "\n".join(lines)

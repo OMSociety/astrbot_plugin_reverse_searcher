@@ -483,7 +483,7 @@ class ReverseSearcherPlugin(Star):
             draw = ImageDraw.Draw(img)
             workspace_root = Path(__file__).parent
             try:
-                font_path = str(workspace_root / "resource/font/arialuni.ttf")
+                font_path = str(workspace_root / "ReverseSearcher/resource/font/NotoSansSC-Regular.otf")
                 title_font = ImageFont.truetype(font_path, 24)
                 header_font = ImageFont.truetype(font_path, 18)
                 body_font = ImageFont.truetype(font_path, 16)
@@ -526,7 +526,7 @@ class ReverseSearcherPlugin(Star):
                 x += col_widths[0]
                 draw.text((x + 15, y + (cell_height - 16) // 2), info["url"], font=body_font, fill=COLOR_THEME["url"])
                 x += col_widths[1]
-                mark = "✓" if info["anime"] else "✗"
+                mark = "✓" if info["anime"] else "×"
                 mark_color = COLOR_THEME["success"] if info["anime"] else COLOR_THEME["fail"]
                 mark_width = draw.textlength(mark, font=header_font) if hasattr(draw, 'textlength') else header_font.getsize(mark)[0]
                 draw.text((x + (col_widths[2] - mark_width) // 2, y + (cell_height - 18) // 2), mark, font=header_font, fill=mark_color)
@@ -580,43 +580,35 @@ class ReverseSearcherPlugin(Star):
         """
 
         file_bytes = img_buffer.getvalue()
-        
-        # 获取额外参数
         user_id = event.get_sender_id()
         state = self.user_states.get(user_id, {})
         extra_kwargs = state.get("search_extra_params", {})
-        
-        try:
-             result_text = await self.search_model.search(api=engine, file=file_bytes, **extra_kwargs)
-             if result_text is None:
-                 yield event.plain_result(f"[{engine}] 未找到相关结果")
-                 return
-        except Exception as e:
-             # Log the error for admin/debug
-             logger.error(f"[{engine}] Search failed: {e}")
-             import traceback
-             logger.error(traceback.format_exc())
-             
-             # Notify user about the specific error
-             yield event.plain_result(f"[{engine}] 搜索出错: {str(e)}")
-             return
-        img_buffer.seek(0)
-        
-        def process_image():
-            try:
-                source_image = Image.open(img_buffer)
-                result_img = self.search_model.draw_results(engine, result_text, source_image)
-            except Exception as e:
-                result_img = self.search_model.draw_error(engine, str(e))
+
+        # search_and_draw 内部已处理异常 → 返回错误图片
+        result_img = await self.search_model.search_and_draw(
+            api=engine, file=file_bytes, **extra_kwargs
+        )
+
+        def encode_image():
             output = io.BytesIO()
             result_img.save(output, format="JPEG", quality=85)
             output.seek(0)
             return output.getvalue()
-        
-        img_bytes = await asyncio.to_thread(process_image)
+
+        img_bytes = await asyncio.to_thread(encode_image)
         async for result in self._send_image(event, img_bytes):
-                yield result
+            yield result
+
         if self.auto_send_text_results:
+            try:
+                result_text = await self.search_model.search(
+                    api=engine, file=file_bytes, **extra_kwargs
+                )
+            except Exception as e:
+                yield event.plain_result(f"[{engine}] 获取文字结果出错: {str(e)}")
+                return
+            if not result_text:
+                return  # 无结果，图片已经发过了，直接结束
             text_parts = split_text_by_length(result_text)
             sender_name = "图片搜索bot"
             sender_id = event.get_self_id()
@@ -654,6 +646,9 @@ class ReverseSearcherPlugin(Star):
             yield event.plain_result("当前没有可用的搜索引擎，请联系管理员在配置中启用至少一个引擎")
             return
         example_engine = self.available_engines[0]
+        # 已经提醒过就不再发完整提示，只发简短引导
+        if state.get('prompted'):
+            return
         if not state.get('engine'):
             async for result in self._send_engine_intro(event):
                 yield result
@@ -663,6 +658,7 @@ class ReverseSearcherPlugin(Star):
             yield event.plain_result(f"已选择引擎: {state['engine']}，请发送图片或图片URL，{self.search_params_timeout}秒内有效")
         else:
             yield event.plain_result(f"请选择引擎（回复引擎名或关键词，如 {example_engine} 或 a）并发送图片，{self.search_params_timeout}秒内有效")
+        state['prompted'] = True
 
     async def _handle_timeout(self, event: AstrMessageEvent, user_id: str):
         """
@@ -814,24 +810,27 @@ class ReverseSearcherPlugin(Star):
             try:
                 async for result in self._perform_search(event, state["engine"], state["preloaded_img"]):
                     yield result
-            except Exception:
-                yield event.plain_result("搜索失败，请重试")
+            except Exception as e:
+                logger.warning(f"[ReverseSearcher] 搜索失败: {type(e).__name__}: {e}", exc_info=True)
+                yield event.plain_result(f"搜索失败: {e}")
             return
 
-        # 4. 缺参数 → 提示
+        # 4. 缺参数 → 提示（已提醒过则跳过）
         state["timestamp"] = time.time()
-        if has_engine:
-            yield event.plain_result(
-                f"已选择引擎: {state['engine']}，请发送图片，{self.search_params_timeout}秒内有效"
-            )
-        elif has_img:
-            yield event.plain_result(
-                f"图片已接收，请回复有效的引擎名（如{example_engine}）"
-            )
-        else:
-            yield event.plain_result(
-                f"请提供引擎名（如{example_engine}）和图片"
-            )
+        if not state.get('prompted'):
+            if has_engine:
+                yield event.plain_result(
+                    f"已选择引擎: {state['engine']}，请发送图片，{self.search_params_timeout}秒内有效"
+                )
+            elif has_img:
+                yield event.plain_result(
+                    f"图片已接收，请回复有效的引擎名（如{example_engine}）"
+                )
+            else:
+                yield event.plain_result(
+                    f"请提供引擎名（如{example_engine}）和图片"
+                )
+            state['prompted'] = True
         async for result in self._send_engine_prompt(event, state):
             yield result
 
@@ -956,8 +955,9 @@ class ReverseSearcherPlugin(Star):
             try:
                 async for result in self._perform_search(event, engine, img_buffer):
                     yield result
-            except Exception:
-                yield event.plain_result("搜索失败，请重试")
+            except Exception as e:
+                logger.warning(f"[ReverseSearcher] 搜索失败: {type(e).__name__}: {e}", exc_info=True)
+                yield event.plain_result(f"搜索失败: {e}")
             event.stop_event()
             return
         state = {

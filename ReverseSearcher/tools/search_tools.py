@@ -16,7 +16,7 @@ from pydantic import Field
 from pydantic.dataclasses import dataclass
 
 from astrbot import logger
-from astrbot.core.agent.tool import FunctionTool, ToolExecResult
+from astrbot.core.agent.tool import FunctionTool
 from astrbot.core.astr_agent_context import AstrAgentContext
 from astrbot.core.agent.run_context import ContextWrapper
 
@@ -153,15 +153,20 @@ class _BaseSearchTool(FunctionTool[AstrAgentContext]):
     def inject_search_model(self, search_model):
         self.search_model = search_model
 
-    async def _do_search(self, engine: str, base64_str: Optional[str], url_str: Optional[str]) -> str:
+    async def _do_search(
+        self,
+        engine: str,
+        base64_str: Optional[str],
+        url_str: Optional[str],
+    ) -> str:
         """执行搜索并格式化结果"""
         logger.info(f"[reverse_search] engine={engine}, url={url_str[:50] if url_str else 'base64'}")
         result = await _perform_search(self.search_model, engine, base64_str, url_str)
         return _format_search_result(result, engine)
 
-    async def call(self, context: ContextWrapper[AstrAgentContext], **kwargs) -> ToolExecResult:
+    async def call(self, context: ContextWrapper[AstrAgentContext], **kwargs) -> str:
         if not self.search_model:
-            return ToolExecResult("搜图引擎未初始化，请联系管理员")
+            return "搜图引擎未初始化，请联系管理员"
 
         # 1. 提取图片
         base64_str = kwargs.get("image_base64") or kwargs.get("base64")
@@ -171,20 +176,20 @@ class _BaseSearchTool(FunctionTool[AstrAgentContext]):
             base64_str, url_str = _extract_image_from_context(context)
 
         if not base64_str and not url_str:
-            return ToolExecResult("未找到图片。请附上图片再调用此工具。")
+            return "未找到图片。请附上图片再调用此工具。"
 
         # 2. 决定引擎（子类覆盖）
         engine = await self._resolve_engine(context, kwargs, base64_str, url_str)
         if not engine:
-            return ToolExecResult("无法确定搜索引擎")
+            return "无法确定搜索引擎"
 
         # 3. 搜索
         try:
             text = await self._do_search(engine, base64_str, url_str)
-            return ToolExecResult(text)
+            return text
         except Exception as e:
             logger.error(f"[reverse_search] Error: {e}")
-            return ToolExecResult(f"搜索出错：{e}")
+            return f"搜索出错：{e}"
 
     async def _resolve_engine(
         self,

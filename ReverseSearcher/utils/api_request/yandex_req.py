@@ -79,7 +79,7 @@ class Yandex(BaseSearchReq[YandexResponse]):
                 from ..ext_tools import read_file
                 file_bytes = read_file(file)
             
-            target_url = self._upload_to_litterbox(file_bytes)
+            target_url = await self._upload_image(file_bytes)
         
         if not target_url:
              raise ValueError("Must provide url or file")
@@ -119,30 +119,3 @@ class Yandex(BaseSearchReq[YandexResponse]):
         )
 
         return YandexResponse(resp.text, resp.url, **kwargs)
-
-    def _upload_to_litterbox(self, file: bytes) -> str:
-        import requests
-        # Simple upload implementation
-        files = {'fileToUpload': ('image.jpg', file, 'image/jpeg')}
-        data = {'reqtype': 'fileupload', 'time': '1h'}
-        resp = requests.post("https://litterbox.catbox.moe/resources/internals/api.php", files=files, data=data, timeout=30)
-        resp.raise_for_status()
-        url = resp.text
-        if not url.startswith("http"):
-            raise Exception(f"Upload failed: {url}")
-        return url
-
-    @override
-    async def _send_request(self, *args, **kwargs) -> Any:
-        try:
-            return await super()._send_request(*args, **kwargs)
-        except Exception as e:
-            # Simple fallback mechanism: replace .com with .ru in url
-            if "yandex.com" in self.base_url:
-                self.base_url = self.base_url.replace("yandex.com", "yandex.ru")
-                # Retry
-                # Note: 'url' in kwargs might also need replacing if it was absolute
-                if "url" in kwargs and "yandex.com" in kwargs["url"]:
-                    kwargs["url"] = kwargs["url"].replace("yandex.com", "yandex.ru")
-                return await super()._send_request(*args, **kwargs)
-            raise e
