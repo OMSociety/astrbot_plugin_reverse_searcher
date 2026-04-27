@@ -1165,7 +1165,19 @@ class ReverseSearcherPlugin(Star):
             yield result
         event.stop_event()
 
-    async def on_message(self, event: AstrMessageEvent):
+    @filter.event_message_type(filter.EventMessageType.PRIVATE_MESSAGE)
+    async def on_private_message(self, event: AstrMessageEvent):
+        """私聊消息入口，委托给统一处理逻辑"""
+        async for result in self._on_message_impl(event):
+            yield result
+
+    @filter.event_message_type(filter.EventMessageType.GROUP_MESSAGE)
+    async def on_group_message(self, event: AstrMessageEvent):
+        """群聊消息入口，委托给统一处理逻辑"""
+        async for result in self._on_message_impl(event):
+            yield result
+
+    async def _on_message_impl(self, event: AstrMessageEvent):
         """
         插件消息收发主入口，处理各种状态下用户输入分发
         """
