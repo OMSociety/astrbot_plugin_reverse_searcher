@@ -1165,7 +1165,6 @@ class ReverseSearcherPlugin(Star):
             yield result
         event.stop_event()
 
-    @filter.event_message_type(filter.EventMessageType.PRIVATE_MESSAGE)
     async def on_message(self, event: AstrMessageEvent):
         """
         插件消息收发主入口，处理各种状态下用户输入分发
