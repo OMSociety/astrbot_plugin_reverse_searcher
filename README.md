@@ -4,7 +4,7 @@
 [![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A5v4-green.svg)](https://github.com/AstrBotDevs/AstrBot)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
-支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 五大引擎的图片反向搜索。搜索结果自动渲染为精美卡片图片，同时提供 LLM 主动搜图工具。
+支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 五大引擎的图片反向搜索，搜索结果自动渲染为精美卡片图片，同时提供 LLM 主动搜图工具。
 
 > 本项目由AI编写，部分源码基于 [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2) 。
 
