@@ -6,6 +6,8 @@
 
 支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 五大引擎的图片反向搜索。搜索结果自动渲染为精美卡片图片，同时提供 LLM 主动搜图工具。
 
+> 本项目由AI编写，部分源码基于 [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2) 。
+
 [快速开始](#-快速开始) • [搜索引擎](#-支持的搜索引擎) • [配置项](#-配置项说明) • [LLM 工具](#-llm-可调用工具) • [更新日志](CHANGELOG.md)
 
 ---
@@ -123,12 +125,6 @@ pip install -r requirements.txt
 ## 📜 许可证
 
 本项目采用 **MIT License** 开源协议。
-
----
-
-## 🙏 致谢
-
-核心代码基于 [kitUIN/PicImageSearch](https://github.com/kitUIN/PicImageSearch)
 
 ---
 
