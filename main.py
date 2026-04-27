@@ -780,6 +780,8 @@ class ReverseSearcherPlugin(Star):
             except Exception:
                 logger.debug(f"sender_id 转 int 失败: {sender_id}")
                 pass
+            for i, part in enumerate(text_parts):
+                node = Node(
                     name=sender_name,
                     uin=sender_id,
                     content=[
