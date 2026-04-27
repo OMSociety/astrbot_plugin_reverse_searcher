@@ -2,13 +2,14 @@
 
 所有搜索引擎请求类的抽象基类，继承 Network 提供统一的 HTTP 请求能力
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Generic, Optional, TypeVar
+from typing import Any, Generic, TypeVar
 
+from ..network import RESP, Network
 from ..response_parser.base_parser import BaseSearchResponse
-from ..network import Network, RESP
 from ..types import FileContent
 
 T = TypeVar("T", bound=BaseSearchResponse[Any])
@@ -19,7 +20,12 @@ class BaseSearchReq(Network, ABC, Generic[T]):
 
     base_url: str = ""
 
-    def __init__(self, base_url: str = "", network: Optional[Network] = None, **request_kwargs: Any):
+    def __init__(
+        self,
+        base_url: str = "",
+        network: Network | None = None,
+        **request_kwargs: Any,
+    ):
         if network is not None:
             # 使用外部传入的 Network 实例（复用其 client）
             self._client = network._client
@@ -32,7 +38,7 @@ class BaseSearchReq(Network, ABC, Generic[T]):
     @abstractmethod
     async def search(
         self,
-        url: Optional[str] = None,
+        url: str | None = None,
         file: FileContent = None,
         **kwargs: Any,
     ) -> T:
@@ -45,7 +51,10 @@ class BaseSearchReq(Network, ABC, Generic[T]):
             raise ValueError("File content is empty or None")
 
         hosts = [
-            ("https://litterbox.catbox.moe/resources/internals/api.php", {"reqtype": "fileupload", "time": "1h"}),
+            (
+                "https://litterbox.catbox.moe/resources/internals/api.php",
+                {"reqtype": "fileupload", "time": "1h"},
+            ),
             ("https://tmp.ninja/upload.php", {"reqtype": "fileupload"}),
         ]
 
@@ -64,16 +73,19 @@ class BaseSearchReq(Network, ABC, Generic[T]):
             except Exception as e:
                 last_error = e
                 from astrbot.api import logger
-                logger.debug(f"[BaseSearchReq] Upload to {upload_url} failed, trying next: {e}")
+
+                logger.debug(
+                    f"[BaseSearchReq] Upload to {upload_url} failed, trying next: {e}"
+                )
                 continue
 
         raise RuntimeError(f"All image hosts failed, last error: {last_error}")
 
     async def __aexit__(
         self,
-        exc_type: Optional[type[BaseException]] = None,
-        exc_val: Optional[BaseException] = None,
-        exc_tb: Optional[Any] = None,
+        exc_type: type[BaseException] | None = None,
+        exc_val: BaseException | None = None,
+        exc_tb: Any | None = None,
     ) -> None:
         # 只有自己创建的 client 才关闭，复用的不关闭
         if getattr(self, "_owned_client", True):
@@ -87,7 +99,9 @@ class BaseSearchReq(Network, ABC, Generic[T]):
         **kwargs: Any,
     ) -> RESP:
         """发送 HTTP 请求"""
-        request_url = url or (f"{self.base_url}/{endpoint}" if endpoint else self.base_url)
+        request_url = url or (
+            f"{self.base_url}/{endpoint}" if endpoint else self.base_url
+        )
         method = method.lower()
         if method == "get":
             kwargs.pop("files", None)

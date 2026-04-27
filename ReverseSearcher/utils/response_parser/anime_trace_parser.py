@@ -1,14 +1,17 @@
-from typing import Any, Optional, NamedTuple
+from typing import Any, NamedTuple
+
 from typing_extensions import override
+
 from .base_parser import BaseResParser, BaseSearchResponse
 
 
 class Character(NamedTuple):
     """
     角色信息命名元组
-    
+
     存储识别出的动漫角色名称和作品名
     """
+
     name: str
     work: str
 
@@ -16,14 +19,14 @@ class Character(NamedTuple):
 class AnimeTraceItem(BaseResParser):
     """
     AnimeTrace搜索结果项解析器
-    
+
     解析单个识别结果，包含角色信息和位置框
     """
-    
+
     def __init__(self, data: dict[str, Any], **kwargs: Any):
         """
         初始化AnimeTrace结果项解析器
-        
+
         参数:
             data: 原始结果数据
             **kwargs: 其他解析参数
@@ -34,7 +37,7 @@ class AnimeTraceItem(BaseResParser):
     def _parse_data(self, data: dict[str, Any], **kwargs: Any) -> None:
         """
         解析AnimeTrace结果数据
-        
+
         参数:
             data: 原始结果数据
             **kwargs: 其他解析参数
@@ -51,14 +54,14 @@ class AnimeTraceItem(BaseResParser):
 class AnimeTraceResponse(BaseSearchResponse[AnimeTraceItem]):
     """
     AnimeTrace搜索响应解析器
-    
+
     解析完整的AnimeTrace API响应，包含多个识别结果
     """
-    
+
     def __init__(self, resp_data: dict[str, Any], resp_url: str, **kwargs: Any) -> None:
         """
         初始化AnimeTrace响应解析器
-        
+
         参数:
             resp_data: 原始响应数据
             resp_url: 响应URL
@@ -70,21 +73,21 @@ class AnimeTraceResponse(BaseSearchResponse[AnimeTraceItem]):
     def _parse_response(self, resp_data: dict[str, Any], **kwargs: Any) -> None:
         """
         解析AnimeTrace响应数据
-        
+
         参数:
             resp_data: 原始响应数据
             **kwargs: 其他解析参数
         """
         self.code: int = resp_data["code"]
-        self.ai: Optional[bool] = resp_data.get("ai")  # None 表示未请求 AI 检测
+        self.ai: bool | None = resp_data.get("ai")  # None 表示未请求 AI 检测
         self.trace_id: str = resp_data.get("trace_id", "")
         results = resp_data["data"]
         self.raw: list[AnimeTraceItem] = [AnimeTraceItem(item) for item in results]
-        
-    def show_result(self) -> Optional[str]:
+
+    def show_result(self) -> str | None:
         """
         生成可读的搜索结果文本
-        
+
         返回:
             str: 格式化的搜索结果文本
         """

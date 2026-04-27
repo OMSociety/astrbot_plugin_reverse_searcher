@@ -1,15 +1,17 @@
-from typing import Any, Optional, Union
+from typing import Any
+
 from typing_extensions import override
 
-from ..types import FileContent
-from ..ext_tools import read_file
 from ..response_parser.yandex_parser import YandexResponse
+from ..types import FileContent
 from .base_req import BaseSearchReq
+
 
 class Yandex(BaseSearchReq[YandexResponse]):
     """
     Yandex 搜索请求类
     """
+
     def __init__(
         self,
         base_url: str = "https://yandex.com",
@@ -20,7 +22,7 @@ class Yandex(BaseSearchReq[YandexResponse]):
         # max_results is passed to search() separately, but model.py also passes it to init.
         # We must pop it to avoid HandOver error.
         request_kwargs.pop("max_results", None)
-        
+
         super().__init__(base_url, **request_kwargs)
 
     # ... (skipping search logic which is unchanged) ...
@@ -37,14 +39,14 @@ class Yandex(BaseSearchReq[YandexResponse]):
                 # The 'search' method constructs: https://yandex.com/images/search...
                 # If _send_request fails, it's because 'search' calls it.
                 # However, 'search' constructs URL outside of _send_request if using 'url' param override.
-                
+
                 # Check if we are retrying a URL passed in args/kwargs
                 # If we are here, super()._send_request failed.
-                
+
                 # We need to detect if we can swap .com to .ru in the params/url
-                
+
                 retry_needed = False
-                
+
                 # 1. Update self.base_url just in case
                 if "yandex.com" in self.base_url:
                     self.base_url = self.base_url.replace("yandex.com", "yandex.ru")
@@ -54,20 +56,20 @@ class Yandex(BaseSearchReq[YandexResponse]):
                 if "url" in kwargs and "yandex.com" in kwargs["url"]:
                     kwargs["url"] = kwargs["url"].replace("yandex.com", "yandex.ru")
                     retry_needed = True
-                    
+
                 if retry_needed:
-                     return await super()._send_request(*args, **kwargs)
-            
+                    return await super()._send_request(*args, **kwargs)
+
             raise e
 
     @override
     async def search(
         self,
-        url: Optional[str] = None,
+        url: str | None = None,
         file: FileContent = None,
         **kwargs: Any,
     ) -> YandexResponse:
-        
+
         target_url = url
         if file:
             # Upload to Litterbox if file is provided
@@ -77,45 +79,40 @@ class Yandex(BaseSearchReq[YandexResponse]):
                 file_bytes = file
             else:
                 from ..ext_tools import read_file
+
                 file_bytes = read_file(file)
-            
+
             target_url = await self._upload_image(file_bytes)
-        
+
         if not target_url:
-             raise ValueError("Must provide url or file")
+            raise ValueError("Must provide url or file")
 
         # Yandex Search via URL
         # https://yandex.com/images/search?rpt=imageview&url={target_url}
-        
-        params = {
-            "rpt": "imageview",
-            "url": target_url
-        }
-        
+
+        params = {"rpt": "imageview", "url": target_url}
+
         # Use headers to mimic browser
         headers = {
-             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
-        
+
         # We use Requests directly or via _send_request (which uses self.session/requests)
         # BaseReq _send_request logic:
         # return await self.get(request_url, **kwargs)
         # We need to mix in our headers.
-        
+
         # Since we are overriding params and headers, let's just call passing them.
         # Note: self.base_url is ".../images/search"
-        
+
         # We might need to handle the specific Yandex URL structure.
         # _send_request uses self.base_url by default.
-        
+
         # Let's try direct construction for clarity, or use the helper.
         # Helper: request_url = url or (f"{self.base_url}/{endpoint}" if endpoint else self.base_url)
-        
+
         resp = await self._send_request(
-            method="get",
-            params=params,
-            headers=headers,
-            timeout=30
+            method="get", params=params, headers=headers, timeout=30
         )
 
         return YandexResponse(resp.text, resp.url, **kwargs)

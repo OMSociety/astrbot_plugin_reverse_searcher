@@ -3,21 +3,21 @@
 纯 PIL 手绘结果卡片，无外部依赖。
 支持引擎色顶栏、卡片阴影、左侧装饰条、编号徽章、缩略图宽高比保持、相似度进度条、圆角卡片。
 """
-from __future__ import annotations
 
-from typing import Optional
+from __future__ import annotations
 
 from PIL import Image, ImageDraw, ImageFont
 
 from ..engine_registry import ENGINE_REGISTRY
 
-
 # ── 字体 ────────────────────────────────────────────────
+
 
 def _load_fonts() -> tuple:
     """加载插件内置中文字体"""
     try:
         from pathlib import Path
+
         base_dir = Path(__file__).parent.parent
         regular_font = str(base_dir / "resource/font/NotoSansSC-Regular.otf")
         heavy_font = str(base_dir / "resource/font/SourceHanSansSC-Heavy.otf")
@@ -35,15 +35,16 @@ def _load_fonts() -> tuple:
 
 # ── 辅助函数 ────────────────────────────────────────────
 
+
 def _hex_to_rgb(hex_str: str) -> tuple:
-    h = hex_str.lstrip('#')
-    return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+    h = hex_str.lstrip("#")
+    return tuple(int(h[i : i + 2], 16) for i in (0, 2, 4))
 
 
 def _rounded_mask(size: tuple, radius: int) -> Image.Image:
     """生成圆角矩形 alpha mask"""
     w, h = size
-    mask = Image.new('L', size, 0)
+    mask = Image.new("L", size, 0)
     draw = ImageDraw.Draw(mask)
     draw.rounded_rectangle([(0, 0), (w - 1, h - 1)], radius=radius, fill=255)
     return mask
@@ -73,7 +74,9 @@ def _draw_similarity_bar(
     draw.rounded_rectangle([x, y, x + width, y + bar_h], radius=radius, fill=bg_color)
     fill_w = int(width * min(similarity, 100) / 100)
     if fill_w > 0:
-        draw.rounded_rectangle([x, y, x + fill_w, y + bar_h], radius=radius, fill=bar_color)
+        draw.rounded_rectangle(
+            [x, y, x + fill_w, y + bar_h], radius=radius, fill=bar_color
+        )
 
     text = f"{similarity:.1f}%"
     if hasattr(font, "getbbox"):
@@ -85,19 +88,20 @@ def _draw_similarity_bar(
 
 # ── 主渲染器 ────────────────────────────────────────────
 
+
 class ResultCardRenderer:
     """手绘搜索结果卡片"""
 
     CARD_WIDTH = 960
     CARD_PADDING = 24
-    THUMB_SIZE = 160          # 缩略图最大边长
+    THUMB_SIZE = 160  # 缩略图最大边长
     THUMB_GAP = 24
     HEADER_H = 72
     SOURCE_H = 180
     CARD_RADIUS = 12
     ROW_PADDING_V = 20
-    ACCENT_W = 5              # 左侧装饰条宽度
-    BADGE_R = 12              # 编号徽章半径（当前未启用）
+    ACCENT_W = 5  # 左侧装饰条宽度
+    BADGE_R = 12  # 编号徽章半径（当前未启用）
 
     def __init__(self):
         self.small, self.body, self.title, self.header_font, self.mono = _load_fonts()
@@ -108,14 +112,14 @@ class ResultCardRenderer:
         self,
         engine: str,
         results: list[dict],
-        source_image: Optional[Image.Image] = None,
-        ai_detect: Optional[bool] = None,
+        source_image: Image.Image | None = None,
+        ai_detect: bool | None = None,
     ) -> Image.Image:
         """渲染结果卡片"""
         engine_color = self._get_engine_color(engine)
         total_height = self._calc_height(results, source_image, ai_detect)
         bg_color = (248, 249, 250)
-        canvas = Image.new('RGB', (self.CARD_WIDTH, total_height), bg_color)
+        canvas = Image.new("RGB", (self.CARD_WIDTH, total_height), bg_color)
         draw = ImageDraw.Draw(canvas)
 
         self._draw_header(draw, engine, engine_color, len(results))
@@ -145,13 +149,16 @@ class ResultCardRenderer:
         return (74, 110, 169)
 
     def _calc_height(
-        self, results: list, source_image: Optional[Image.Image], ai_detect: Optional[bool] = None
+        self,
+        results: list,
+        source_image: Image.Image | None,
+        ai_detect: bool | None = None,
     ) -> int:
         h = self.HEADER_H
         if ai_detect is not None:
             h += 46
         if source_image:
-            h += self.SOURCE_H + 12    # source gap
+            h += self.SOURCE_H + 12  # source gap
         h += self.CARD_PADDING
         for item in results[:5]:
             h += self._row_height(item)
@@ -161,7 +168,7 @@ class ResultCardRenderer:
 
     def _row_height(self, item: dict) -> int:
         """计算单行卡片高度，适配可变缩略图尺寸"""
-        thumb = item.get('thumbnail_image')
+        thumb = item.get("thumbnail_image")
         if thumb and isinstance(thumb, Image.Image):
             ow, oh = thumb.size
             if ow > oh:
@@ -173,11 +180,11 @@ class ResultCardRenderer:
 
         # 文字行数
         text_lines = 1  # source
-        if item.get('title'):
+        if item.get("title"):
             text_lines += 1
-        if item.get('author'):
+        if item.get("author"):
             text_lines += 1
-        if item.get('similarity'):
+        if item.get("similarity"):
             text_lines += 1
         text_h = text_lines * 26 + self.ROW_PADDING_V * 2
 
@@ -204,12 +211,16 @@ class ResultCardRenderer:
             tw = self.title.getsize(text)[0]
         draw.text(
             ((self.CARD_WIDTH - tw) // 2, 18),
-            text, font=self.title, fill=(255, 255, 255),
+            text,
+            font=self.title,
+            fill=(255, 255, 255),
         )
 
     # ── AI 标签 ───────────────────────────────────────────
 
-    def _draw_ai_badge(self, draw: ImageDraw.Draw, canvas: Image.Image, ai: bool, y: int) -> int:
+    def _draw_ai_badge(
+        self, draw: ImageDraw.Draw, canvas: Image.Image, ai: bool, y: int
+    ) -> int:
         """绘制 AI 检测结果标签"""
         badge_w = 220
         badge_h = 34
@@ -224,7 +235,8 @@ class ResultCardRenderer:
 
         draw.rounded_rectangle(
             [(x, y), (x + badge_w, y + badge_h)],
-            radius=6, fill=badge_color,
+            radius=6,
+            fill=badge_color,
         )
         if hasattr(draw, "textlength"):
             tw = draw.textlength(label, font=self.small)
@@ -232,13 +244,17 @@ class ResultCardRenderer:
             tw = self.small.getsize(label)[0]
         draw.text(
             (x + (badge_w - tw) // 2, y + 7),
-            label, font=self.small, fill=(255, 255, 255),
+            label,
+            font=self.small,
+            fill=(255, 255, 255),
         )
         return y + badge_h + 10
 
     # ── 源图缩略图 ───────────────────────────────────────
 
-    def _draw_source_thumb(self, canvas: Image.Image, source: Image.Image, y: int) -> int:
+    def _draw_source_thumb(
+        self, canvas: Image.Image, source: Image.Image, y: int
+    ) -> int:
         """绘制源图缩略图"""
         src = source.copy()
         src.thumbnail((self.THUMB_SIZE + 80, self.THUMB_SIZE), Image.LANCZOS)
@@ -295,11 +311,14 @@ class ResultCardRenderer:
         # ── 白色卡片背景 ──
         draw.rounded_rectangle(
             [(card_x, y), (card_x + card_w, y + card_h)],
-            radius=radius, fill=(255, 255, 255),
+            radius=radius,
+            fill=(255, 255, 255),
         )
         draw.rounded_rectangle(
             [(card_x, y), (card_x + card_w, y + card_h)],
-            radius=radius, outline=(215, 215, 222), width=1,
+            radius=radius,
+            outline=(215, 215, 222),
+            width=1,
         )
 
         # ── 左侧装饰条 ──
@@ -313,7 +332,7 @@ class ResultCardRenderer:
         inner_y = y + self.ROW_PADDING_V
 
         # ── 缩略图（保持宽高比）──
-        thumb = item.get('thumbnail_image')
+        thumb = item.get("thumbnail_image")
         if thumb and isinstance(thumb, Image.Image):
             th = thumb.copy()
             ow, oh = th.size
@@ -337,42 +356,52 @@ class ResultCardRenderer:
         text_y = inner_y + 6
 
         # 来源
-        source = item.get('source', '未知来源')
+        source = item.get("source", "未知来源")
         draw.text((text_x, text_y), source, font=self.body, fill=(30, 30, 30))
         text_y += 26
 
         # 标题
-        title_text = item.get('title', '')
+        title_text = item.get("title", "")
         if title_text:
             if len(title_text) > 36:
-                title_text = title_text[:33] + '...'
+                title_text = title_text[:33] + "..."
             draw.text((text_x, text_y), title_text, font=self.small, fill=(90, 90, 90))
             text_y += 22
 
         # 画师
-        author = item.get('author', '')
+        author = item.get("author", "")
         if author:
-            draw.text((text_x, text_y), f"作者: {author}", font=self.small, fill=(120, 120, 120))
+            draw.text(
+                (text_x, text_y),
+                f"作者: {author}",
+                font=self.small,
+                fill=(120, 120, 120),
+            )
             text_y += 22
 
         # 相似度条
-        sim_str = item.get('similarity', '')
+        sim_str = item.get("similarity", "")
         if sim_str:
             try:
-                similarity = float(sim_str.replace('%', '').replace('\uff05', ''))
+                similarity = float(sim_str.replace("%", "").replace("\uff05", ""))
             except (ValueError, TypeError):
                 similarity = 0
             if similarity > 0:
                 _draw_similarity_bar(
-                    draw, text_x, text_y + 8, 200,
-                    similarity, self.small, (80, 80, 80),
+                    draw,
+                    text_x,
+                    text_y + 8,
+                    200,
+                    similarity,
+                    self.small,
+                    (80, 80, 80),
                 )
                 text_y += 26
 
         # 链接
-        url = item.get('url', '')
+        url = item.get("url", "")
         if url:
-            short_url = url[:60] + '...' if len(url) > 60 else url
+            short_url = url[:60] + "..." if len(url) > 60 else url
             draw.text((text_x, text_y), short_url, font=self.mono, fill=(41, 98, 255))
 
         return y + card_h
@@ -398,13 +427,15 @@ class ResultCardRenderer:
         draw.text(
             (self.CARD_PADDING, 16),
             f"「{label}」搜索失败",
-            font=self.title, fill=(255, 255, 255),
+            font=self.title,
+            fill=(255, 255, 255),
         )
 
         draw.text(
             (self.CARD_PADDING, 90),
             f"Error: {error_msg}",
-            font=self.body, fill=(100, 100, 100),
+            font=self.body,
+            fill=(100, 100, 100),
         )
 
         return canvas

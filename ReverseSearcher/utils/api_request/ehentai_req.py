@@ -1,18 +1,20 @@
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
+
 from typing_extensions import override
-from ..response_parser import EHentaiResponse
+
 from ..ext_tools import read_file
+from ..response_parser import EHentaiResponse
 from .base_req import BaseSearchReq
 
 
 class EHentai(BaseSearchReq[EHentaiResponse]):
     """
     E-Hentai搜索请求类
-    
+
     用于与E-Hentai/ExHentai图像搜索功能交互，支持多种搜索选项
     """
-    
+
     def __init__(
         self,
         is_ex: bool = False,
@@ -23,7 +25,7 @@ class EHentai(BaseSearchReq[EHentaiResponse]):
     ):
         """
         初始化E-Hentai搜索请求
-        
+
         参数:
             is_ex: 是否使用ExHentai而不是E-Hentai
             covers: 是否搜索封面图像
@@ -41,21 +43,21 @@ class EHentai(BaseSearchReq[EHentaiResponse]):
     @override
     async def search(
         self,
-        url: Optional[str] = None,
-        file: Union[str, bytes, Path, None] = None,
+        url: str | None = None,
+        file: str | bytes | Path | None = None,
         **kwargs: Any,
     ) -> EHentaiResponse:
         """
         执行E-Hentai图像搜索
-        
+
         参数:
             url: 图像URL
             file: 本地文件内容
             **kwargs: 其他搜索参数
-            
+
         返回:
             EHentaiResponse: 搜索响应对象
-            
+
         异常:
             ValueError: 当未提供url或file参数时抛出
         """
@@ -63,7 +65,13 @@ class EHentai(BaseSearchReq[EHentaiResponse]):
         data: dict[str, Any] = {"f_sfile": "File Search"}
         if url:
             # Add filename to tuple to enable Similarity Search
-            files = {"sfile": ("image.jpg", await self.download(url), "application/octet-stream")}
+            files = {
+                "sfile": (
+                    "image.jpg",
+                    await self.download(url),
+                    "application/octet-stream",
+                )
+            }
         elif file:
             file_bytes = read_file(file)
             files = {"sfile": ("image.jpg", file_bytes, "application/octet-stream")}

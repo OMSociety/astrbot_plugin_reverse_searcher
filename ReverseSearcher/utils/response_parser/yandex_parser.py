@@ -1,7 +1,9 @@
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any
+
 from pyquery import PyQuery
 from typing_extensions import override
+
 from .base_parser import BaseResParser, BaseSearchResponse
 
 
@@ -27,6 +29,7 @@ class YandexResponse(BaseSearchResponse[YandexItem]):
     """
     Yandex 搜索结果解析类
     """
+
     def __init__(self, resp_data: str, resp_url: str, **kwargs: Any):
         super().__init__(resp_data, resp_url, **kwargs)
         self.max_results = kwargs.get("max_results", 10)
@@ -67,13 +70,17 @@ class YandexResponse(BaseSearchResponse[YandexItem]):
                     height = original_image.get("height", 0)
                     size_str = f"{width}x{height}"
 
-                    item = YandexItem({
-                        "title": title,
-                        "url": url,
-                        "thumbnail": thumb_url,
-                        "author": domain,
-                        "other_info": f"{size_str} {content[:50]}..." if content else size_str,
-                    })
+                    item = YandexItem(
+                        {
+                            "title": title,
+                            "url": url,
+                            "thumbnail": thumb_url,
+                            "author": domain,
+                            "other_info": f"{size_str} {content[:50]}..."
+                            if content
+                            else size_str,
+                        }
+                    )
                     self.raw.append(item)
                 except Exception:
                     continue
@@ -85,11 +92,13 @@ class YandexResponse(BaseSearchResponse[YandexItem]):
         if not self.raw:
             return "Yandex 未找到相关结果"
 
-        return "\n".join([
-            f"标题: {item.title}\n"
-            f"来源: {item.author}\n"
-            f"链接: {item.url}\n"
-            f"信息: {item.other_info}\n"
-            f"{'-'*30}"
-            for item in self.raw[:self.max_results]
-        ])
+        return "\n".join(
+            [
+                f"标题: {item.title}\n"
+                f"来源: {item.author}\n"
+                f"链接: {item.url}\n"
+                f"信息: {item.other_info}\n"
+                f"{'-' * 30}"
+                for item in self.raw[: self.max_results]
+            ]
+        )

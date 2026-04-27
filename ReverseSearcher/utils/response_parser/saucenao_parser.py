@@ -1,19 +1,21 @@
-from typing import Any, Optional
+from typing import Any
+
 from typing_extensions import override
+
 from .base_parser import BaseResParser, BaseSearchResponse
 
 
 class SauceNAOItem(BaseResParser):
     """
     SauceNAO搜索结果项解析器
-    
+
     解析单个搜索结果，提取标题、URL、作者等信息
     """
-    
+
     def __init__(self, data: dict[str, Any], **kwargs: Any):
         """
         初始化SauceNAO结果项解析器
-        
+
         参数:
             data: 原始结果数据
             **kwargs: 其他解析参数
@@ -24,7 +26,7 @@ class SauceNAOItem(BaseResParser):
     def _parse_data(self, data: dict[str, Any], **kwargs: Any) -> None:
         """
         解析SauceNAO结果数据
-        
+
         参数:
             data: 原始结果数据
             **kwargs: 其他解析参数
@@ -46,10 +48,10 @@ class SauceNAOItem(BaseResParser):
     def _get_title(data: dict[str, Any]) -> str:
         """
         从数据中提取标题
-        
+
         参数:
             data: 结果数据字典
-            
+
         返回:
             str: 提取的标题
         """
@@ -76,12 +78,12 @@ class SauceNAOItem(BaseResParser):
     def _get_url(data: dict[str, Any]) -> str:
         """
         从数据中提取URL
-        
+
         根据不同来源网站的ID格式化对应的URL
-        
+
         参数:
             data: 结果数据字典
-            
+
         返回:
             str: 提取的URL
         """
@@ -99,17 +101,21 @@ class SauceNAOItem(BaseResParser):
     def _get_author(data: dict[str, Any]) -> str:
         """
         从数据中提取作者信息
-        
+
         参数:
             data: 结果数据字典
-            
+
         返回:
             str: 提取的作者名称
         """
         return (
             next(
                 (
-                    (", ".join(data[i]) if i == "creator" and isinstance(data[i], list) else data[i])
+                    (
+                        ", ".join(data[i])
+                        if i == "creator" and isinstance(data[i], list)
+                        else data[i]
+                    )
                     for i in [
                         "author",
                         "member_name",
@@ -132,12 +138,12 @@ class SauceNAOItem(BaseResParser):
     def _get_author_url(data: dict[str, Any]) -> str:
         """
         从数据中提取作者URL
-        
+
         根据不同来源网站的ID格式化对应的作者主页URL
-        
+
         参数:
             data: 结果数据字典
-            
+
         返回:
             str: 提取的作者URL
         """
@@ -159,14 +165,14 @@ class SauceNAOItem(BaseResParser):
 class SauceNAOResponse(BaseSearchResponse[SauceNAOItem]):
     """
     SauceNAO搜索响应解析器
-    
+
     解析完整的SauceNAO API响应，包含多个搜索结果和API限制信息
     """
-    
+
     def __init__(self, resp_data: dict[str, Any], resp_url: str, **kwargs: Any) -> None:
         """
         初始化SauceNAO响应解析器
-        
+
         参数:
             resp_data: 原始响应数据
             resp_url: 响应URL
@@ -178,7 +184,7 @@ class SauceNAOResponse(BaseSearchResponse[SauceNAOItem]):
     def _parse_response(self, resp_data: dict[str, Any], **kwargs: Any) -> None:
         """
         解析SauceNAO响应数据
-        
+
         参数:
             resp_data: 原始响应数据
             **kwargs: 其他解析参数
@@ -187,23 +193,23 @@ class SauceNAOResponse(BaseSearchResponse[SauceNAOItem]):
         header = resp_data["header"]
         results = resp_data.get("results", [])
         self.raw: list[SauceNAOItem] = [SauceNAOItem(i) for i in results]
-        self.short_remaining: Optional[int] = header.get("short_remaining")
-        self.long_remaining: Optional[int] = header.get("long_remaining")
-        self.user_id: Optional[int] = header.get("user_id")
-        self.account_type: Optional[int] = header.get("account_type")
-        self.short_limit: Optional[str] = header.get("short_limit")
-        self.long_limit: Optional[str] = header.get("long_limit")
-        self.status: Optional[int] = header.get("status")
-        self.results_requested: Optional[int] = header.get("results_requested")
-        self.search_depth: Optional[int] = header.get("search_depth")
-        self.minimum_similarity: Optional[float] = header.get("minimum_similarity")
-        self.results_returned: Optional[int] = header.get("results_returned")
+        self.short_remaining: int | None = header.get("short_remaining")
+        self.long_remaining: int | None = header.get("long_remaining")
+        self.user_id: int | None = header.get("user_id")
+        self.account_type: int | None = header.get("account_type")
+        self.short_limit: str | None = header.get("short_limit")
+        self.long_limit: str | None = header.get("long_limit")
+        self.status: int | None = header.get("status")
+        self.results_requested: int | None = header.get("results_requested")
+        self.search_depth: int | None = header.get("search_depth")
+        self.minimum_similarity: float | None = header.get("minimum_similarity")
+        self.results_returned: int | None = header.get("results_returned")
         self.url: str = f"https://saucenao.com/search.php?url=https://saucenao.com{header.get('query_image_display')}"
 
-    def show_result(self) -> Optional[str]:
+    def show_result(self) -> str | None:
         """
         生成可读的搜索结果文本
-        
+
         返回:
             str: 格式化的搜索结果文本
         """

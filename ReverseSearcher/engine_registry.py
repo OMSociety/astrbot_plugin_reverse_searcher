@@ -3,10 +3,11 @@
 所有引擎元数据、请求类映射、意图路由集中于此。
 main.py / search_tools.py / model.py 从本文件引。
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import ClassVar, Optional
+from typing import ClassVar
 
 # 前向声明类型占位，实际引用由调用方注入
 TYPE_REQUEST_CLASS = type
@@ -14,18 +15,20 @@ TYPE_REQUEST_CLASS = type
 
 # ── 引擎定义 ──────────────────────────────────────────
 
+
 @dataclass
 class EngineDef:
     """单个搜索引擎的完整元数据"""
-    name: str                       # 内部标识
-    label: str                      # 展示名
-    desc: str                       # 功能描述
-    url: str                        # 官网/入口
-    anime_focused: bool             # 是否二次元专用
-    color: tuple[int, int, int]     # 主题色 (用于卡片/表格)
-    
+
+    name: str  # 内部标识
+    label: str  # 展示名
+    desc: str  # 功能描述
+    url: str  # 官网/入口
+    anime_focused: bool  # 是否二次元专用
+    color: tuple[int, int, int]  # 主题色 (用于卡片/表格)
+
     # 运行时引用
-    req_class: Optional[TYPE_REQUEST_CLASS] = None   # api_request 请求类
+    req_class: TYPE_REQUEST_CLASS | None = None  # api_request 请求类
 
     # LLM 工具用
     fallback: list[str] = field(default_factory=list)  # 自动切换候补
@@ -40,7 +43,7 @@ ENGINE_REGISTRY: dict[str, EngineDef] = {
         desc="动漫角色识别（最强）",
         url="https://www.animetrace.com/",
         anime_focused=True,
-        color=(99, 102, 241),     # #6366F1 靛蓝紫
+        color=(99, 102, 241),  # #6366F1 靛蓝紫
         fallback=["saucenao"],
     ),
     "saucenao": EngineDef(
@@ -49,7 +52,7 @@ ENGINE_REGISTRY: dict[str, EngineDef] = {
         desc="综合出处搜索",
         url="https://saucenao.com/",
         anime_focused=True,
-        color=(30, 30, 46),       # #1E1E2E 暗炭黑
+        color=(30, 30, 46),  # #1E1E2E 暗炭黑
         fallback=["google"],
     ),
     "ehentai": EngineDef(
@@ -58,7 +61,7 @@ ENGINE_REGISTRY: dict[str, EngineDef] = {
         desc="同人本/汉化组搜索",
         url="https://e-hentai.org/",
         anime_focused=True,
-        color=(220, 55, 75),      # #DC374B 绯红
+        color=(220, 55, 75),  # #DC374B 绯红
     ),
     "google": EngineDef(
         name="google",
@@ -105,25 +108,52 @@ COLOR_THEME: dict[str, tuple] = {
 
 INTENT_KEYWORD_WEIGHTS: dict[str, dict[str, int]] = {
     "animetrace": {
-        "角色": 10, "角色名": 10, "是谁": 8, "哪个人物": 8,
-        "动漫角色": 10, "cos": 8, "动画": 5, "番剧": 5,
-        "画风": 3, "画师风格": 3,
+        "角色": 10,
+        "角色名": 10,
+        "是谁": 8,
+        "哪个人物": 8,
+        "动漫角色": 10,
+        "cos": 8,
+        "动画": 5,
+        "番剧": 5,
+        "画风": 3,
+        "画师风格": 3,
     },
     "saucenao": {
-        "出处": 10, "来源": 10, "画师": 10, "作者": 8,
-        "pixiv": 6, "pid": 6, "作品": 5, "原图": 4,
+        "出处": 10,
+        "来源": 10,
+        "画师": 10,
+        "作者": 8,
+        "pixiv": 6,
+        "pid": 6,
+        "作品": 5,
+        "原图": 4,
     },
     "ehentai": {
-        "同人": 10, "本子": 10, "汉化": 8, "r18": 8,
-        "无修": 6, "单行本": 6, "漫画": 5, "cg": 5,
+        "同人": 10,
+        "本子": 10,
+        "汉化": 8,
+        "r18": 8,
+        "无修": 6,
+        "单行本": 6,
+        "漫画": 5,
+        "cg": 5,
     },
     "yandex": {
-        "相似图": 10, "相似图片": 10, "找相似": 10,
-        "像这个": 6, "类似的": 5, "照片": 4,
+        "相似图": 10,
+        "相似图片": 10,
+        "找相似": 10,
+        "像这个": 6,
+        "类似的": 5,
+        "照片": 4,
     },
     "google": {
-        "找原图": 10, "综合搜索": 8, "以图搜图": 5,
-        "新闻图": 5, "商品图": 5, "人脸": 3,
+        "找原图": 10,
+        "综合搜索": 8,
+        "以图搜图": 5,
+        "新闻图": 5,
+        "商品图": 5,
+        "人脸": 3,
     },
 }
 
@@ -132,12 +162,22 @@ class IntentRouter:
     """意图 → 引擎路由，支持多关键词加权匹配"""
 
     ANIME_IMAGE_KEYWORDS: ClassVar[list[str]] = [
-        "角色", "动漫", "动画", "番", "二次元", "人物", "cos",
-        "画师", "pixiv", "同人", "本子", "画风",
+        "角色",
+        "动漫",
+        "动画",
+        "番",
+        "二次元",
+        "人物",
+        "cos",
+        "画师",
+        "pixiv",
+        "同人",
+        "本子",
+        "画风",
     ]
 
     @staticmethod
-    def match(intent: Optional[str] = None) -> str:
+    def match(intent: str | None = None) -> str:
         """根据意图文本返回推荐引擎名
 
         参数:
@@ -166,7 +206,7 @@ class IntentRouter:
         return max(scores, key=scores.get)  # type: ignore[arg-type]
 
     @classmethod
-    def looks_anime(cls, intent: Optional[str] = None) -> bool:
+    def looks_anime(cls, intent: str | None = None) -> bool:
         """快速判断意图是否偏向二次元"""
         if not intent:
             return True
@@ -175,7 +215,10 @@ class IntentRouter:
 
 # ── 引擎名标准化 ────────────────────────────────────────
 
-def resolve_engine_name(keyword: str, engine_keywords: Optional[dict[str, str]] = None) -> Optional[str]:
+
+def resolve_engine_name(
+    keyword: str, engine_keywords: dict[str, str] | None = None
+) -> str | None:
     """将用户输入的关键词/别名解析为标准引擎名
 
     参数:
@@ -207,6 +250,7 @@ def resolve_engine_name(keyword: str, engine_keywords: Optional[dict[str, str]] 
 
 
 # ── 请求类注入 ──────────────────────────────────────────
+
 
 def inject_request_classes():
     """将 api_request 模块的请求类注入到 ENGINE_REGISTRY

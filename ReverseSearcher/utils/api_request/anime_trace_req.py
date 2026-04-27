@@ -1,30 +1,32 @@
 from json import loads as json_loads
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
+
 from typing_extensions import override
-from ..response_parser import AnimeTraceResponse
+
 from ..ext_tools import read_file
+from ..response_parser import AnimeTraceResponse
 from .base_req import BaseSearchReq
 
 
 class AnimeTrace(BaseSearchReq[AnimeTraceResponse]):
     """
     AnimeTrace搜索请求类
-    
+
     用于识别动漫角色的图像搜索API接口
     """
-    
+
     def __init__(
         self,
         base_url: str = "https://api.animetrace.com",
         endpoint: str = "v1/search",
-        is_multi: Optional[bool] = None,
-        ai_detect: Optional[bool] = None,
+        is_multi: bool | None = None,
+        ai_detect: bool | None = None,
         **request_kwargs: Any,
     ):
         """
         初始化AnimeTrace搜索请求
-        
+
         参数:
             base_url: API基础URL
             endpoint: API端点路径
@@ -34,31 +36,31 @@ class AnimeTrace(BaseSearchReq[AnimeTraceResponse]):
         """
         base_url = f"{base_url}/{endpoint}"
         super().__init__(base_url, **request_kwargs)
-        self.is_multi: Optional[bool] = is_multi
-        self.ai_detect: Optional[bool] = ai_detect
+        self.is_multi: bool | None = is_multi
+        self.ai_detect: bool | None = ai_detect
 
     @override
     async def search(
         self,
-        url: Optional[str] = None,
-        file: Union[str, bytes, Path, None] = None,
-        base64: Optional[str] = None,
-        model: Optional[str] = None,
+        url: str | None = None,
+        file: str | bytes | Path | None = None,
+        base64: str | None = None,
+        model: str | None = None,
         **kwargs: Any,
     ) -> AnimeTraceResponse:
         """
         执行AnimeTrace搜索
-        
+
         参数:
             url: 图像URL
             file: 本地文件内容
             base64: Base64编码的图像数据
             model: 使用的识别模型
             **kwargs: 其他搜索参数
-            
+
         返回:
             AnimeTraceResponse: 搜索响应对象
-            
+
         异常:
             ValueError: 当未提供url、file或base64参数时抛出
         """

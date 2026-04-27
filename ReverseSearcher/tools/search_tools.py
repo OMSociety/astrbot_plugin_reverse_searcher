@@ -6,27 +6,28 @@
 
 芙兰会根据图片内容和对话意图自主选择最合适的搜索引擎。
 """
+
 from __future__ import annotations
 
 import base64
 import re
-from typing import Optional
 
 from pydantic import Field
 from pydantic.dataclasses import dataclass
 
 from astrbot import logger
+from astrbot.core.agent.run_context import ContextWrapper
 from astrbot.core.agent.tool import FunctionTool
 from astrbot.core.astr_agent_context import AstrAgentContext
-from astrbot.core.agent.run_context import ContextWrapper
 
 from ..engine_registry import IntentRouter
-
 
 # ============ 图片提取（两个 tool 共用）=============
 
 
-def _extract_image_from_context(context: ContextWrapper[AstrAgentContext]) -> tuple[Optional[str], Optional[str]]:
+def _extract_image_from_context(
+    context: ContextWrapper[AstrAgentContext],
+) -> tuple[str | None, str | None]:
     """从 context 中提取图片，返回 (base64, url)
 
     优先级：
@@ -40,33 +41,41 @@ def _extract_image_from_context(context: ContextWrapper[AstrAgentContext]) -> tu
     url_str = None
 
     # 从消息上下文中提取
-    event = getattr(context.context, 'event', None) if hasattr(context, 'context') else None
+    event = (
+        getattr(context.context, "event", None) if hasattr(context, "context") else None
+    )
     if event:
-        msg_obj = getattr(event, 'message_obj', None)
+        msg_obj = getattr(event, "message_obj", None)
         if msg_obj:
             # image_list
-            if hasattr(msg_obj, 'image_list') and msg_obj.image_list:
+            if hasattr(msg_obj, "image_list") and msg_obj.image_list:
                 url_str = msg_obj.image_list[0]
             # 内容中的 URL 或本地路径
-            content = getattr(msg_obj, 'content', '') or ''
+            content = getattr(msg_obj, "content", "") or ""
             if content:
-                path_match = re.search(r'path[/\s]+(/[^\s]+\.(?:jpg|jpeg|png|gif|webp))', content)
+                path_match = re.search(
+                    r"path[/\s]+(/[^\s]+\.(?:jpg|jpeg|png|gif|webp))", content
+                )
                 if path_match:
                     local_path = path_match.group(1)
                     try:
-                        with open(local_path, 'rb') as f:
+                        with open(local_path, "rb") as f:
                             base64_str = base64.b64encode(f.read()).decode()
                     except Exception:
                         url_str = local_path
                 else:
-                    img_matches = re.findall(r'https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)', content)
+                    img_matches = re.findall(
+                        r"https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)", content
+                    )
                     if img_matches:
                         url_str = img_matches[0]
 
     return base64_str, url_str
 
 
-async def _perform_search(search_model, engine: str, base64_str: Optional[str], url_str: Optional[str]) -> any:
+async def _perform_search(
+    search_model, engine: str, base64_str: str | None, url_str: str | None
+) -> any:
     """执行搜索，统一处理 base64/URL 参数"""
     if base64_str:
         return await search_model.search(api=engine, base64=base64_str)
@@ -127,24 +136,26 @@ class _BaseSearchTool(FunctionTool[AstrAgentContext]):
     """搜图工具基类，定义搜索流程模板"""
 
     description: str = ""
-    parameters: dict = Field(default_factory=lambda: {
-        "type": "object",
-        "properties": {
-            "image_base64": {
-                "type": "string",
-                "description": "图片的 base64 编码（不含 data:image 前缀）",
+    parameters: dict = Field(
+        default_factory=lambda: {
+            "type": "object",
+            "properties": {
+                "image_base64": {
+                    "type": "string",
+                    "description": "图片的 base64 编码（不含 data:image 前缀）",
+                },
+                "image_url": {
+                    "type": "string",
+                    "description": "或直接提供图片 URL（二选一，与 base64 互斥）",
+                },
+                "intent": {
+                    "type": "string",
+                    "description": "搜索意图，用于自动选引擎。例如：「找角色」「找出处」「找相似图」",
+                },
             },
-            "image_url": {
-                "type": "string",
-                "description": "或直接提供图片 URL（二选一，与 base64 互斥）",
-            },
-            "intent": {
-                "type": "string",
-                "description": "搜索意图，用于自动选引擎。例如：「找角色」「找出处」「找相似图」",
-            },
-        },
-        "required": [],
-    })
+            "required": [],
+        }
+    )
 
     def __init__(self, **data):
         super().__init__(**data)
@@ -156,11 +167,13 @@ class _BaseSearchTool(FunctionTool[AstrAgentContext]):
     async def _do_search(
         self,
         engine: str,
-        base64_str: Optional[str],
-        url_str: Optional[str],
+        base64_str: str | None,
+        url_str: str | None,
     ) -> str:
         """执行搜索并格式化结果"""
-        logger.info(f"[reverse_search] engine={engine}, url={url_str[:50] if url_str else 'base64'}")
+        logger.info(
+            f"[reverse_search] engine={engine}, url={url_str[:50] if url_str else 'base64'}"
+        )
         result = await _perform_search(self.search_model, engine, base64_str, url_str)
         return _format_search_result(result, engine)
 
@@ -195,9 +208,9 @@ class _BaseSearchTool(FunctionTool[AstrAgentContext]):
         self,
         context: ContextWrapper[AstrAgentContext],
         kwargs: dict,
-        base64_str: Optional[str],
-        url_str: Optional[str],
-    ) -> Optional[str]:
+        base64_str: str | None,
+        url_str: str | None,
+    ) -> str | None:
         """解析引擎，由子类实现。返回引擎名或 None"""
         raise NotImplementedError
 
@@ -225,9 +238,9 @@ class ReverseSearchTool(_BaseSearchTool):
         self,
         context: ContextWrapper[AstrAgentContext],
         kwargs: dict,
-        base64_str: Optional[str],
-        url_str: Optional[str],
-    ) -> Optional[str]:
+        base64_str: str | None,
+        url_str: str | None,
+    ) -> str | None:
         intent = kwargs.get("intent")
         return IntentRouter.match(intent)
 
@@ -237,37 +250,41 @@ class ReverseSearchWithEngineTool(_BaseSearchTool):
     """指定引擎搜图工具"""
 
     name: str = "reverse_search_with_engine"
-    description: str = "指定搜索引擎进行以图搜图。当用户明确要求使用某个特定引擎时调用。引擎参数必填。"
-    parameters: dict = Field(default_factory=lambda: {
-        "type": "object",
-        "properties": {
-            "image_base64": {
-                "type": "string",
-                "description": "图片的 base64 编码",
+    description: str = (
+        "指定搜索引擎进行以图搜图。当用户明确要求使用某个特定引擎时调用。引擎参数必填。"
+    )
+    parameters: dict = Field(
+        default_factory=lambda: {
+            "type": "object",
+            "properties": {
+                "image_base64": {
+                    "type": "string",
+                    "description": "图片的 base64 编码",
+                },
+                "image_url": {
+                    "type": "string",
+                    "description": "或图片 URL",
+                },
+                "engine": {
+                    "type": "string",
+                    "description": "搜索引擎名称",
+                    "enum": ["animetrace", "saucenao", "ehentai", "google", "yandex"],
+                },
             },
-            "image_url": {
-                "type": "string",
-                "description": "或图片 URL",
-            },
-            "engine": {
-                "type": "string",
-                "description": "搜索引擎名称",
-                "enum": ["animetrace", "saucenao", "ehentai", "google", "yandex"],
-            },
-        },
-        "required": ["engine"],
-    })
+            "required": ["engine"],
+        }
+    )
 
     async def _resolve_engine(
         self,
         context: ContextWrapper[AstrAgentContext],
         kwargs: dict,
-        base64_str: Optional[str],
-        url_str: Optional[str],
-    ) -> Optional[str]:
+        base64_str: str | None,
+        url_str: str | None,
+    ) -> str | None:
         engine = kwargs.get("engine")
         if not engine:
-            from ..engine_registry import ENGINE_REGISTRY
+
             return None
         return engine
 
@@ -288,4 +305,6 @@ def register_search_tools(plugin_instance):
         with_engine_tool,
     )
 
-    logger.info("[ReverseSearcher] 搜图工具已注册：reverse_search, reverse_search_with_engine")
+    logger.info(
+        "[ReverseSearcher] 搜图工具已注册：reverse_search, reverse_search_with_engine"
+    )

@@ -1,25 +1,29 @@
 import asyncio
 import io
+import ipaddress
 import os
 import re
+import socket
 import tempfile
 import time
-from typing import List
 from pathlib import Path
+from urllib.parse import urlparse
+
 import httpx
 from PIL import Image, ImageDraw, ImageFont
-from astrbot.api.event import AstrMessageEvent, filter
-from astrbot.api.message_components import Image as AstrImage, Nodes, Node, Plain
-from astrbot.api.star import Context, Star, register
+
 from astrbot.api import logger
-import base64
-import socket
-import ipaddress
-from urllib.parse import urlparse
-from .ReverseSearcher.model import BaseSearchModel
+from astrbot.api.event import AstrMessageEvent, filter
+from astrbot.api.message_components import Image as AstrImage
+from astrbot.api.message_components import Node, Nodes, Plain
+from astrbot.api.star import Context, Star, register
+
 from .ReverseSearcher.engine_registry import (
-    ENGINE_REGISTRY, ALL_ENGINES, COLOR_THEME, resolve_engine_name
+    ALL_ENGINES,
+    COLOR_THEME,
+    ENGINE_REGISTRY,
 )
+from .ReverseSearcher.model import BaseSearchModel
 
 # 保留兼容旧引用的变量名
 ENGINE_INFO = {
@@ -41,9 +45,12 @@ def is_image_url(text: str) -> bool:
     异常:
         无
     """
-    return bool(re.match(r"^https://.*\.(jpg|jpeg|png|gif|webp|bmp)$", text, re.IGNORECASE))
+    return bool(
+        re.match(r"^https://.*\.(jpg|jpeg|png|gif|webp|bmp)$", text, re.IGNORECASE)
+    )
 
-def split_text_by_length(text: str, max_length: int = 4000) -> List[str]:
+
+def split_text_by_length(text: str, max_length: int = 4000) -> list[str]:
     """
     按最大长度将长文本智能断行拆分，优先按50连字符切分
 
@@ -73,6 +80,7 @@ def split_text_by_length(text: str, max_length: int = 4000) -> List[str]:
         text = text[cut_index:]
     return result
 
+
 def get_img_urls(message) -> str:
     """
     从消息对象中提取第一张图片的URL
@@ -86,30 +94,35 @@ def get_img_urls(message) -> str:
     异常:
         无
     """
-    raw_message = getattr(message, 'raw_message', '')
+    raw_message = getattr(message, "raw_message", "")
     if isinstance(raw_message, dict) and "message" in raw_message:
         raw_message_str = str(raw_message.get("message", []))
-        image_match = re.search(r"'type':\s*'image'.*?'url':\s*'([^']+)'", raw_message_str)
+        image_match = re.search(
+            r"'type':\s*'image'.*?'url':\s*'([^']+)'", raw_message_str
+        )
         if image_match:
             return image_match.group(1)
-        file_match = re.search(r"'type':\s*'file'.*?'file':\s*'([^']+)'", raw_message_str)
+        file_match = re.search(
+            r"'type':\s*'file'.*?'file':\s*'([^']+)'", raw_message_str
+        )
         if file_match:
             filename = file_match.group(1)
-            IMAGE_EXTS = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.tiff'}
+            IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff"}
             if os.path.splitext(filename.lower())[1] in IMAGE_EXTS:
-                for component in getattr(message, 'message', []):
+                for component in getattr(message, "message", []):
                     component_str = str(component)
                     if "type='File'" in component_str:
                         url_match = re.search(r"url='([^']+)'", component_str)
                         if url_match:
                             return url_match.group(1)
-    for component in getattr(message, 'message', []):
+    for component in getattr(message, "message", []):
         component_str = str(component)
         if "type='Image'" in component_str:
             url_match = re.search(r"url='([^']+)'", component_str)
             if url_match:
                 return url_match.group(1)
     return ""
+
 
 def get_message_text(message) -> str:
     """
@@ -124,17 +137,22 @@ def get_message_text(message) -> str:
     异常:
         无
     """
-    raw_message = getattr(message, 'raw_message', '')
+    raw_message = getattr(message, "raw_message", "")
     if isinstance(raw_message, str):
         return raw_message.strip()
     elif isinstance(raw_message, dict) and "message" in raw_message:
         texts = [
-            (msg_part.get("data", {}).get("text", "") if isinstance(msg_part, dict) else str(msg_part))
+            (
+                msg_part.get("data", {}).get("text", "")
+                if isinstance(msg_part, dict)
+                else str(msg_part)
+            )
             for msg_part in raw_message.get("message", [])
-            if (isinstance(msg_part, dict) and msg_part.get("type") == "text") or isinstance(msg_part, str)
+            if (isinstance(msg_part, dict) and msg_part.get("type") == "text")
+            or isinstance(msg_part, str)
         ]
         return " ".join(texts).strip()
-    return ''
+    return ""
 
 
 @register("astrbot_plugin_img_rev_searcher", "drdon1234", "以图搜图，找出处", "3.4")
@@ -174,7 +192,9 @@ class ReverseSearcherPlugin(Star):
         self.user_states = {}
         self.cleanup_task = asyncio.create_task(self.cleanup_loop())
         available_apis_config = config.get("available_apis", {})
-        self.available_engines = [e for e in ALL_ENGINES if available_apis_config.get(e, True)]
+        self.available_engines = [
+            e for e in ALL_ENGINES if available_apis_config.get(e, True)
+        ]
         timeout_settings = config.get("timeout_settings", {})
         self.search_params_timeout = timeout_settings.get("search_params_timeout", 30)
         self.text_confirm_timeout = timeout_settings.get("text_confirm_timeout", 30)
@@ -182,7 +202,9 @@ class ReverseSearcherPlugin(Star):
         trigger_keywords = keyword_config.get("trigger_keywords", ["以图搜图"])
         # 确保触发关键词是列表格式，如果为空或无效则使用默认值
         if isinstance(trigger_keywords, list) and trigger_keywords:
-            self.trigger_keywords = [kw.strip() for kw in trigger_keywords if kw and kw.strip()]
+            self.trigger_keywords = [
+                kw.strip() for kw in trigger_keywords if kw and kw.strip()
+            ]
         else:
             self.trigger_keywords = ["以图搜图"]
         self.auto_send_text_results = config.get("auto_send_text_results", False)
@@ -198,7 +220,7 @@ class ReverseSearcherPlugin(Star):
             proxies=config.get("proxies", ""),
             timeout=60,
             default_params=default_params,
-            default_cookies=config.get("default_cookies", {})
+            default_cookies=config.get("default_cookies", {}),
         )
         self.state_handlers = {
             "waiting_text_confirm": self._handle_waiting_text_confirm,
@@ -210,13 +232,14 @@ class ReverseSearcherPlugin(Star):
         # 注册 LLM 工具
         try:
             from .ReverseSearcher.tools.search_tools import register_search_tools
+
             register_search_tools(self)
             logger.info("[ReverseSearcher] LLM 搜图工具注册完成")
         except Exception as e:
             logger.error(f"[ReverseSearcher] 工具注册失败: {e}")
             import traceback
-            traceback.print_exc()
 
+            traceback.print_exc()
 
     @staticmethod
     def _is_safe_url(url: str) -> bool:
@@ -225,110 +248,117 @@ class ReverseSearcherPlugin(Star):
         """
         try:
             parsed = urlparse(url)
-            if parsed.scheme not in ('http', 'https'):
+            if parsed.scheme not in ("http", "https"):
                 return False
-            
+
             hostname = parsed.hostname
             if not hostname:
                 return False
-                
+
             # 获取 IP 地址
             try:
                 addr_info = socket.getaddrinfo(hostname, None)
             except socket.gaierror:
                 return False
-                
+
             for family, socktype, proto, canonname, sockaddr in addr_info:
                 ip_str = sockaddr[0]
                 ip = ipaddress.ip_address(ip_str)
                 # 禁止以下类型的 IP
-                if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast:
+                if (
+                    ip.is_private
+                    or ip.is_loopback
+                    or ip.is_link_local
+                    or ip.is_multicast
+                ):
                     # logger.warning(f"检测到不安全的 IP 地址: {ip_str} ({hostname})")
                     return False
-            
+
             return True
-        except Exception as e:
+        except Exception:
             # logger.warning(f"URL 安全检查失败: {e}")
             return False
 
-    async def _fetch_reply_images_via_api(self, event: AstrMessageEvent, reply_id: str) -> List[io.BytesIO]:
+    async def _fetch_reply_images_via_api(
+        self, event: AstrMessageEvent, reply_id: str
+    ) -> list[io.BytesIO]:
         """通过 OneBot API 获取被引用消息中的图片"""
         images = []
         try:
             # 尝试获取底层 client 并调用 get_msg API
             client = None
-            
+
             # 方式1：从 event.raw_event 获取 bot 实例
-            if hasattr(event, 'raw_event') and event.raw_event:
+            if hasattr(event, "raw_event") and event.raw_event:
                 raw = event.raw_event
-                if hasattr(raw, 'bot'):
+                if hasattr(raw, "bot"):
                     client = raw.bot
-                elif hasattr(raw, '_bot'):
+                elif hasattr(raw, "_bot"):
                     client = raw._bot
-            
+
             # 方式2：从 context 获取
-            if not client and hasattr(self, 'context') and self.context:
+            if not client and hasattr(self, "context") and self.context:
                 # AstrBot 3.4+
-                if hasattr(self.context, 'get_platform_client'):
+                if hasattr(self.context, "get_platform_client"):
                     client = self.context.get_platform_client()
-                elif hasattr(self.context, 'platform_manager'):
+                elif hasattr(self.context, "platform_manager"):
                     pm = self.context.platform_manager
-                    if hasattr(pm, 'get_client'):
-                        client = pm.get_client('aiocqhttp')
-            
+                    if hasattr(pm, "get_client"):
+                        client = pm.get_client("aiocqhttp")
+
             if not client:
                 return images
-            
+
             # 调用 get_msg API
             result = None
-            if hasattr(client, 'call_api'):
-                result = await client.call_api('get_msg', message_id=int(reply_id))
-            elif hasattr(client, 'get_msg'):
+            if hasattr(client, "call_api"):
+                result = await client.call_api("get_msg", message_id=int(reply_id))
+            elif hasattr(client, "get_msg"):
                 result = await client.get_msg(message_id=int(reply_id))
-            
+
             if not result:
                 return images
-            
+
             # 解析返回的消息
             message_content = None
             if isinstance(result, dict):
-                message_content = result.get('message', [])
-            elif hasattr(result, 'message'):
+                message_content = result.get("message", [])
+            elif hasattr(result, "message"):
                 message_content = result.message
-            
+
             if not message_content:
                 return images
-            
+
             urls = []
             for seg in message_content:
                 seg_type = None
                 seg_data = None
-                
+
                 if isinstance(seg, dict):
-                    seg_type = seg.get('type')
-                    seg_data = seg.get('data', {})
-                elif hasattr(seg, 'type'):
+                    seg_type = seg.get("type")
+                    seg_data = seg.get("data", {})
+                elif hasattr(seg, "type"):
                     seg_type = seg.type
-                    seg_data = getattr(seg, 'data', {})
-                
-                if seg_type == 'image':
+                    seg_data = getattr(seg, "data", {})
+
+                if seg_type == "image":
                     img_url = None
                     if isinstance(seg_data, dict):
-                        img_url = seg_data.get('url') or seg_data.get('file')
-                    elif hasattr(seg_data, 'url'):
+                        img_url = seg_data.get("url") or seg_data.get("file")
+                    elif hasattr(seg_data, "url"):
                         img_url = seg_data.url
-                    
+
                     if img_url and self._is_safe_url(img_url):
                         urls.append(img_url)
-            
+
             if urls:
                 images = await self.get_imgs(urls)
         except Exception as e:
             logger.warning(f"通过 API 获取被引用消息失败: {e}")
-        
+
         return images
 
-    async def _collect_input_images(self, event: AstrMessageEvent) -> List[io.BytesIO]:
+    async def _collect_input_images(self, event: AstrMessageEvent) -> list[io.BytesIO]:
         """收集图片（BytesIO格式），支持直接发送和引用回复"""
         images = []
 
@@ -341,20 +371,20 @@ class ReverseSearcherPlugin(Star):
 
         # 2. 检查引用回复
         reply_id = None
-        raw_evt = getattr(event, 'raw_event', None)
+        raw_evt = getattr(event, "raw_event", None)
         if raw_evt and isinstance(raw_evt, dict):
-            msg_segs = raw_evt.get('message', [])
+            msg_segs = raw_evt.get("message", [])
             if isinstance(msg_segs, list):
                 for seg in msg_segs:
-                    if seg.get('type') == 'reply':
-                        reply_id = seg.get('data', {}).get('id')
+                    if seg.get("type") == "reply":
+                        reply_id = seg.get("data", {}).get("id")
                         break
 
         if reply_id and not images:
             fetched = await self._fetch_reply_images_via_api(event, reply_id)
             if fetched:
                 images.extend(fetched)
-        
+
         return images
 
     async def cleanup_loop(self):
@@ -368,8 +398,9 @@ class ReverseSearcherPlugin(Star):
             await asyncio.sleep(600)
             now = time.time()
             to_delete = [
-                user_id for user_id, state in list(self.user_states.items())
-                if now - state['timestamp'] > self.search_params_timeout
+                user_id
+                for user_id, state in list(self.user_states.items())
+                if now - state["timestamp"] > self.search_params_timeout
             ]
             for user_id in to_delete:
                 del self.user_states[user_id]
@@ -382,7 +413,7 @@ class ReverseSearcherPlugin(Star):
             无
         """
         await self.client.aclose()
-        if hasattr(self, 'cleanup_task'):
+        if hasattr(self, "cleanup_task"):
             self.cleanup_task.cancel()
 
     async def _download_img(self, url: str):
@@ -406,7 +437,7 @@ class ReverseSearcherPlugin(Star):
             pass
         return None
 
-    async def get_imgs(self, img_urls: List[str]) -> List[io.BytesIO]:
+    async def get_imgs(self, img_urls: list[str]) -> list[io.BytesIO]:
         """
         批量并发下载多张图片
 
@@ -460,6 +491,7 @@ class ReverseSearcherPlugin(Star):
         异常:
             无
         """
+
         def create_engine_intro_image():
             width = 1000
             cell_height = 50
@@ -468,22 +500,63 @@ class ReverseSearcherPlugin(Star):
             table_height = header_height + cell_height * len(self.available_engines)
             height = title_height + table_height + 25
             border_width = 2
-            
+
             def rounded_rectangle(draw, xy, radius, fill=None, outline=None, width=1):
                 x1, y1, x2, y2 = xy
                 diameter = 2 * radius
-                draw.rectangle([x1 + radius, y1, x2 - radius, y2], fill=fill, outline=outline, width=width)
-                draw.rectangle([x1, y1 + radius, x2, y2 - radius], fill=fill, outline=outline, width=width)
-                draw.pieslice([x1, y1, x1 + diameter, y1 + diameter], 180, 270, fill=fill, outline=outline, width=width)
-                draw.pieslice([x2 - diameter, y1, x2, y1 + diameter], 270, 360, fill=fill, outline=outline, width=width)
-                draw.pieslice([x1, y2 - diameter, x1 + diameter, y2], 90, 180, fill=fill, outline=outline, width=width)
-                draw.pieslice([x2 - diameter, y2 - diameter, x2, y2], 0, 90, fill=fill, outline=outline, width=width)
+                draw.rectangle(
+                    [x1 + radius, y1, x2 - radius, y2],
+                    fill=fill,
+                    outline=outline,
+                    width=width,
+                )
+                draw.rectangle(
+                    [x1, y1 + radius, x2, y2 - radius],
+                    fill=fill,
+                    outline=outline,
+                    width=width,
+                )
+                draw.pieslice(
+                    [x1, y1, x1 + diameter, y1 + diameter],
+                    180,
+                    270,
+                    fill=fill,
+                    outline=outline,
+                    width=width,
+                )
+                draw.pieslice(
+                    [x2 - diameter, y1, x2, y1 + diameter],
+                    270,
+                    360,
+                    fill=fill,
+                    outline=outline,
+                    width=width,
+                )
+                draw.pieslice(
+                    [x1, y2 - diameter, x1 + diameter, y2],
+                    90,
+                    180,
+                    fill=fill,
+                    outline=outline,
+                    width=width,
+                )
+                draw.pieslice(
+                    [x2 - diameter, y2 - diameter, x2, y2],
+                    0,
+                    90,
+                    fill=fill,
+                    outline=outline,
+                    width=width,
+                )
 
-            img = Image.new('RGB', (width, height), COLOR_THEME["bg"])
+            img = Image.new("RGB", (width, height), COLOR_THEME["bg"])
             draw = ImageDraw.Draw(img)
             workspace_root = Path(__file__).parent
             try:
-                font_path = str(workspace_root / "ReverseSearcher/resource/font/NotoSansSC-Regular.otf")
+                font_path = str(
+                    workspace_root
+                    / "ReverseSearcher/resource/font/NotoSansSC-Regular.otf"
+                )
                 title_font = ImageFont.truetype(font_path, 24)
                 header_font = ImageFont.truetype(font_path, 18)
                 body_font = ImageFont.truetype(font_path, 16)
@@ -491,30 +564,67 @@ class ReverseSearcherPlugin(Star):
                 title_font = ImageFont.load_default()
                 header_font = ImageFont.load_default()
                 body_font = ImageFont.load_default()
-            rounded_rectangle(draw, [20, 15, width - 20, title_height - 5], 10, fill=COLOR_THEME["header_bg"])
+            rounded_rectangle(
+                draw,
+                [20, 15, width - 20, title_height - 5],
+                10,
+                fill=COLOR_THEME["header_bg"],
+            )
             title = "可用搜索引擎"
-            title_width = draw.textlength(title, font=title_font) if hasattr(draw, 'textlength') else title_font.getsize(title)[0]
+            title_width = (
+                draw.textlength(title, font=title_font)
+                if hasattr(draw, "textlength")
+                else title_font.getsize(title)[0]
+            )
             title_x = (width - title_width) // 2
-            draw.text((title_x, 25), title, font=title_font, fill=COLOR_THEME["header_text"])
+            draw.text(
+                (title_x, 25), title, font=title_font, fill=COLOR_THEME["header_text"]
+            )
             table_x = 20
             table_width = width - 40
-            col_widths = [int(table_width * 0.15), int(table_width * 0.40), int(table_width * 0.20), int(table_width * 0.25)]
+            col_widths = [
+                int(table_width * 0.15),
+                int(table_width * 0.40),
+                int(table_width * 0.20),
+                int(table_width * 0.25),
+            ]
             table_y = title_height + 10
-            table_bottom = table_y + header_height + cell_height * len(self.available_engines)
-            draw.rectangle([table_x, table_y, table_x + sum(col_widths), table_y + header_height], fill=COLOR_THEME["table_header"])
+            table_bottom = (
+                table_y + header_height + cell_height * len(self.available_engines)
+            )
+            draw.rectangle(
+                [table_x, table_y, table_x + sum(col_widths), table_y + header_height],
+                fill=COLOR_THEME["table_header"],
+            )
             y = table_y + header_height
             for idx, engine in enumerate(self.available_engines):
                 if engine not in ENGINE_INFO:
                     continue
-                row_bg = COLOR_THEME["cell_bg_even"] if idx % 2 == 0 else COLOR_THEME["cell_bg_odd"]
-                draw.rectangle([table_x, y, table_x + sum(col_widths), y + cell_height], fill=row_bg)
+                row_bg = (
+                    COLOR_THEME["cell_bg_even"]
+                    if idx % 2 == 0
+                    else COLOR_THEME["cell_bg_odd"]
+                )
+                draw.rectangle(
+                    [table_x, y, table_x + sum(col_widths), y + cell_height],
+                    fill=row_bg,
+                )
                 y += cell_height
             headers = ["引擎", "网址", "二次元图片专用", "关键词"]
             x = table_x
             for i, header in enumerate(headers):
-                text_width = draw.textlength(header, font=header_font) if hasattr(draw, 'textlength') else header_font.getsize(header)[0]
+                text_width = (
+                    draw.textlength(header, font=header_font)
+                    if hasattr(draw, "textlength")
+                    else header_font.getsize(header)[0]
+                )
                 text_x = x + (col_widths[i] - text_width) // 2
-                draw.text((text_x, table_y + (header_height - 18) // 2), header, font=header_font, fill=COLOR_THEME["text"])
+                draw.text(
+                    (text_x, table_y + (header_height - 18) // 2),
+                    header,
+                    font=header_font,
+                    fill=COLOR_THEME["text"],
+                )
                 x += col_widths[i]
             y = table_y + header_height
             for idx, engine in enumerate(self.available_engines):
@@ -522,49 +632,101 @@ class ReverseSearcherPlugin(Star):
                     continue
                 info = ENGINE_INFO[engine]
                 x = table_x
-                draw.text((x + 15, y + (cell_height - 16) // 2), engine, font=body_font, fill=COLOR_THEME["text"])
+                draw.text(
+                    (x + 15, y + (cell_height - 16) // 2),
+                    engine,
+                    font=body_font,
+                    fill=COLOR_THEME["text"],
+                )
                 x += col_widths[0]
-                draw.text((x + 15, y + (cell_height - 16) // 2), info["url"], font=body_font, fill=COLOR_THEME["url"])
+                draw.text(
+                    (x + 15, y + (cell_height - 16) // 2),
+                    info["url"],
+                    font=body_font,
+                    fill=COLOR_THEME["url"],
+                )
                 x += col_widths[1]
                 mark = "✓" if info["anime"] else "×"
-                mark_color = COLOR_THEME["success"] if info["anime"] else COLOR_THEME["fail"]
-                mark_width = draw.textlength(mark, font=header_font) if hasattr(draw, 'textlength') else header_font.getsize(mark)[0]
-                draw.text((x + (col_widths[2] - mark_width) // 2, y + (cell_height - 18) // 2), mark, font=header_font, fill=mark_color)
+                mark_color = (
+                    COLOR_THEME["success"] if info["anime"] else COLOR_THEME["fail"]
+                )
+                mark_width = (
+                    draw.textlength(mark, font=header_font)
+                    if hasattr(draw, "textlength")
+                    else header_font.getsize(mark)[0]
+                )
+                draw.text(
+                    (
+                        x + (col_widths[2] - mark_width) // 2,
+                        y + (cell_height - 18) // 2,
+                    ),
+                    mark,
+                    font=header_font,
+                    fill=mark_color,
+                )
                 x += col_widths[2]
                 keyword = engine
                 for custom_keyword, engine_name in self.engine_keywords.items():
                     if engine_name == engine:
                         keyword = custom_keyword
                         break
-                draw.text((x + 15, y + (cell_height - 16) // 2), keyword, font=body_font, fill=COLOR_THEME["hint"])
+                draw.text(
+                    (x + 15, y + (cell_height - 16) // 2),
+                    keyword,
+                    font=body_font,
+                    fill=COLOR_THEME["hint"],
+                )
                 y += cell_height
-            draw.rectangle([table_x, table_y, table_x + sum(col_widths), table_bottom], outline=COLOR_THEME["border"], width=border_width)
+            draw.rectangle(
+                [table_x, table_y, table_x + sum(col_widths), table_bottom],
+                outline=COLOR_THEME["border"],
+                width=border_width,
+            )
             for i in range(1, len(self.available_engines) + 1):
                 line_y = table_y + header_height + cell_height * i
                 if i < len(self.available_engines):
-                    draw.line([(table_x, line_y), (table_x + sum(col_widths), line_y)], fill=COLOR_THEME["border"], width=border_width)
-            draw.line([(table_x, table_y + header_height), (table_x + sum(col_widths), table_y + header_height)], fill=COLOR_THEME["border"], width=border_width)
+                    draw.line(
+                        [(table_x, line_y), (table_x + sum(col_widths), line_y)],
+                        fill=COLOR_THEME["border"],
+                        width=border_width,
+                    )
+            draw.line(
+                [
+                    (table_x, table_y + header_height),
+                    (table_x + sum(col_widths), table_y + header_height),
+                ],
+                fill=COLOR_THEME["border"],
+                width=border_width,
+            )
             col_x = table_x
             for i in range(len(col_widths) - 1):
                 col_x += col_widths[i]
-                draw.line([(col_x, table_y), (col_x, table_bottom)], fill=COLOR_THEME["border"], width=border_width)
+                draw.line(
+                    [(col_x, table_y), (col_x, table_bottom)],
+                    fill=COLOR_THEME["border"],
+                    width=border_width,
+                )
             output = io.BytesIO()
             img.save(output, format="JPEG", quality=85)
             output.seek(0)
             return output.getvalue()
-        
+
         img_bytes = await asyncio.to_thread(create_engine_intro_image)
         async for result in self._send_image(event, img_bytes):
-                yield result
+            yield result
 
-    async def _check_and_ask_mode(self, event: AstrMessageEvent, engine: str, img_buffer: io.BytesIO, user_id: str):
+    async def _check_and_ask_mode(
+        self, event: AstrMessageEvent, engine: str, img_buffer: io.BytesIO, user_id: str
+    ):
         """
         检查是否需要询问模式（预留接口，当前未使用）
         返回 True 表示已拦截并发送询问，False 表示直接继续
         """
         return False
 
-    async def _perform_search(self, event: AstrMessageEvent, engine: str, img_buffer: io.BytesIO):
+    async def _perform_search(
+        self, event: AstrMessageEvent, engine: str, img_buffer: io.BytesIO
+    ):
         """
         调用模型执行图片反向搜索（含异常提示图渲染）
         参数:
@@ -620,7 +782,9 @@ class ReverseSearcherPlugin(Star):
                 node = Node(
                     name=sender_name,
                     uin=sender_id,
-                    content=[Plain(f"[  搜索结果 {i + 1} / {len(text_parts)}  ]\n\n{part}")]
+                    content=[
+                        Plain(f"[  搜索结果 {i + 1} / {len(text_parts)}  ]\n\n{part}")
+                    ],
                 )
                 nodes = Nodes([node])
                 try:
@@ -643,22 +807,30 @@ class ReverseSearcherPlugin(Star):
             无
         """
         if not self.available_engines:
-            yield event.plain_result("当前没有可用的搜索引擎，请联系管理员在配置中启用至少一个引擎")
+            yield event.plain_result(
+                "当前没有可用的搜索引擎，请联系管理员在配置中启用至少一个引擎"
+            )
             return
         example_engine = self.available_engines[0]
         # 已经提醒过就不再发完整提示，只发简短引导
-        if state.get('prompted'):
+        if state.get("prompted"):
             return
-        if not state.get('engine'):
+        if not state.get("engine"):
             async for result in self._send_engine_intro(event):
                 yield result
-        if state.get('preloaded_img'):
-            yield event.plain_result(f"图片已接收，请选择引擎（回复引擎名或关键词，如 {example_engine} 或 a），{self.search_params_timeout}秒内有效")
-        elif state.get('engine'):
-            yield event.plain_result(f"已选择引擎: {state['engine']}，请发送图片或图片URL，{self.search_params_timeout}秒内有效")
+        if state.get("preloaded_img"):
+            yield event.plain_result(
+                f"图片已接收，请选择引擎（回复引擎名或关键词，如 {example_engine} 或 a），{self.search_params_timeout}秒内有效"
+            )
+        elif state.get("engine"):
+            yield event.plain_result(
+                f"已选择引擎: {state['engine']}，请发送图片或图片URL，{self.search_params_timeout}秒内有效"
+            )
         else:
-            yield event.plain_result(f"请选择引擎（回复引擎名或关键词，如 {example_engine} 或 a）并发送图片，{self.search_params_timeout}秒内有效")
-        state['prompted'] = True
+            yield event.plain_result(
+                f"请选择引擎（回复引擎名或关键词，如 {example_engine} 或 a）并发送图片，{self.search_params_timeout}秒内有效"
+            )
+        state["prompted"] = True
 
     async def _handle_timeout(self, event: AstrMessageEvent, user_id: str):
         """
@@ -682,10 +854,10 @@ class ReverseSearcherPlugin(Star):
     def _get_engine_by_name(self, engine_name: str) -> str:
         """
         根据引擎名称或关键词获取实际的引擎标识符
-        
+
         参数:
             engine_name: 引擎名称或关键词
-            
+
         返回:
             str: 实际的引擎标识符，如果未找到则返回原名称
         """
@@ -697,7 +869,7 @@ class ReverseSearcherPlugin(Star):
     def _clear_waiting_states_before_search(self, user_id: str):
         """
         在执行搜索前清除用户等待状态
-        
+
         参数:
             user_id: 用户ID
 
@@ -710,12 +882,14 @@ class ReverseSearcherPlugin(Star):
         if user_id in self.user_states:
             del self.user_states[user_id]
 
-    async def _handle_waiting_text_confirm(self, event: AstrMessageEvent, state: dict, user_id: str):
+    async def _handle_waiting_text_confirm(
+        self, event: AstrMessageEvent, state: dict, user_id: str
+    ):
         """
         等待用户是否主动获取文本格式结果
         """
         message_text = get_message_text(event.message_obj).strip()
-        
+
         if time.time() - state["timestamp"] > self.text_confirm_timeout:
             del self.user_states[user_id]
             event.stop_event()
@@ -730,12 +904,14 @@ class ReverseSearcherPlugin(Star):
                 sender_id = int(sender_id)
             except Exception:
                 pass
-            
+
             for i, part in enumerate(text_parts):
                 node = Node(
                     name=sender_name,
                     uin=sender_id,
-                    content=[Plain(f"[  搜索结果 {i + 1} / {len(text_parts)}  ]\n\n{part}")]
+                    content=[
+                        Plain(f"[  搜索结果 {i + 1} / {len(text_parts)}  ]\n\n{part}")
+                    ],
                 )
                 nodes = Nodes([node])
                 try:
@@ -748,7 +924,9 @@ class ReverseSearcherPlugin(Star):
 
     # ── 统一搜索解析器 ──────────────────────────────
 
-    async def _resolve_and_search(self, event: AstrMessageEvent, state: dict, user_id: str):
+    async def _resolve_and_search(
+        self, event: AstrMessageEvent, state: dict, user_id: str
+    ):
         """统一解析用户输入，尝试补全缺失参数并执行搜索
 
         三个等待处理器共享此核心逻辑：
@@ -757,7 +935,9 @@ class ReverseSearcherPlugin(Star):
         - 齐了 → 执行搜索
         - 缺 → 提示并更新状态
         """
-        example_engine = self.available_engines[0] if self.available_engines else "animetrace"
+        example_engine = (
+            self.available_engines[0] if self.available_engines else "animetrace"
+        )
         message_text = get_message_text(event.message_obj).strip()
         collected_imgs = await self._collect_input_images(event)
 
@@ -808,16 +988,21 @@ class ReverseSearcherPlugin(Star):
             # 齐了，执行搜索
             self._clear_waiting_states_before_search(user_id)
             try:
-                async for result in self._perform_search(event, state["engine"], state["preloaded_img"]):
+                async for result in self._perform_search(
+                    event, state["engine"], state["preloaded_img"]
+                ):
                     yield result
             except Exception as e:
-                logger.warning(f"[ReverseSearcher] 搜索失败: {type(e).__name__}: {e}", exc_info=True)
+                logger.warning(
+                    f"[ReverseSearcher] 搜索失败: {type(e).__name__}: {e}",
+                    exc_info=True,
+                )
                 yield event.plain_result(f"搜索失败: {e}")
             return
 
         # 4. 缺参数 → 提示（已提醒过则跳过）
         state["timestamp"] = time.time()
-        if not state.get('prompted'):
+        if not state.get("prompted"):
             if has_engine:
                 yield event.plain_result(
                     f"已选择引擎: {state['engine']}，请发送图片，{self.search_params_timeout}秒内有效"
@@ -827,16 +1012,16 @@ class ReverseSearcherPlugin(Star):
                     f"图片已接收，请回复有效的引擎名（如{example_engine}）"
                 )
             else:
-                yield event.plain_result(
-                    f"请提供引擎名（如{example_engine}）和图片"
-                )
-            state['prompted'] = True
+                yield event.plain_result(f"请提供引擎名（如{example_engine}）和图片")
+            state["prompted"] = True
         async for result in self._send_engine_prompt(event, state):
             yield result
 
     # ── 薄封装处理器 ──────────────────────────────
 
-    async def _handle_waiting_engine(self, event: AstrMessageEvent, state: dict, user_id: str):
+    async def _handle_waiting_engine(
+        self, event: AstrMessageEvent, state: dict, user_id: str
+    ):
         async for result in self._resolve_and_search(event, state, user_id):
             yield result
         event.stop_event()
@@ -846,28 +1031,30 @@ class ReverseSearcherPlugin(Star):
             yield result
         event.stop_event()
 
-    async def _handle_waiting_image(self, event: AstrMessageEvent, state: dict, user_id: str):
+    async def _handle_waiting_image(
+        self, event: AstrMessageEvent, state: dict, user_id: str
+    ):
         async for result in self._resolve_and_search(event, state, user_id):
             yield result
         event.stop_event()
 
     async def _parse_initial_command(self, event: AstrMessageEvent):
         """
-        解析初始搜索命令中的引擎名称和图片
+                解析初始搜索命令中的引擎名称和图片
 
-        参数:
-            event: 消息事件对象
+                参数:
+                    event: 消息事件对象
 
-        返回:
-            tuple: (引擎名称或None, 图片缓冲区或None, 错误信息字典或None)
-                - 引擎名称: 有效的引擎名称或None
-                - 图片缓冲区: 图片数据的BytesIO对象或None
-                - 错误信息: 包含错误类型和相关信息的字典或None
-                    {
-'type': 'invalid_engine' | 'disabled_engine',
-'engine_name': 输入的引擎名称,
-'message': 错误提示消息
-                    }
+                返回:
+                    tuple: (引擎名称或None, 图片缓冲区或None, 错误信息字典或None)
+                        - 引擎名称: 有效的引擎名称或None
+                        - 图片缓冲区: 图片数据的BytesIO对象或None
+                        - 错误信息: 包含错误类型和相关信息的字典或None
+                            {
+        'type': 'invalid_engine' | 'disabled_engine',
+        'engine_name': 输入的引擎名称,
+        'message': 错误提示消息
+                            }
         """
         example_engine = self.available_engines[0] if self.available_engines else None
         message_text = get_message_text(event.message_obj)
@@ -887,34 +1074,36 @@ class ReverseSearcherPlugin(Star):
                     engine = actual_engine
                 elif actual_engine in ALL_ENGINES:
                     error = {
-'type': 'disabled_engine',
-'engine_name': potential_engine,
-'message': f"引擎 '{potential_engine}' 已被禁用，请联系管理员在配置中启用或选择其他引擎（如{example_engine}）"
+                        "type": "disabled_engine",
+                        "engine_name": potential_engine,
+                        "message": f"引擎 '{potential_engine}' 已被禁用，请联系管理员在配置中启用或选择其他引擎（如{example_engine}）",
                     }
                 else:
                     error = {
-'type': 'invalid_engine',
-'engine_name': potential_engine,
-'message': f"引擎 '{potential_engine}' 不存在，请提供有效的引擎名（如{example_engine}）"
+                        "type": "invalid_engine",
+                        "engine_name": potential_engine,
+                        "message": f"引擎 '{potential_engine}' 不存在，请提供有效的引擎名（如{example_engine}）",
                     }
                 if len(parts) > 2 and is_image_url(parts[2]):
                     url_from_text = parts[2]
         # Try to collect images using new logic
         img_buffer = None
         collected_imgs = await self._collect_input_images(event)
-        
+
         # Original logic fallback specifically for text-embedded URL which _collect_input_images might not prioritizing if not in image component
         # But _collect_input_images does check get_img_urls.
         # But here we also support "engine image_url" syntax in text parts[1] or parts[2].
-        
+
         if collected_imgs:
             img_buffer = collected_imgs[0]
         elif url_from_text:
-             img_buffer = await self._download_img(url_from_text)
-             
+            img_buffer = await self._download_img(url_from_text)
+
         return engine, img_buffer, error
 
-    async def _handle_initial_search_command(self, event: AstrMessageEvent, user_id: str):
+    async def _handle_initial_search_command(
+        self, event: AstrMessageEvent, user_id: str
+    ):
         """
         处理最初 "以图搜图" 命令自动分流与预处理
 
@@ -929,7 +1118,9 @@ class ReverseSearcherPlugin(Star):
             无
         """
         if not self.available_engines:
-            yield event.plain_result("当前没有可用的搜索引擎，请联系管理员在配置中启用至少一个引擎")
+            yield event.plain_result(
+                "当前没有可用的搜索引擎，请联系管理员在配置中启用至少一个引擎"
+            )
             event.stop_event()
             return
         if user_id in self.user_states:
@@ -940,12 +1131,12 @@ class ReverseSearcherPlugin(Star):
                 "step": "waiting_both",
                 "timestamp": time.time(),
                 "preloaded_img": img_buffer,
-                "engine": None
+                "engine": None,
             }
-            if error['type'] == 'invalid_engine':
-                state["invalid_attempts"] = 1  
+            if error["type"] == "invalid_engine":
+                state["invalid_attempts"] = 1
             self.user_states[user_id] = state
-            yield event.plain_result(error['message'])
+            yield event.plain_result(error["message"])
             async for result in self._send_engine_prompt(event, state):
                 yield result
             event.stop_event()
@@ -956,7 +1147,10 @@ class ReverseSearcherPlugin(Star):
                 async for result in self._perform_search(event, engine, img_buffer):
                     yield result
             except Exception as e:
-                logger.warning(f"[ReverseSearcher] 搜索失败: {type(e).__name__}: {e}", exc_info=True)
+                logger.warning(
+                    f"[ReverseSearcher] 搜索失败: {type(e).__name__}: {e}",
+                    exc_info=True,
+                )
                 yield event.plain_result(f"搜索失败: {e}")
             event.stop_event()
             return
@@ -964,7 +1158,7 @@ class ReverseSearcherPlugin(Star):
             "step": "waiting_both",
             "timestamp": time.time(),
             "preloaded_img": img_buffer,
-            "engine": engine
+            "engine": engine,
         }
         self.user_states[user_id] = state
         async for result in self._send_engine_prompt(event, state):
@@ -978,9 +1172,12 @@ class ReverseSearcherPlugin(Star):
         """
         user_id = event.get_sender_id()
         message_text = get_message_text(event.message_obj)
-        
+
         # 检查是否以任意一个触发关键词开头（且开关开启）
-        if any(message_text.strip().startswith(keyword) for keyword in self.trigger_keywords):
+        if any(
+            message_text.strip().startswith(keyword)
+            for keyword in self.trigger_keywords
+        ):
             if not self.enable_keyword_trigger:
                 return  # 关键词触发已关闭
             async for result in self._handle_initial_search_command(event, user_id):
@@ -989,7 +1186,10 @@ class ReverseSearcherPlugin(Star):
         state = self.user_states.get(user_id)
         if not state:
             return
-        if state.get("step") == "waiting_text_confirm" and time.time() - state["timestamp"] > self.text_confirm_timeout:
+        if (
+            state.get("step") == "waiting_text_confirm"
+            and time.time() - state["timestamp"] > self.text_confirm_timeout
+        ):
             del self.user_states[user_id]
             event.stop_event()
             return
