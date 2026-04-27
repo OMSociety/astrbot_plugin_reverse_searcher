@@ -4,7 +4,7 @@
 [![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A5v4-green.svg)](https://github.com/AstrBotDevs/AstrBot)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 
-支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 五大引擎的图片反向搜索。搜索结果自动渲染为精美卡片图片，纯 PIL 手绘零外部依赖，同时提供 LLM 主动搜图工具。
+支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 五大引擎的图片反向搜索。搜索结果自动渲染为精美卡片图片，同时提供 LLM 主动搜图工具。
 
 [快速开始](#-快速开始) • [搜索引擎](#-支持的搜索引擎) • [配置项](#-配置项说明) • [LLM 工具](#-llm-可调用工具) • [更新日志](CHANGELOG.md)
 
@@ -25,8 +25,6 @@
 - 🖼️ **源图 + 结果缩略图同框** — 待搜索图片和匹配结果并列展示，缩略图自动保持宽高比
 - 📊 **相似度彩色进度条** — ≥90% 绿 / ≥70% 橙 / <70% 红，直观
 - 🤖 **AI 检测徽章** — AnimeTrace 结果直接标注是否 AI 生成
-- 🧩 **纯 PIL 手绘，零依赖** — 不装 matplotlib、不装 opencv，只有 Pillow
-
 ---
 
 ## 🚀 快速开始
