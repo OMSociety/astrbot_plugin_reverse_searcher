@@ -28,7 +28,7 @@ class BaseSearchReq(Network, ABC, Generic[T]):
     ):
         if network is not None:
             # 使用外部传入的 Network 实例（复用其 client）
-            self._client = network._client
+            self._client = network.client
             self._owned_client = False
         else:
             super().__init__(**request_kwargs)

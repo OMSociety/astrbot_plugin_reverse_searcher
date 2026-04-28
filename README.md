@@ -62,15 +62,13 @@ pip install -r requirements.txt
 
 ## ⚙️ 配置项说明
 
+### 顶层配置
+
 | 配置项 | 类型 | 默认值 | 说明 |
 |:----|:----|:----|:----|
 | `enable_keyword_trigger` | bool | `true` | 关闭后不再响应关键词，但 LLM 工具仍可用 |
-| `serpapi_key` | string | - | SerpAPI Key，从 [serpapi.com](https://serpapi.com/) 申请 |
-| `zenserp_key` | string | - | 备用 SerpAPI，从 [zenserp.com](https://zenserp.com/) 申请 |
-| `api_key` | string | - | SauceNAO API Key，从 [saucenao.com](https://saucenao.com/user.php) 申请 |
-| `cookies` | string | - | 仅使用 ExHentai 时需要 |
-| `proxies` | string | - | 代理服务器地址 |
-| `auto_send_text_results` | bool | `false` | 搜索完成后自动发送文本结果 |
+| `proxies` | string | - | 代理服务器地址，如 `http://127.0.0.1:7890` |
+| `auto_send_text_results` | bool | `false` | 搜索完成后自动发送文本结果，无需用户确认 |
 
 ### 超时配置 `timeout_settings`
 
@@ -79,13 +77,86 @@ pip install -r requirements.txt
 | `search_params_timeout` | int | `30` | 等待搜索参数的最大时间（秒） |
 | `text_confirm_timeout` | int | `30` | 等待确认结果格式的最大时间（秒） |
 
-### AnimeTrace 参数
+### 关键词 `keyword`
 
 | 子配置 | 类型 | 默认值 | 说明 |
 |:----|:----|:----|:----|
-| `model` | string | `full_game_model_kira` | 识别模型 |
+| `trigger_keywords` | list | `["以图搜图"]` | 触发搜索的关键词列表 |
+| `engine_keywords` | object | 见下 | 各搜索引擎的自定义别名 |
+
+**引擎别名 `keyword.engine_keywords`：**
+
+| 子配置 | 类型 | 默认值 | 说明 |
+|:----|:----|:----|:----|
+| `animetrace` | string | `a` | AnimeTrace 别名 |
+| `ehentai` | string | `e` | E-Hentai 别名 |
+| `google` | string | `g` | Google 别名 |
+| `yandex` | string | `y` | Yandex 别名 |
+| `saucenao` | string | `s` | SauceNAO 别名 |
+
+### 引擎启用 `available_apis`
+
+| 子配置 | 类型 | 默认值 | 说明 |
+|:----|:----|:----|:----|
+| `animetrace` | bool | `true` | 启用 AnimeTrace |
+| `ehentai` | bool | `true` | 启用 E-Hentai/ExHentai |
+| `google` | bool | `true` | 启用 Google Lens |
+| `yandex` | bool | `true` | 启用 Yandex |
+| `saucenao` | bool | `true` | 启用 SauceNAO |
+
+### 全局 Cookie `default_cookies`
+
+| 子配置 | 类型 | 默认值 | 说明 |
+|:----|:----|:----|:----|
+| `yandex` | string | - | Yandex 全局 Cookie |
+| `ehentai` | string | - | E-Hentai 全局 Cookie |
+
+### 引擎默认参数 `default_params`
+
+#### AnimeTrace `default_params.animetrace`
+
+| 子配置 | 类型 | 默认值 | 说明 |
+|:----|:----|:----|:----|
+| `model` | string | `full_game_model_kira` | 识别模型：`anime_model_lovelive` / `pre_stable` / `anime` / `full_game_model_kira` |
 | `is_multi` | bool | `false` | 多角色搜索模式 |
 | `ai_detect` | bool | `false` | AI 检测模式 |
+
+#### E-Hentai `default_params.ehentai`
+
+| 子配置 | 类型 | 默认值 | 说明 |
+|:----|:----|:----|:----|
+| `is_ex` | bool | `false` | 使用 ExHentai（需有效 Cookie） |
+| `covers` | bool | `false` | 包含封面搜索结果 |
+| `similar` | bool | `true` | 包含相似结果 |
+| `exp` | bool | `false` | 实验性搜索模式 |
+| `cookies` | string | - | E-Hentai Cookie，格式：`ipb_member_id=...; ipb_pass_hash=...; igneous=...` |
+
+#### Google `default_params.google`
+
+| 子配置 | 类型 | 默认值 | 说明 |
+|:----|:----|:----|:----|
+| `serpapi_key` | string | - | SerpAPI Key，从 [serpapi.com](https://serpapi.com/) 申请（推荐） |
+| `zenserp_key` | string | - | Zenserp Key（备用），从 [zenserp.com](https://zenserp.com/) 申请 |
+| `hl` | string | `zh-CN` | 界面语言代码 |
+| `country` | string | `HK` | 搜索地区代码 |
+| `max_results` | int | `10` | 最大返回结果数 |
+
+#### SauceNAO `default_params.saucenao`
+
+| 子配置 | 类型 | 默认值 | 说明 |
+|:----|:----|:----|:----|
+| `api_key` | string | - | SauceNAO API Key，从 [saucenao.com](https://saucenao.com/user.php) 申请 |
+| `hide` | int | `3` | 隐藏级别 |
+| `numres` | int | `5` | 返回结果数量 |
+| `minsim` | int | `30` | 最低相似度阈值 |
+| `output_type` | int | `2` | 输出类型（2=JSON） |
+
+#### Yandex `default_params.yandex`
+
+| 子配置 | 类型 | 默认值 | 说明 |
+|:----|:----|:----|:----|
+| `max_results` | int | `10` | 最大返回结果数 |
+| `use_ru_fallback` | bool | `true` | `.com` 失败时回退到 `yandex.ru` |
 
 ---
 

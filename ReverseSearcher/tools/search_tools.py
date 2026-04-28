@@ -89,7 +89,8 @@ def _format_search_result(result: any, engine: str) -> str:
     """格式化搜索结果为文本"""
     from ..engine_registry import ENGINE_REGISTRY
 
-    label = ENGINE_REGISTRY.get(engine, {}).label or engine
+    engine_def = ENGINE_REGISTRY.get(engine)
+    label = engine_def.label if engine_def else engine
 
     if result is None or result == "":
         return f"🔍 [{label}] 未找到结果"

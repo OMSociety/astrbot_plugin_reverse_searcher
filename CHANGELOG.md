@@ -10,6 +10,16 @@
 - **HTTP 客户端替换**：`google_lens_req.py` 中的 `requests` 同步调用全面替换为 `httpx.AsyncClient`，`_fetch` 方法改为 async，与项目异步架构保持一致
 - **代码风格统一**：全项目通过 ruff 0.15.12 格式化，统一缩进、引号、import 顺序等风格
 
+### 🐛 Bug 修复
+- **插件载入崩溃**：修复 `_conf_schema.json` 中 `default_cookies` 缺少 `items` 字段导致 AstrBot 解析配置时抛出 `KeyError`，插件无法启动
+- **群聊消息不触发**：移除 `PRIVATE_MESSAGE` 事件过滤器，新增 `GROUP_MESSAGE` handler，使关键词触发在群聊中正常工作
+- **缩进错误**：修复编辑时误删 `for` 循环导致的缩进错误
+
+### 🧹 清理
+- 清理 `types.py` 中未使用的 `DomainTag` / `SearchType` / `DomainInfo` 类定义
+- 移除 `main.py` 中未使用的 `_check_and_ask_mode` 存根方法
+- `except` 块补充 `logger.debug` 日志，避免静默吞异常
+
 ### 🧪 测试体系
 - **新增测试文件**：`test_model.py` + `test_google_lens_req.py`，共计 31 条用例
 - **31/31 全部通过**：覆盖数据模型构造、边界值、异步请求等核心场景

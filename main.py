@@ -716,15 +716,6 @@ class ReverseSearcherPlugin(Star):
         async for result in self._send_image(event, img_bytes):
             yield result
 
-    async def _check_and_ask_mode(
-        self, event: AstrMessageEvent, engine: str, img_buffer: io.BytesIO, user_id: str
-    ):
-        """
-        检查是否需要询问模式（预留接口，当前未使用）
-        返回 True 表示已拦截并发送询问，False 表示直接继续
-        """
-        return False
-
     async def _perform_search(
         self, event: AstrMessageEvent, engine: str, img_buffer: io.BytesIO
     ):
@@ -772,27 +763,29 @@ class ReverseSearcherPlugin(Star):
                 return
             if not result_text:
                 return  # 无结果，图片已经发过了，直接结束
-            text_parts = split_text_by_length(result_text)
-            sender_name = "图片搜索bot"
-            sender_id = event.get_self_id()
+            async for result in self._send_text_results(event, result_text):
+                yield result
+
+    async def _send_text_results(self, event, result_text):
+        """提取公共文本结果发送逻辑，避免与 _handle_waiting_text_confirm 重复"""
+        text_parts = split_text_by_length(result_text)
+        sender_name = "图片搜索bot"
+        sender_id = event.get_self_id()
+        try:
+            sender_id = int(sender_id)
+        except Exception:
+            logger.debug(f"sender_id 转 int 失败: {sender_id}")
+        for i, part in enumerate(text_parts):
+            node = Node(
+                name=sender_name,
+                uin=sender_id,
+                content=[Plain(f"[  搜索结果 {i + 1} / {len(text_parts)}  ]\n\n{part}")],
+            )
+            nodes = Nodes([node])
             try:
-                sender_id = int(sender_id)
-            except Exception:
-                logger.debug(f"sender_id 转 int 失败: {sender_id}")
-                pass
-            for i, part in enumerate(text_parts):
-                node = Node(
-                    name=sender_name,
-                    uin=sender_id,
-                    content=[
-                        Plain(f"[  搜索结果 {i + 1} / {len(text_parts)}  ]\n\n{part}")
-                    ],
-                )
-                nodes = Nodes([node])
-                try:
-                    await event.send(event.chain_result([nodes]))
-                except Exception as e:
-                    yield event.plain_result(f"发送搜索结果失败: {str(e)}")
+                await event.send(event.chain_result([nodes]))
+            except Exception as e:
+                yield event.plain_result(f"发送搜索结果失败: {str(e)}")
 
     async def _send_engine_prompt(self, event: AstrMessageEvent, state: dict):
         """
@@ -897,30 +890,17 @@ class ReverseSearcherPlugin(Star):
             event.stop_event()
             return
 
+        # Check for No/N/否
+        if message_text.lower() in ["否", "n", "no", "cancel"]:
+            del self.user_states[user_id]
+            yield event.plain_result("好的，已取消文本结果展示~")
+            event.stop_event()
+            return
+
         # Check for Yes/Y/是
         if message_text.lower() in ["是", "y"]:
-            text_parts = split_text_by_length(state["result_text"])
-            sender_name = "图片搜索bot"
-            sender_id = event.get_self_id()
-            try:
-                sender_id = int(sender_id)
-            except Exception:
-                logger.debug(f"sender_id 转 int 失败: {sender_id}")
-                pass
-
-            for i, part in enumerate(text_parts):
-                node = Node(
-                    name=sender_name,
-                    uin=sender_id,
-                    content=[
-                        Plain(f"[  搜索结果 {i + 1} / {len(text_parts)}  ]\n\n{part}")
-                    ],
-                )
-                nodes = Nodes([node])
-                try:
-                    await event.send(event.chain_result([nodes]))
-                except Exception as e:
-                    yield event.plain_result(f"发送搜索结果失败: {str(e)}")
+            async for result in self._send_text_results(event, state["result_text"]):
+                yield result
             del self.user_states[user_id]
             event.stop_event()
             return

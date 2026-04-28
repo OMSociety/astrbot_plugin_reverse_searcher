@@ -113,6 +113,24 @@
             }
         }
     },
+    "default_cookies": {
+        "description": "各引擎的默认Cookie（全局）",
+        "type": "object",
+        "hint": "为各引擎设置全局默认Cookie，如 {\"yandex\": \"cookie_str\", \"ehentai\": \"cookie_str\"}。引擎自身的cookies参数优先级更高。",
+        "items": {
+            "yandex": {
+                "description": "Yandex Cookie",
+                "type": "string",
+                "default": ""
+            },
+            "ehentai": {
+                "description": "E-Hentai Cookie",
+                "type": "string",
+                "default": ""
+            }
+        },
+        "default": {}
+    },
     "default_params": {
         "description": "默认参数",
         "type": "object",

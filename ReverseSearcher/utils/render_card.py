@@ -13,8 +13,14 @@ from ..engine_registry import ENGINE_REGISTRY
 # ── 字体 ────────────────────────────────────────────────
 
 
+_font_cache = None
+
+
 def _load_fonts() -> tuple:
-    """加载插件内置中文字体"""
+    """加载插件内置中文字体（模块级懒加载单例）"""
+    global _font_cache
+    if _font_cache is not None:
+        return _font_cache
     try:
         from pathlib import Path
 
@@ -27,10 +33,12 @@ def _load_fonts() -> tuple:
         title = ImageFont.truetype(heavy_font, 26)
         header_font = ImageFont.truetype(regular_font, 20)
         mono = ImageFont.truetype(regular_font, 14)
-        return small, body, title, header_font, mono
+        _font_cache = (small, body, title, header_font, mono)
+        return _font_cache
     except Exception:
         d = ImageFont.load_default()
-        return d, d, d, d, d
+        _font_cache = (d, d, d, d, d)
+        return _font_cache
 
 
 # ── 辅助函数 ────────────────────────────────────────────
