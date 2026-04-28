@@ -51,25 +51,73 @@ class BaseSearchReq(Network, ABC, Generic[T]):
             raise ValueError("File content is empty or None")
 
         hosts = [
+            # 格式: (upload_url, form_data, file_field_name, json_path_list_or_None)
+            (
+                "https://tmpfiles.org/api/v1/upload",
+                None,
+                "file",
+                ["data", "url"],
+            ),
+            (
+                "https://uguu.se/upload.php",
+                None,
+                "files[]",
+                ["files", 0, "url"],
+            ),
+            # 以下旧图床（纯文本响应）
             (
                 "https://litterbox.catbox.moe/resources/internals/api.php",
                 {"reqtype": "fileupload", "time": "1h"},
+                "fileToUpload",
+                None,
             ),
-            ("https://tmp.ninja/upload.php", {"reqtype": "fileupload"}),
+            (
+                "https://tmp.ninja/upload.php",
+                {"reqtype": "fileupload"},
+                "fileToUpload",
+                None,
+            ),
         ]
 
         last_error = None
-        for upload_url, data in hosts:
+        for upload_url, data, field_name, json_path in hosts:
             try:
                 resp = await self._client.post(
                     upload_url,
                     data=data,
-                    files={"fileToUpload": ("image.jpg", file, "image/jpeg")},
+                    files={field_name: ("image.jpg", file, "image/jpeg")},
                 )
                 resp.raise_for_status()
-                public_url = resp.text.strip()
-                if public_url.startswith("http"):
-                    return public_url
+                text = resp.text.strip()
+
+                # 尝试 JSON 解析
+                if json_path:
+                    import json
+
+                    try:
+                        obj = json.loads(text)
+                        url = obj
+                        for key in json_path:
+                            url = url[key]
+                        if isinstance(url, str) and url.startswith("http"):
+                            url = (
+                                url.replace("http://", "https://", 1)
+                                if url.startswith("http://")
+                                else url
+                            )
+                            # tmpfiles.org 返回的是 HTML 展示页，图片实际在 /dl/ 路径下
+                            if "tmpfiles.org/" in url and "/dl/" not in url:
+                                url = url.replace("tmpfiles.org/", "tmpfiles.org/dl/")
+                            return url
+                    except (json.JSONDecodeError, KeyError, IndexError, TypeError):
+                        pass
+
+                # 纯文本 URL 响应
+                if text.startswith("http"):
+                    url = text
+                    if "tmpfiles.org/" in url and "/dl/" not in url:
+                        url = url.replace("tmpfiles.org/", "tmpfiles.org/dl/")
+                    return url
             except Exception as e:
                 last_error = e
                 from astrbot.api import logger

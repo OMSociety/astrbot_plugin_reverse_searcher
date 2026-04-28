@@ -779,7 +779,9 @@ class ReverseSearcherPlugin(Star):
             node = Node(
                 name=sender_name,
                 uin=sender_id,
-                content=[Plain(f"[  搜索结果 {i + 1} / {len(text_parts)}  ]\n\n{part}")],
+                content=[
+                    Plain(f"[  搜索结果 {i + 1} / {len(text_parts)}  ]\n\n{part}")
+                ],
             )
             nodes = Nodes([node])
             try:
