@@ -390,6 +390,19 @@ class ReverseSearcherPlugin(Star):
             imgs = await self.get_imgs([curr_url])
             if imgs:
                 images.extend(imgs)
+            else:
+                logger.warning(
+                    f"[ReverseSearcher] 消息含图片但下载失败: {curr_url[:100]}"
+                )
+        else:
+            comps = [
+                f"{type(c).__name__}(file={getattr(c, 'file', '')[:40]}, "
+                f"url={getattr(c, 'url', '')[:40]})"
+                for c in getattr(event.message_obj, "message", [])
+            ]
+            logger.warning(
+                f"[ReverseSearcher] 未从消息提取到图片 URL，组件链: {comps}"
+            )
 
         # 2. 检查引用回复
         reply_id = None
