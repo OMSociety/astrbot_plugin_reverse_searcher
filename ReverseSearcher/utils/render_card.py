@@ -150,8 +150,15 @@ class ResultCardRenderer:
                 ),
                 timeout=HTML_RENDER_TIMEOUT,
             )
+        except asyncio.TimeoutError:
+            logger.warning(
+                f"[ReverseSearcher] HTML 卡片渲染超时（>{HTML_RENDER_TIMEOUT}s，云端 t2i 服务慢/不可达），降级 PIL"
+            )
+            return None
         except Exception as e:  # noqa: BLE001 - 渲染失败/超时降级 PIL
-            logger.warning(f"[ReverseSearcher] HTML 卡片渲染失败，降级 PIL: {e}")
+            logger.warning(
+                f"[ReverseSearcher] HTML 卡片渲染失败（{type(e).__name__}: {e}），降级 PIL"
+            )
             return None
 
     async def render_error_html_async(self, engine: str, error_msg: str) -> str | None:
