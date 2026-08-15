@@ -86,7 +86,9 @@ def _sim_class(sim_str) -> str:
     return "sim-none"
 
 
-def _img_to_data_uri(img: Image.Image | None, max_size: int = 400, quality: int = 80) -> str:
+def _img_to_data_uri(
+    img: Image.Image | None, max_size: int = 400, quality: int = 80
+) -> str:
     """PIL 图片 → 压缩 → base64 data URI（内嵌 HTML，渲染不依赖外网）"""
     if img is None:
         return ""
@@ -97,7 +99,9 @@ def _img_to_data_uri(img: Image.Image | None, max_size: int = 400, quality: int 
             im = im.convert("RGB")
         buf = io.BytesIO()
         im.save(buf, format="JPEG", quality=quality)
-        return f"data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode('ascii')}"
+        return (
+            f"data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode('ascii')}"
+        )
     except Exception:  # noqa: BLE001 - 单张图失败不影响整体
         return ""
 
@@ -273,7 +277,9 @@ class ResultCardRenderer:
         thumb = item.get("thumbnail_image")
         if thumb and isinstance(thumb, Image.Image):
             ow, oh = thumb.size
-            thumb_h = max(int(oh * self.THUMB_SIZE / ow), 60) if ow > oh else self.THUMB_SIZE
+            thumb_h = (
+                max(int(oh * self.THUMB_SIZE / ow), 60) if ow > oh else self.THUMB_SIZE
+            )
         else:
             thumb_h = 0
 
@@ -308,10 +314,17 @@ class ResultCardRenderer:
             [(x, y), (x + badge_w, y + badge_h)], radius=6, fill=badge_color
         )
         tw = draw.textlength(label, font=self.small)
-        draw.text((x + (badge_w - tw) // 2, y + 7), label, font=self.small, fill=(255, 255, 255))
+        draw.text(
+            (x + (badge_w - tw) // 2, y + 7),
+            label,
+            font=self.small,
+            fill=(255, 255, 255),
+        )
         return y + badge_h + 10
 
-    def _draw_source_thumb(self, canvas: Image.Image, source: Image.Image, y: int) -> int:
+    def _draw_source_thumb(
+        self, canvas: Image.Image, source: Image.Image, y: int
+    ) -> int:
         src = source.copy()
         src.thumbnail((240, 160), Image.LANCZOS)
         x = self.CARD_PADDING
@@ -330,7 +343,13 @@ class ResultCardRenderer:
         return y + card_h + 4
 
     def _draw_result_card_pil(
-        self, draw, canvas: Image.Image, index: int, item: dict, y: int, engine_color: tuple
+        self,
+        draw,
+        canvas: Image.Image,
+        index: int,
+        item: dict,
+        y: int,
+        engine_color: tuple,
     ) -> int:
         card_x = self.CARD_PADDING
         card_w = self.CARD_WIDTH - self.CARD_PADDING * 2
@@ -339,15 +358,23 @@ class ResultCardRenderer:
 
         shadow_offset = 3
         draw.rounded_rectangle(
-            [(card_x + shadow_offset, y + shadow_offset), (card_x + card_w + shadow_offset, y + card_h + shadow_offset)],
+            [
+                (card_x + shadow_offset, y + shadow_offset),
+                (card_x + card_w + shadow_offset, y + card_h + shadow_offset),
+            ],
             radius=radius,
             fill=(200, 200, 208),
         )
         draw.rounded_rectangle(
-            [(card_x, y), (card_x + card_w, y + card_h)], radius=radius, fill=(255, 255, 255)
+            [(card_x, y), (card_x + card_w, y + card_h)],
+            radius=radius,
+            fill=(255, 255, 255),
         )
         draw.rounded_rectangle(
-            [(card_x, y), (card_x + card_w, y + card_h)], radius=radius, outline=(215, 215, 222), width=1
+            [(card_x, y), (card_x + card_w, y + card_h)],
+            radius=radius,
+            outline=(215, 215, 222),
+            width=1,
         )
         draw.rectangle(
             [(card_x, y + radius), (card_x + 5, y + card_h - radius)], fill=engine_color
@@ -388,7 +415,12 @@ class ResultCardRenderer:
 
         author = item.get("author", "")
         if author:
-            draw.text((text_x, text_y), f"作者: {author}", font=self.small, fill=(120, 120, 120))
+            draw.text(
+                (text_x, text_y),
+                f"作者: {author}",
+                font=self.small,
+                fill=(120, 120, 120),
+            )
             text_y += 22
 
         sim_str = item.get("similarity", "")
@@ -398,7 +430,9 @@ class ResultCardRenderer:
             except (ValueError, TypeError):
                 similarity = 0
             if similarity > 0:
-                _draw_similarity_bar(draw, text_x, text_y + 8, 200, similarity, self.small, (80, 80, 80))
+                _draw_similarity_bar(
+                    draw, text_x, text_y + 8, 200, similarity, self.small, (80, 80, 80)
+                )
                 text_y += 26
 
         url = item.get("url", "")
@@ -440,7 +474,9 @@ def _draw_similarity_bar(draw, x, y, width, similarity, font, text_color) -> Non
     draw.rounded_rectangle([x, y, x + width, y + bar_h], radius=radius, fill=bg_color)
     fill_w = int(width * min(similarity, 100) / 100)
     if fill_w > 0:
-        draw.rounded_rectangle([x, y, x + fill_w, y + bar_h], radius=radius, fill=bar_color)
+        draw.rounded_rectangle(
+            [x, y, x + fill_w, y + bar_h], radius=radius, fill=bar_color
+        )
 
     text = f"{similarity:.1f}%"
     draw.text((x + width + 8, y - 7), text, font=font, fill=text_color)

@@ -333,7 +333,9 @@ class ReverseSearcherPlugin(Star):
                     elif hasattr(seg_data, "url"):
                         img_url = seg_data.url
 
-                    if img_url and (self._is_safe_url(img_url) or os.path.exists(img_url)):
+                    if img_url and (
+                        self._is_safe_url(img_url) or os.path.exists(img_url)
+                    ):
                         urls.append(img_url)
 
             if urls:
@@ -363,9 +365,7 @@ class ReverseSearcherPlugin(Star):
                 f"url={getattr(c, 'url', '')[:40]})"
                 for c in getattr(event.message_obj, "message", [])
             ]
-            logger.warning(
-                f"[ReverseSearcher] 未从消息提取到图片 URL，组件链: {comps}"
-            )
+            logger.warning(f"[ReverseSearcher] 未从消息提取到图片 URL，组件链: {comps}")
 
         # 2. 检查引用回复
         reply_id = None
@@ -809,13 +809,16 @@ class ReverseSearcherPlugin(Star):
         async for result in self._send_image(event, img_bytes):
             yield result
 
-    async def _prepare_image_bytes(self, img_buffer: io.BytesIO, max_side: int = 1500) -> bytes:
+    async def _prepare_image_bytes(
+        self, img_buffer: io.BytesIO, max_side: int = 1500
+    ) -> bytes:
         """压缩图片字节：最长边 ≤ max_side，转 JPEG 质量 88。
 
         大图直接上传到搜索 API 会显著拖慢搜索（用户实测：小图正常、大图慢）。
         1500px + JPEG 88 对角色/出处识别足够，上传体积可降 90%+。
         压缩失败回退原图。
         """
+
         def compress() -> bytes:
             img_buffer.seek(0)
             img = Image.open(img_buffer)

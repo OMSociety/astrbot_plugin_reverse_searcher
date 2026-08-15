@@ -353,7 +353,9 @@ class BaseSearchModel:
 
             # AnimeTrace: 提取 AI 检测结果
             ai_detect = getattr(response, "ai", None)
-            return await self.draw_results(api, items, source_image, ai_detect=ai_detect)
+            return await self.draw_results(
+                api, items, source_image, ai_detect=ai_detect
+            )
         except Exception:
             return await self.draw_error(api, "搜索失败")
 
