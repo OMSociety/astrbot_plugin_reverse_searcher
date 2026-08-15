@@ -113,7 +113,7 @@
                 "hint": "获取：登录 yandex.com/images 后 F12 → Console 标签 → 输入 document.cookie 回车复制（拿不到 HttpOnly 字段时改用：F12 → Network 标签（过滤框保持空白！）→ 刷新 → 点第一条请求 → Headers → 请求头 Cookie 行整行复制）。留空可能触发验证码导致无结果"
             },
             "ehentai": {
-                "description": "E-Hentai Cookie",
+                "description": "E-Hentai Cookie（唯一配置位置）",
                 "type": "string",
                 "default": "",
                 "hint": "获取：登录 e-hentai.org（ExHentai 需 exhentai.org）后 F12 → Console 标签 → 输入 document.cookie 回车 → 复制输出的整行（含 ipb_member_id/ipb_pass_hash/igneous）。仅搜 E-Hentai 可留空，搜 ExHentai 必需"
@@ -173,12 +173,6 @@
                         "description": "是否启用实验性搜索模式",
                         "type": "bool",
                         "default": false
-                    },
-                    "cookies": {
-                        "description": "E-Hentai Cookies",
-                        "type": "string",
-                        "hint": "获取：浏览器访问 e-hentai.org（ExHentai 需 exhentai.org）登录后，F12 → Network → 请求头 Cookie 整行复制（关键字段：ipb_member_id=xxx; ipb_pass_hash=xxx; igneous=xxx）。与上方全局 default_cookies.ehentai 等价，此处优先级更高",
-                        "default": ""
                     }
                 }
             },

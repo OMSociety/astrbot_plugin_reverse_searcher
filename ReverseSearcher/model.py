@@ -83,7 +83,6 @@ class BaseSearchModel:
                 "covers": search_params.pop("covers", False),
                 "similar": search_params.pop("similar", True),
                 "exp": search_params.pop("exp", False),
-                "cookies": search_params.pop("cookies", None),
             }
         elif api == "saucenao":
             engine_params = {
@@ -255,8 +254,6 @@ class BaseSearchModel:
         effective_cookies = None
         if api == "yandex":
             effective_cookies = await self._get_yandex_cookie()
-        elif api == "ehentai" and "cookies" in search_params:
-            effective_cookies = search_params.get("cookies")
         elif api in self.default_cookies:
             effective_cookies = self.default_cookies.get(api)
         elif self.cookies:

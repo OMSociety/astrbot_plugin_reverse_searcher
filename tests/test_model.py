@@ -133,7 +133,6 @@ class TestPrepareEngineParams:
             "covers": False,
             "similar": True,
             "exp": False,
-            "cookies": {"sk": "val"},
             "keep_this": 42,
         }
         engine_params = model._prepare_engine_params("ehentai", params)
@@ -141,7 +140,7 @@ class TestPrepareEngineParams:
         assert engine_params["covers"] is False
         assert engine_params["similar"] is True
         assert engine_params["exp"] is False
-        assert engine_params["cookies"] == {"sk": "val"}
+        assert "cookies" not in engine_params  # cookie 统一走 default_cookies.ehentai
         assert "is_ex" not in params
         assert params["keep_this"] == 42
 

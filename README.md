@@ -232,7 +232,7 @@
 
 ### Q2：E-Hentai 搜不了 / 想看 ExHentai 内容？
 
-- E-Hentai 免配置可搜；**ExHentai** 需要账号 Cookie（`ipb_member_id`、`ipb_pass_hash`、`igneous`），填在 `default_params.ehentai.cookies` 或全局 `default_cookies.ehentai`，并开启 `is_ex`
+- E-Hentai 免配置可搜；**ExHentai** 需要账号 Cookie（`ipb_member_id`、`ipb_pass_hash`、`igneous`），填在全局 `default_cookies.ehentai`，并开启 `is_ex`
 
 ### Q3：国内服务器搜图很慢 / 搜不到？
 
