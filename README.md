@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="logo.png" width="120" alt="ReverseSearcher Logo" />
+<img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/logo.png" width="120" alt="ReverseSearcher Logo" />
 
 # 🔍 图片反搜助手
 
@@ -38,7 +38,7 @@
 ### 搜索卡片渲染
 搜索完成后自动生成一张卡片图片：源图 + 结果缩略图同框，相似度一目了然：
 
-<img src="docs/search_example.png" alt="搜索结果卡片示例" width="480" />
+<img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/docs/search_example.png" alt="搜索结果卡片示例" width="480" />
 
 ### 关键词触发
 发送 `以图搜图` 并附上图片（或回复引用消息），即可按引导完成搜索：
