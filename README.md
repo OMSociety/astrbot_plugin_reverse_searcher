@@ -119,14 +119,12 @@
 |--------|------|------|------|
 | `enable_keyword_trigger` | bool | `true` | 关键词触发开关；关闭后仅 LLM 工具可用 |
 | `proxies` | string | `""` | 代理地址，如 `http://127.0.0.1:7890`（国内访问必填） |
-| `auto_send_text_results` | bool | `false` | 搜索完成后自动发送文本结果（免确认） |
 
 ### 超时配置 `timeout_settings`
 
 | 配置项 | 类型 | 默认 | 说明 |
 |--------|------|------|------|
 | `search_params_timeout` | int | `30` | 等待用户补充引擎/图片的超时（秒） |
-| `text_confirm_timeout` | int | `30` | 等待确认文本结果的超时（秒） |
 
 ### 关键词 `keyword`
 
@@ -166,10 +164,8 @@
 {
   "enable_keyword_trigger": true,
   "proxies": "",
-  "auto_send_text_results": false,
   "timeout_settings": {
-    "search_params_timeout": 30,
-    "text_confirm_timeout": 30
+    "search_params_timeout": 30
   },
   "keyword": {
     "trigger_keywords": ["以图搜图"],

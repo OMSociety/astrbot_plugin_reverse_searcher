@@ -11,12 +11,6 @@
         "hint": "http://host:port，例如：http://127.0.0.1:7890",
         "default": ""
     },
-    "auto_send_text_results": {
-        "description": "是否自动发送文本格式搜索结果",
-        "type": "bool",
-        "hint": "搜索完成后是否自动发送文本格式搜索结果，无需用户确认",
-        "default": false
-    },
     "timeout_settings": {
         "description": "超时配置",
         "type": "object",
@@ -25,12 +19,6 @@
                 "description": "等待搜索参数（引擎名、图片等）的时间（秒）",
                 "type": "int",
                 "hint": "用户在发送'以图搜图'命令后，等待提供引擎名称和图片的最大时间",
-                "default": 30
-            },
-            "text_confirm_timeout": {
-                "description": "等待确认是否需要文本格式结果的时间（秒）",
-                "type": "int",
-                "hint": "搜索完成后，等待用户确认是否需要文本格式结果的最大时间",
                 "default": 30
             }
         }

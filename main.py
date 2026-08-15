@@ -15,7 +15,6 @@ from PIL import Image, ImageDraw, ImageFont
 from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.message_components import Image as AstrImage
-from astrbot.api.message_components import Node, Nodes, Plain
 from astrbot.api.star import Context, Star
 
 from .ReverseSearcher.engine_registry import (
@@ -48,37 +47,6 @@ def is_image_url(text: str) -> bool:
     return bool(
         re.match(r"^https://.*\.(jpg|jpeg|png|gif|webp|bmp)$", text, re.IGNORECASE)
     )
-
-
-def split_text_by_length(text: str, max_length: int = 4000) -> list[str]:
-    """
-    按最大长度将长文本智能断行拆分，优先按50连字符切分
-
-    参数:
-        text (str): 待分割文本
-        max_length (int): 每段最大长度
-
-    返回:
-        List[str]: 拆分碎片
-
-    异常:
-        无
-    """
-    if len(text) <= max_length:
-        return [text]
-    separator = "-" * 50
-    result = []
-    while text:
-        if len(text) <= max_length:
-            result.append(text)
-            break
-        cut_index = max_length
-        separator_index = text.rfind(separator, 0, max_length)
-        if separator_index != -1 and separator_index > max_length // 2:
-            cut_index = separator_index + len(separator)
-        result.append(text[:cut_index])
-        text = text[cut_index:]
-    return result
 
 
 def get_img_urls(message) -> str:
@@ -198,7 +166,6 @@ class ReverseSearcherPlugin(Star):
             cleanup_task: 用户超时定时清理协程
             available_engines: 实际启用的引擎列表
             search_params_timeout: 等待搜索参数的超时时间（秒）
-            text_confirm_timeout: 等待文本格式确认的超时时间（秒）
             search_model: 搜索执行模型
             state_handlers: 状态处理器方法字典
 
@@ -219,7 +186,6 @@ class ReverseSearcherPlugin(Star):
         ]
         timeout_settings = config.get("timeout_settings", {})
         self.search_params_timeout = timeout_settings.get("search_params_timeout", 30)
-        self.text_confirm_timeout = timeout_settings.get("text_confirm_timeout", 30)
         keyword_config = config.get("keyword", {})
         trigger_keywords = keyword_config.get("trigger_keywords", ["以图搜图"])
         # 确保触发关键词是列表格式，如果为空或无效则使用默认值
@@ -229,7 +195,6 @@ class ReverseSearcherPlugin(Star):
             ]
         else:
             self.trigger_keywords = ["以图搜图"]
-        self.auto_send_text_results = config.get("auto_send_text_results", False)
         self.enable_keyword_trigger = config.get("enable_keyword_trigger", True)
         engine_keywords_config = keyword_config.get("engine_keywords", {})
         self.engine_keywords = {}
@@ -245,7 +210,6 @@ class ReverseSearcherPlugin(Star):
             default_cookies=config.get("default_cookies", {}),
         )
         self.state_handlers = {
-            "waiting_text_confirm": self._handle_waiting_text_confirm,
             "waiting_engine": self._handle_waiting_engine,
             "waiting_both": self._handle_waiting_both,
             "waiting_image": self._handle_waiting_image,
@@ -845,42 +809,6 @@ class ReverseSearcherPlugin(Star):
         async for result in self._send_image(event, img_bytes):
             yield result
 
-        if self.auto_send_text_results:
-            try:
-                result_text = await self.search_model.search(
-                    api=engine, file=file_bytes, **extra_kwargs
-                )
-            except Exception as e:
-                yield event.plain_result(f"[{engine}] 获取文字结果出错: {str(e)}")
-                return
-            if not result_text:
-                return  # 无结果，图片已经发过了，直接结束
-            async for result in self._send_text_results(event, result_text):
-                yield result
-
-    async def _send_text_results(self, event, result_text):
-        """提取公共文本结果发送逻辑，避免与 _handle_waiting_text_confirm 重复"""
-        text_parts = split_text_by_length(result_text)
-        sender_name = "图片搜索bot"
-        sender_id = event.get_self_id()
-        try:
-            sender_id = int(sender_id)
-        except Exception:
-            logger.debug(f"sender_id 转 int 失败: {sender_id}")
-        for i, part in enumerate(text_parts):
-            node = Node(
-                name=sender_name,
-                uin=sender_id,
-                content=[
-                    Plain(f"[  搜索结果 {i + 1} / {len(text_parts)}  ]\n\n{part}")
-                ],
-            )
-            nodes = Nodes([node])
-            try:
-                await event.send(event.chain_result([nodes]))
-            except Exception as e:
-                yield event.plain_result(f"发送搜索结果失败: {str(e)}")
-
     async def _send_engine_prompt(self, event: AstrMessageEvent, state: dict):
         """
         按状态发送引擎选择或图片上传提示
@@ -970,34 +898,6 @@ class ReverseSearcherPlugin(Star):
         """
         if user_id in self.user_states:
             del self.user_states[user_id]
-
-    async def _handle_waiting_text_confirm(
-        self, event: AstrMessageEvent, state: dict, user_id: str
-    ):
-        """
-        等待用户是否主动获取文本格式结果
-        """
-        message_text = get_message_text(event.message_obj).strip()
-
-        if time.time() - state["timestamp"] > self.text_confirm_timeout:
-            del self.user_states[user_id]
-            event.stop_event()
-            return
-
-        # Check for No/N/否
-        if message_text.lower() in ["否", "n", "no", "cancel"]:
-            del self.user_states[user_id]
-            yield event.plain_result("好的，已取消文本结果展示~")
-            event.stop_event()
-            return
-
-        # Check for Yes/Y/是
-        if message_text.lower() in ["是", "y"]:
-            async for result in self._send_text_results(event, state["result_text"]):
-                yield result
-            del self.user_states[user_id]
-            event.stop_event()
-            return
 
     # ── 统一搜索解析器 ──────────────────────────────
 
@@ -1271,13 +1171,6 @@ class ReverseSearcherPlugin(Star):
             return
         state = self.user_states.get(user_id)
         if not state:
-            return
-        if (
-            state.get("step") == "waiting_text_confirm"
-            and time.time() - state["timestamp"] > self.text_confirm_timeout
-        ):
-            del self.user_states[user_id]
-            event.stop_event()
             return
         if time.time() - state["timestamp"] > self.search_params_timeout:
             async for result in self._handle_timeout(event, user_id):
