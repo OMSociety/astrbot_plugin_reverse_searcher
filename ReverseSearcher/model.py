@@ -386,11 +386,9 @@ class BaseSearchModel:
 
             # AnimeTrace: 提取 AI 检测结果
             ai_detect = getattr(response, "ai", None)
-            return await asyncio.to_thread(
-                self.draw_results, api, items, source_image, ai_detect=ai_detect
-            )
+            return await self.draw_results(api, items, source_image, ai_detect=ai_detect)
         except Exception:
-            return await asyncio.to_thread(self.draw_error, api, "搜索失败")
+            return await self.draw_error(api, "搜索失败")
 
     def _format_error(self, api: str, error_msg: str) -> str:
         """
@@ -424,17 +422,42 @@ class BaseSearchModel:
         """
         return list(ENGINE_MAP.keys())
 
-    def draw_results(
+    async def draw_results(
         self,
         api: str,
         items: list[dict],
         source_image: Image.Image | None = None,
         ai_detect: bool | None = None,
     ) -> Image.Image:
-        """绘制搜索结果图像（使用新卡片样式）"""
+        """绘制搜索结果图像
+
+        主路径：HTML 模板 + 云端文转图（astrbot.app 风格卡片）；
+        云端不可达/超时时自动降级为 PIL 手绘卡片。
+        """
         try:
             renderer = ResultCardRenderer()
-            return renderer.render(api, items, source_image, ai_detect=ai_detect)
+            img_path = await renderer.render_html_async(
+                api, items, source_image, ai_detect=ai_detect
+            )
+            if img_path:
+                return await asyncio.to_thread(Image.open, img_path)
+        except Exception:  # noqa: BLE001 - 任何异常都降级 PIL
+            pass
+        return await asyncio.to_thread(
+            self._draw_results_pil, api, items, source_image, ai_detect=ai_detect
+        )
+
+    def _draw_results_pil(
+        self,
+        api: str,
+        items: list[dict],
+        source_image: Image.Image | None = None,
+        ai_detect: bool | None = None,
+    ) -> Image.Image:
+        """PIL 手绘卡片（HTML 渲染不可用时的回退）"""
+        try:
+            renderer = ResultCardRenderer()
+            return renderer.render_pil(api, items, source_image, ai_detect=ai_detect)
         except Exception:
             return self._draw_results_legacy(api, "渲染失败", source_image)
 
@@ -541,7 +564,7 @@ class BaseSearchModel:
             result = "\n".join(text_lines)
         lines = result.split("\n")
         base_dir = Path(__file__).parent
-        font_path = str(base_dir / "resource/font/arialuni.ttf")
+        font_path = str(base_dir / "resource/font/NotoSansSC-Regular.otf")
         try:
             font = ImageFont.truetype(font_path, 18)
             title_font = ImageFont.truetype(font_path, 24)
@@ -614,32 +637,13 @@ class BaseSearchModel:
             y_position += line_height
         return img
 
-    def draw_error(self, api: str, error_msg: str) -> Image.Image:
-        """绘制错误图像（使用卡片样式）"""
+    async def draw_error(self, api: str, error_msg: str) -> Image.Image:
+        """绘制错误图像（HTML 卡片优先，失败降级 PIL）"""
         try:
             renderer = ResultCardRenderer()
-            return renderer.render_error(api, error_msg)
-        except Exception:
+            img_path = await renderer.render_error_html_async(api, error_msg)
+            if img_path:
+                return await asyncio.to_thread(Image.open, img_path)
+        except Exception:  # noqa: BLE001
             pass
-        # fallback
-        width, height = 600, 200
-        img = Image.new("RGB", (width, height), color="white")
-        draw = ImageDraw.Draw(img)
-        draw.rectangle([(0, 0), (width, 60)], fill="#e74c3c")
-        try:
-            base_dir = Path(__file__).parent
-            font_path = str(base_dir / "resource/font/arialuni.ttf")
-            font = ImageFont.truetype(font_path, 18)
-            title_font = ImageFont.truetype(font_path, 24)
-        except OSError:
-            font = ImageFont.load_default()
-            title_font = ImageFont.load_default()
-        margin = 20
-        draw.text(
-            (margin, margin),
-            f"{api.upper()} search failed",
-            font=title_font,
-            fill="white",
-        )
-        draw.text((margin, 80), f"Error: {error_msg}", font=font, fill="black")
-        return img
+        return await asyncio.to_thread(renderer.render_error_pil, api, error_msg)

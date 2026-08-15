@@ -9,7 +9,7 @@
         "description": "代理服务器地址",
         "type": "string",
         "hint": "http://host:port，例如：http://127.0.0.1:7890",
-        "default": null
+        "default": ""
     },
     "auto_send_text_results": {
         "description": "是否自动发送文本格式搜索结果",

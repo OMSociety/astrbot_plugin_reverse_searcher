@@ -16,7 +16,7 @@ from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.message_components import Image as AstrImage
 from astrbot.api.message_components import Node, Nodes, Plain
-from astrbot.api.star import Context, Star, register
+from astrbot.api.star import Context, Star
 
 from .ReverseSearcher.engine_registry import (
     ALL_ENGINES,
@@ -155,7 +155,6 @@ def get_message_text(message) -> str:
     return ""
 
 
-@register("astrbot_plugin_img_rev_searcher", "drdon1234", "以图搜图，找出处", "3.4")
 class ReverseSearcherPlugin(Star):
     """
     以图搜图插件主类
@@ -481,7 +480,7 @@ class ReverseSearcherPlugin(Star):
 
     async def _send_engine_intro(self, event: AstrMessageEvent):
         """
-        绘制并发送引擎表格介绍图片，便于用户首次选择
+        绘制并发送引擎表格介绍图片（HTML 模板优先，云端 t2i 不可达时降级 PIL）
 
         参数:
             event: 事件对象
@@ -492,6 +491,54 @@ class ReverseSearcherPlugin(Star):
         异常:
             无
         """
+        if not self.available_engines:
+            return
+
+        # ── HTML 模板渲染（优先）──
+        from astrbot.core import html_renderer
+
+        from .ReverseSearcher.engine_registry import ENGINE_REGISTRY
+        from .ReverseSearcher.utils.templates import ENGINE_INTRO_TMPL
+
+        engines_data = []
+        for engine in self.available_engines:
+            if engine not in ENGINE_INFO:
+                continue
+            info = ENGINE_INFO[engine]
+            engine_def = ENGINE_REGISTRY.get(engine)
+            keyword = engine
+            for custom_keyword, engine_name in self.engine_keywords.items():
+                if engine_name == engine:
+                    keyword = custom_keyword
+                    break
+            engines_data.append(
+                {
+                    "label": engine_def.label if engine_def else engine,
+                    "url": info["url"],
+                    "anime": info["anime"],
+                    "keyword": keyword,
+                }
+            )
+        try:
+            img_path = await asyncio.wait_for(
+                html_renderer.render_custom_template(
+                    ENGINE_INTRO_TMPL,
+                    {"engines": engines_data},
+                    return_url=False,
+                    options={"full_page": True, "type": "jpeg", "quality": 80},
+                ),
+                timeout=25,
+            )
+            if img_path:
+                with open(img_path, "rb") as f:
+                    content = f.read()
+                async for result in self._send_image(event, content):
+                    yield result
+                return
+        except Exception as e:  # noqa: BLE001 - 渲染失败降级 PIL
+            logger.warning(f"[ReverseSearcher] 引擎表格 HTML 渲染失败，降级 PIL: {e}")
+
+        # ── PIL 回退 ──
 
         def create_engine_intro_image():
             width = 1000

@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 *.pyo
 *.log
+# AstrBot 运行数据（全局配置副本/t2i 模板，非插件代码）
+data/
