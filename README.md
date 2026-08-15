@@ -1,62 +1,113 @@
-# 图片反搜助手
+<div align="center">
+
+<img src="logo.png" width="120" alt="ReverseSearcher Logo" />
+
+# 🔍 图片反搜助手
+
+**五大引擎反向搜图** —— AnimeTrace 认角色 · SauceNAO 找出处 · Google Lens 兜底 · Yandex 找相似 · E-Hentai 搜本子
 
 [![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
 [![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A5v4-green.svg)](https://github.com/AstrBotDevs/AstrBot)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/stargazers)
+[![Issues](https://img.shields.io/github/issues/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/issues)
 
-支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 五大引擎的图片反向搜索，搜索结果自动渲染为精美卡片图片，同时提供 LLM 主动搜图工具。
+[✨ 核心特性](#-核心特性) • [📖 功能概览](#-功能概览) • [🚀 快速开始](#-快速开始) • [🔍 支持的搜索引擎](#-支持的搜索引擎) • [⚙️ 配置项说明](#️-配置项说明) • [🛠️ LLM 可调用工具](#️-llm-可调用工具) • [🔧 常见问题](#-常见问题) • [📝 更新日志](CHANGELOG.md)
 
-> 本项目由AI编写，部分源码基于 [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2) 。
+</div>
 
-[快速开始](#-快速开始) • [搜索引擎](#-支持的搜索引擎) • [配置项](#-配置项说明) • [LLM 工具](#-llm-可调用工具) • [更新日志](CHANGELOG.md)
+> 🎨 本项目由 AI 编写，部分源码基于 [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2)
+
+---
+
+## ✨ 核心特性
+
+| 特性 | 说明 |
+|------|------|
+| 🔍 **五大搜索引擎** | AnimeTrace 认角色、SauceNAO 找出处、Google Lens 综合兜底、Yandex 找相似、E-Hentai 搜本子，各司其职 |
+| 💬 **关键词触发** | 发送 `以图搜图` + 图片即可搜索，支持引擎别名快捷指定（`a`/`s`/`e`/`g`/`y`） |
+| 🤖 **LLM 主动搜图** | 机器人根据对话意图自主判断何时搜图、用哪个引擎，无需手动指令 |
+| 🧭 **意图路由** | 基于关键词加权匹配自动选择最优引擎——说「这是谁」自动走 AnimeTrace |
+| 🎴 **精美结果卡片** | 搜索结果渲染为现代卡片图片（引擎色渐变 Header、相似度彩色徽章、AI 检测标签），云端文转图不可达时自动降级 PIL |
+| 🔄 **多引擎自由切换** | 引擎按需启停，失败可自动切换候补引擎 |
 
 ---
 
 ## 📖 功能概览
 
-### 核心能力
-- **五大搜索引擎** — AnimeTrace 认角色、SauceNAO 找出处、Google Lens 综合兜底、Yandex 找相似、E-Hentai 搜本子，各司其职
-- **关键词触发** — 发送 `以图搜图` + 图片即可搜，支持引擎别名快捷指定（`a`/`s`/`e`/`g`/`y`）
-- **LLM 主动搜图** — 芙兰根据对话意图自主判断何时搜图、用哪个引擎，无需手动指令
-- **意图路由** — 基于关键词加权匹配自动选择最优引擎，用户说「这是谁」自动走 AnimeTrace
+### 搜索卡片渲染
+搜索完成后自动生成一张卡片图片：源图 + 结果缩略图同框，相似度一目了然：
 
-### 搜索结果卡片
-搜索结果不是干巴巴的文字，而是自动生成为一张精美卡片图片：
+<img src="docs/search_example.png" alt="搜索结果卡片示例" width="480" />
 
-- 🎨 **引擎主题色顶栏 + 左侧装饰条** — 靛蓝紫 / 暗炭黑 / 绯红，哪家搜的一眼认出
-- 🖼️ **源图 + 结果缩略图同框** — 待搜索图片和匹配结果并列展示，缩略图自动保持宽高比
-- 📊 **相似度彩色进度条** — ≥90% 绿 / ≥70% 橙 / <70% 红，直观
-- 🤖 **AI 检测徽章** — AnimeTrace 结果直接标注是否 AI 生成
+### 关键词触发
+发送 `以图搜图` 并附上图片（或回复引用消息），即可按引导完成搜索：
+
+```
+用户: 以图搜图
+🤖 → 发送引擎介绍卡片，请选择引擎
+用户: a 这张图
+🤖 → 已选择 AnimeTrace，正在搜索...
+     → 发送搜索结果卡片 ✅
+```
+
+### LLM 主动搜图
+机器人内置 `reverse_search` 工具，根据对话内容自主判断是否搜图：
+
+```
+用户: 芙兰，帮我看看这张图的角色是谁
+🤖 → reverse_search(intent=找角色)
+    🔍 [AnimeTrace] 找到 3 个结果
+    角色: 芙兰朵露·斯卡蕾特 | 作品: 东方Project...
+```
+
+### 意图路由
+无需指定引擎，说意图即可自动选：
+
+| 意图 | 自动路由 |
+|------|---------|
+| 「这是谁 / 哪个角色 / cos」 | → AnimeTrace |
+| 「找出处 / 找作者 / pixiv pid」 | → SauceNAO |
+| 「找相似图 / 像这个」 | → Yandex |
+| 「找本子 / 同人」 | → E-Hentai |
+| 「找原图 / 综合搜索」 | → Google |
+
 ---
 
 ## 🚀 快速开始
 
-### 安装
+### 第一步：安装
 
 **方式一：插件市场**
 - AstrBot WebUI → 插件市场 → 搜索 `astrbot_plugin_reverse_searcher`
 
 **方式二：GitHub 仓库**
-- AstrBot WebUI → 插件管理 → ＋ 安装
-- 粘贴仓库地址：`https://github.com/OMSociety/astrbot_plugin_reverse_searcher`
+- AstrBot WebUI → 插件管理 → ＋ 安装 → 粘贴仓库地址：
+- `https://github.com/OMSociety/astrbot_plugin_reverse_searcher`
+
+### 第二步：最小配置（装好即用）
+
+**无需任何配置**即可使用 AnimeTrace、Yandex、E-Hentai 三个免 Key 引擎：
+
+1. 重启 AstrBot 后，直接发送 `以图搜图` + 图片
+2. 或直接对机器人说「帮我看看这个角色是谁」让 LLM 自动搜图
+
+> 💡 可选增强：配置 SauceNAO `api_key`（[申请地址](https://saucenao.com/user.php)）解锁画师/出处搜索；Google 引擎需 [SerpAPI Key](https://serpapi.com/)；ExHentai 需有效 Cookie。
 
 ### 依赖安装
-```bash
-pip install -r requirements.txt
-```
-核心依赖：`httpx`, `Pillow`, `pyquery`, `typing_extensions`
+插件依赖 `httpx`、`Pillow`、`pyquery` 等，AstrBot 安装插件时自动处理。
 
 ---
 
 ## 🔍 支持的搜索引擎
 
-| 引擎 | 说明 | 备注 |
+| 引擎 | 说明 | 需要配置 |
 |:----|:----|:----|
-| **animetrace** | 动漫角色识别 | 无需 API Key，返回作品名+角色名 |
-| **saucenao** | 综合出处搜索 | 免费 Key 够用，Pixiv 插画首选 |
-| **google** | Google Lens | 需 SerpAPI Key（推荐），综合搜索兜底 |
-| **yandex** | 相似图片搜索 | 无需配置 |
-| **ehentai** | E-Hentai/ExHentai | 仅 ExHentai 需要 Cookie |
+| **animetrace** | 动漫角色识别（最强），返回作品名 + 角色名 | ❌ 免配置 |
+| **yandex** | 相似图片搜索 | ❌ 免配置 |
+| **ehentai** | E-Hentai 同人本搜索 | ❌ 免配置（ExHentai 需 Cookie） |
+| **saucenao** | 综合出处搜索，Pixiv 插画首选 | ⚠️ 建议配 `api_key` |
+| **google** | Google Lens 综合兜底 | ✅ 需 SerpAPI Key |
 
 ---
 
@@ -64,132 +115,153 @@ pip install -r requirements.txt
 
 ### 顶层配置
 
-| 配置项 | 类型 | 默认值 | 说明 |
-|:----|:----|:----|:----|
-| `enable_keyword_trigger` | bool | `true` | 关闭后不再响应关键词，但 LLM 工具仍可用 |
-| `proxies` | string | - | 代理服务器地址，如 `http://127.0.0.1:7890` |
-| `auto_send_text_results` | bool | `false` | 搜索完成后自动发送文本结果，无需用户确认 |
+| 配置项 | 类型 | 默认 | 说明 |
+|--------|------|------|------|
+| `enable_keyword_trigger` | bool | `true` | 关键词触发开关；关闭后仅 LLM 工具可用 |
+| `proxies` | string | `""` | 代理地址，如 `http://127.0.0.1:7890`（国内访问必填） |
+| `auto_send_text_results` | bool | `false` | 搜索完成后自动发送文本结果（免确认） |
 
 ### 超时配置 `timeout_settings`
 
-| 子配置 | 类型 | 默认值 | 说明 |
-|:----|:----|:----|:----|
-| `search_params_timeout` | int | `30` | 等待搜索参数的最大时间（秒） |
-| `text_confirm_timeout` | int | `30` | 等待确认结果格式的最大时间（秒） |
+| 配置项 | 类型 | 默认 | 说明 |
+|--------|------|------|------|
+| `search_params_timeout` | int | `30` | 等待用户补充引擎/图片的超时（秒） |
+| `text_confirm_timeout` | int | `30` | 等待确认文本结果的超时（秒） |
 
 ### 关键词 `keyword`
 
-| 子配置 | 类型 | 默认值 | 说明 |
-|:----|:----|:----|:----|
+| 配置项 | 类型 | 默认 | 说明 |
+|--------|------|------|------|
 | `trigger_keywords` | list | `["以图搜图"]` | 触发搜索的关键词列表 |
-| `engine_keywords` | object | 见下 | 各搜索引擎的自定义别名 |
-
-**引擎别名 `keyword.engine_keywords`：**
-
-| 子配置 | 类型 | 默认值 | 说明 |
-|:----|:----|:----|:----|
-| `animetrace` | string | `a` | AnimeTrace 别名 |
-| `ehentai` | string | `e` | E-Hentai 别名 |
-| `google` | string | `g` | Google 别名 |
-| `yandex` | string | `y` | Yandex 别名 |
-| `saucenao` | string | `s` | SauceNAO 别名 |
+| `engine_keywords` | object | `a/s/e/g/y` | 各引擎的自定义别名（animetrace=`a`、saucenao=`s`、ehentai=`e`、google=`g`、yandex=`y`） |
 
 ### 引擎启用 `available_apis`
 
-| 子配置 | 类型 | 默认值 | 说明 |
-|:----|:----|:----|:----|
-| `animetrace` | bool | `true` | 启用 AnimeTrace |
-| `ehentai` | bool | `true` | 启用 E-Hentai/ExHentai |
-| `google` | bool | `true` | 启用 Google Lens |
-| `yandex` | bool | `true` | 启用 Yandex |
-| `saucenao` | bool | `true` | 启用 SauceNAO |
+| 配置项 | 类型 | 默认 | 说明 |
+|--------|------|------|------|
+| `animetrace` / `ehentai` / `google` / `yandex` / `saucenao` | bool | `true` | 各引擎启停开关 |
 
 ### 全局 Cookie `default_cookies`
 
-| 子配置 | 类型 | 默认值 | 说明 |
-|:----|:----|:----|:----|
-| `yandex` | string | - | Yandex 全局 Cookie |
-| `ehentai` | string | - | E-Hentai 全局 Cookie |
+| 配置项 | 类型 | 默认 | 说明 |
+|--------|------|------|------|
+| `yandex` | string | `""` | Yandex 全局 Cookie |
+| `ehentai` | string | `""` | E-Hentai 全局 Cookie（ExHentai 必需） |
 
 ### 引擎默认参数 `default_params`
 
-#### AnimeTrace `default_params.animetrace`
+| 配置项 | 说明 |
+|--------|------|
+| `animetrace.model` | 识别模型，默认 `full_game_model_kira` |
+| `animetrace.is_multi` / `ai_detect` | 多角色搜索 / AI 检测开关 |
+| `ehentai.is_ex` / `covers` / `similar` / `exp` | ExHentai 开关、封面/相似/实验模式 |
+| `google.serpapi_key` / `zenserp_key` | SerpAPI（推荐）/ Zenserp（备用）Key |
+| `google.hl` / `country` / `max_results` | 语言 / 地区 / 最大结果数 |
+| `saucenao.api_key` / `minsim` / `numres` | API Key / 最低相似度 / 结果数 |
+| `yandex.max_results` / `use_ru_fallback` | 结果数 / `.ru` 域名回退 |
 
-| 子配置 | 类型 | 默认值 | 说明 |
-|:----|:----|:----|:----|
-| `model` | string | `full_game_model_kira` | 识别模型：`anime_model_lovelive` / `pre_stable` / `anime` / `full_game_model_kira` |
-| `is_multi` | bool | `false` | 多角色搜索模式 |
-| `ai_detect` | bool | `false` | AI 检测模式 |
+### 快速配置模板
 
-#### E-Hentai `default_params.ehentai`
-
-| 子配置 | 类型 | 默认值 | 说明 |
-|:----|:----|:----|:----|
-| `is_ex` | bool | `false` | 使用 ExHentai（需有效 Cookie） |
-| `covers` | bool | `false` | 包含封面搜索结果 |
-| `similar` | bool | `true` | 包含相似结果 |
-| `exp` | bool | `false` | 实验性搜索模式 |
-| `cookies` | string | - | E-Hentai Cookie，格式：`ipb_member_id=...; ipb_pass_hash=...; igneous=...` |
-
-#### Google `default_params.google`
-
-| 子配置 | 类型 | 默认值 | 说明 |
-|:----|:----|:----|:----|
-| `serpapi_key` | string | - | SerpAPI Key，从 [serpapi.com](https://serpapi.com/) 申请（推荐） |
-| `zenserp_key` | string | - | Zenserp Key（备用），从 [zenserp.com](https://zenserp.com/) 申请 |
-| `hl` | string | `zh-CN` | 界面语言代码 |
-| `country` | string | `HK` | 搜索地区代码 |
-| `max_results` | int | `10` | 最大返回结果数 |
-
-#### SauceNAO `default_params.saucenao`
-
-| 子配置 | 类型 | 默认值 | 说明 |
-|:----|:----|:----|:----|
-| `api_key` | string | - | SauceNAO API Key，从 [saucenao.com](https://saucenao.com/user.php) 申请 |
-| `hide` | int | `3` | 隐藏级别 |
-| `numres` | int | `5` | 返回结果数量 |
-| `minsim` | int | `30` | 最低相似度阈值 |
-| `output_type` | int | `2` | 输出类型（2=JSON） |
-
-#### Yandex `default_params.yandex`
-
-| 子配置 | 类型 | 默认值 | 说明 |
-|:----|:----|:----|:----|
-| `max_results` | int | `10` | 最大返回结果数 |
-| `use_ru_fallback` | bool | `true` | `.com` 失败时回退到 `yandex.ru` |
+```json
+{
+  "enable_keyword_trigger": true,
+  "proxies": "",
+  "auto_send_text_results": false,
+  "timeout_settings": {
+    "search_params_timeout": 30,
+    "text_confirm_timeout": 30
+  },
+  "keyword": {
+    "trigger_keywords": ["以图搜图"],
+    "engine_keywords": { "animetrace": "a", "ehentai": "e", "google": "g", "yandex": "y", "saucenao": "s" }
+  },
+  "available_apis": { "animetrace": true, "ehentai": true, "google": true, "yandex": true, "saucenao": true },
+  "default_cookies": { "yandex": "", "ehentai": "" },
+  "default_params": {
+    "animetrace": { "model": "full_game_model_kira", "is_multi": false, "ai_detect": false },
+    "ehentai": { "is_ex": false, "covers": false, "similar": true, "exp": false },
+    "google": { "serpapi_key": "", "zenserp_key": "", "hl": "zh-CN", "country": "HK", "max_results": 10 },
+    "saucenao": { "api_key": "", "hide": 3, "numres": 5, "minsim": 30, "output_type": 2 },
+    "yandex": { "max_results": 10, "use_ru_fallback": true }
+  }
+}
+```
 
 ---
 
 ## 🛠️ LLM 可调用工具
 
+插件注册 2 个 LLM 工具，机器人会自主判断何时调用：
+
+```
+用户: 这张图是什么角色？
+🤖 → reverse_search(intent=找角色)
+    🔍 [AnimeTrace] 找到 3 个结果
+    角色: 芙兰朵露·斯卡蕾特 | 作品: 东方Project...
+
+用户: 用 SauceNAO 查一下这张图的画师
+🤖 → reverse_search_with_engine(engine=saucenao)
+    🔍 [SauceNAO] 找到 5 个结果
+    Pixiv: 画师 KuroNeko | 相似度 95.2%
+```
+
 ### reverse_search
-通用搜图工具，自动判断引擎。
+通用搜图工具，根据意图自动选择引擎。
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `image_base64` | string | 图片 base64 编码（可选） |
-| `image_url` | string | 图片 URL（可选，与 base64 二选一） |
-| `intent` | string | 搜索意图（如「找角色」「找出处」），用于自动选引擎 |
+| `image_base64` | string? | 图片 base64 编码（与 URL 二选一） |
+| `image_url` | string? | 图片 URL（与 base64 二选一） |
+| `intent` | string? | 搜索意图（如「找角色」「找出处」「找相似图」），用于自动选引擎 |
 
 ### reverse_search_with_engine
-指定引擎搜图。
+指定引擎搜图，当用户明确要求使用某引擎时调用。
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `image_base64` / `image_url` | string | 图片来源 |
-| `engine` | string | **必填**，引擎名称 |
+| `image_base64` / `image_url` | string? | 图片来源（二选一） |
+| `engine` | string | **必填**，引擎名：`animetrace` / `saucenao` / `ehentai` / `google` / `yandex` |
+
+---
+
+## 🔧 常见问题
+
+### Q1：哪些引擎需要 API Key？
+
+| 引擎 | 需要配置 |
+|------|---------|
+| AnimeTrace / Yandex / E-Hentai | 不需要，装好即用 |
+| SauceNAO | 建议配置 `api_key`（[免费申请](https://saucenao.com/user.php)，每日 150 次） |
+| Google | 需要 [SerpAPI Key](https://serpapi.com/)（推荐）或 Zenserp Key |
+
+### Q2：E-Hentai 搜不了 / 想看 ExHentai 内容？
+
+- E-Hentai 免配置可搜；**ExHentai** 需要账号 Cookie（`ipb_member_id`、`ipb_pass_hash`、`igneous`），填在 `default_params.ehentai.cookies` 或全局 `default_cookies.ehentai`，并开启 `is_ex`
+
+### Q3：国内服务器搜图很慢 / 搜不到？
+
+在 `proxies` 配置代理（如 `http://127.0.0.1:7890`）。SauceNAO、Google、Yandex 等引擎对国内 IP 有风控，代理是必需的。
+
+### Q4：搜索结果卡片图没生成？
+
+插件优先走 AstrBot 云端文转图（t2i）渲染 HTML 卡片；若云端不可达/超时，**自动降级为内置 PIL 渲染**（仍会出图）。若两者都失败才回退纯文本。升级 AstrBot 到最新版可改善云端渲染稳定性。
 
 ---
 
 ## 📝 更新日志
 
-> 📋 **[查看完整更新日志 →](CHANGELOG.md)**
+> 📋 **[查看更新日志 →](CHANGELOG.md)**
 
 ---
 
-## 🤝 贡献与反馈
+## ⭐ 支持本项目
 
-如遇问题请在 [GitHub Issues](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/issues) 提交，欢迎 Pull Request！
+如果这个插件对你有帮助，欢迎点亮 Star ⭐，有问题和建议请提交 [Issue](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/issues) 或 [Pull Request](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/pulls)。
+
+## 🙏 致谢
+
+- [AstrBot](https://github.com/AstrBotDevs/AstrBot) 开源聊天机器人框架
+- [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2) 原始项目
 
 ---
 
@@ -201,4 +273,4 @@ pip install -r requirements.txt
 
 ## 👤 作者
 
-**Slandre & Flandre** — [@OMSociety](https://github.com/OMSociety)
+[@OMSociety](https://github.com/OMSociety)
