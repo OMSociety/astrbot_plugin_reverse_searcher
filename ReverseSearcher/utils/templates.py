@@ -193,7 +193,14 @@ RESULT_CARD_TMPL = """<!DOCTYPE html>
   .sim-mid { background: #ffedd5; color: #ea580c; }
   .sim-low { background: #fee2e2; color: #dc2626; }
   .sim-none { background: #f3f4f6; color: #6b7280; }
-  .link { background: #e0f2fe; color: #0284c7; }
+  /* 结果链接：图片内按钮不可点击，直接展示可复制链接文本 */
+  .link-row {
+    font-size: 12px;
+    color: #0284c7;
+    margin-top: 6px;
+    word-break: break-all;
+    line-height: 1.4;
+  }
 </style>
 </head>
 <body>
@@ -228,8 +235,10 @@ RESULT_CARD_TMPL = """<!DOCTYPE html>
         {% if r.similarity %}
         <span class="badge {{ r.sim_class }}">📊 {{ r.similarity }}</span>
         {% endif %}
-        {% if r.url %}<span class="badge link">🔗 查看原图</span>{% endif %}
       </div>
+      {% if r.url %}
+      <div class="link-row">🔗 {{ r.url }}</div>
+      {% endif %}
     </div>
   </div>
   {% endfor %}

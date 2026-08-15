@@ -789,7 +789,8 @@ class ReverseSearcherPlugin(Star):
             出错时生成错误提示图片
         """
 
-        file_bytes = img_buffer.getvalue()
+        # 压缩源图：大图上传搜索 API 慢（用户反馈），统一缩到最长边 1500px 转 JPEG
+        file_bytes = await self._prepare_image_bytes(img_buffer)
         user_id = event.get_sender_id()
         state = self.user_states.get(user_id, {})
         extra_kwargs = state.get("search_extra_params", {})
@@ -808,6 +809,36 @@ class ReverseSearcherPlugin(Star):
         img_bytes = await asyncio.to_thread(encode_image)
         async for result in self._send_image(event, img_bytes):
             yield result
+
+    async def _prepare_image_bytes(self, img_buffer: io.BytesIO, max_side: int = 1500) -> bytes:
+        """压缩图片字节：最长边 ≤ max_side，转 JPEG 质量 88。
+
+        大图直接上传到搜索 API 会显著拖慢搜索（用户实测：小图正常、大图慢）。
+        1500px + JPEG 88 对角色/出处识别足够，上传体积可降 90%+。
+        压缩失败回退原图。
+        """
+        def compress() -> bytes:
+            img_buffer.seek(0)
+            img = Image.open(img_buffer)
+            img.load()
+            w, h = img.size
+            if max(w, h) > max_side:
+                ratio = max_side / max(w, h)
+                img = img.resize(
+                    (max(1, int(w * ratio)), max(1, int(h * ratio))), Image.LANCZOS
+                )
+            if img.mode in ("RGBA", "P", "LA"):
+                img = img.convert("RGB")
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=88)
+            return buf.getvalue()
+
+        try:
+            return await asyncio.to_thread(compress)
+        except Exception as e:  # noqa: BLE001 - 压缩失败回退原图
+            logger.warning(f"[ReverseSearcher] 图片压缩失败，使用原图: {e}")
+            img_buffer.seek(0)
+            return img_buffer.getvalue()
 
     async def _send_engine_prompt(self, event: AstrMessageEvent, state: dict):
         """
