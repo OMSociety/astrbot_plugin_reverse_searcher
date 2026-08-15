@@ -32,34 +32,13 @@ class Yandex(BaseSearchReq[YandexResponse]):
         try:
             return await super()._send_request(*args, **kwargs)
         except Exception as e:
-            # Simple fallback mechanism: replace .com with .ru in url
+            # .com 被 Yandex 风控时回退到 .ru 域名重试（search 内部 URL 基于 self.base_url 构造）
             if self.use_ru_fallback and "yandex.com" in self.base_url:
-                # Update base_url for future calls logic (though search logic uses manual URLs mostly)
-                # Currently 'search' override mostly constructs URLs manually unless we refactor it.
-                # The 'search' method constructs: https://yandex.com/images/search...
-                # If _send_request fails, it's because 'search' calls it.
-                # However, 'search' constructs URL outside of _send_request if using 'url' param override.
-
-                # Check if we are retrying a URL passed in args/kwargs
-                # If we are here, super()._send_request failed.
-
-                # We need to detect if we can swap .com to .ru in the params/url
-
-                retry_needed = False
-
-                # 1. Update self.base_url just in case
-                if "yandex.com" in self.base_url:
-                    self.base_url = self.base_url.replace("yandex.com", "yandex.ru")
-                    retry_needed = True
-
-                # 2. Update kwargs['url'] if present (this is what search uses)
-                if "url" in kwargs and "yandex.com" in kwargs["url"]:
-                    kwargs["url"] = kwargs["url"].replace("yandex.com", "yandex.ru")
-                    retry_needed = True
-
-                if retry_needed:
+                self.base_url = self.base_url.replace("yandex.com", "yandex.ru")
+                try:
                     return await super()._send_request(*args, **kwargs)
-
+                except Exception:
+                    pass
             raise e
 
     @override

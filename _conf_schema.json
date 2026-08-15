@@ -109,7 +109,8 @@
             "yandex": {
                 "description": "Yandex Cookie",
                 "type": "string",
-                "default": ""
+                "default": "",
+                "hint": "浏览器登录 yandex.com/images 后从 Cookie 复制整行填入。Yandex 反爬严格，不填时可能触发 CAPTCHA 导致搜索无结果"
             },
             "ehentai": {
                 "description": "E-Hentai Cookie",

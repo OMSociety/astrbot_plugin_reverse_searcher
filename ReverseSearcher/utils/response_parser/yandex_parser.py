@@ -4,6 +4,8 @@ from typing import Any
 from pyquery import PyQuery
 from typing_extensions import override
 
+from astrbot.api import logger
+
 from .base_parser import BaseResParser, BaseSearchResponse
 
 
@@ -44,6 +46,15 @@ class YandexResponse(BaseSearchResponse[YandexItem]):
         data_state = data_div.attr("data-state")
 
         if not data_state:
+            # 无 data-state：可能是被 CAPTCHA 拦截、未登录或页面结构变化
+            if "captcha" in resp_data.lower():
+                logger.warning(
+                    "[Yandex] 响应疑似 CAPTCHA 验证页，建议在插件配置中填写 Yandex Cookie（default_cookies.yandex）"
+                )
+            else:
+                logger.warning(
+                    "[Yandex] 响应缺少 data-state（页面结构可能已变化或需登录），解析结果为空"
+                )
             return
 
         try:

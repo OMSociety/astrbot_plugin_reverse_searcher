@@ -104,7 +104,7 @@
 | 引擎 | 说明 | 需要配置 |
 |:----|:----|:----|
 | **animetrace** | 动漫角色识别（最强），返回作品名 + 角色名 | ❌ 免配置 |
-| **yandex** | 相似图片搜索 | ❌ 免配置 |
+| **yandex** | 相似图片搜索 | ⚠️ 建议配 Cookie（Yandex 反爬严格，未配置时可能 CAPTCHA/无结果） |
 | **ehentai** | E-Hentai 同人本搜索 | ❌ 免配置（ExHentai 需 Cookie） |
 | **saucenao** | 综合出处搜索，Pixiv 插画首选 | ⚠️ 建议配 `api_key` |
 | **google** | Google Lens 综合兜底 | ✅ 需 SerpAPI Key |
@@ -143,7 +143,7 @@
 
 | 配置项 | 类型 | 默认 | 说明 |
 |--------|------|------|------|
-| `yandex` | string | `""` | Yandex 全局 Cookie |
+| `yandex` | string | `""` | Yandex 全局 Cookie（浏览器访问 yandex.com 后从 Cookie 复制；不填可能触发 CAPTCHA 导致无结果） |
 | `ehentai` | string | `""` | E-Hentai 全局 Cookie（ExHentai 必需） |
 
 ### 引擎默认参数 `default_params`

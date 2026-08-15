@@ -10,6 +10,13 @@ from ..response_parser.google_lens_parser import GoogleLensResponse
 from .base_req import BaseSearchReq
 
 
+class SearchAPIError(Exception):
+    """API 业务错误（4xx：Key 无效、额度用完等）。
+
+    这类错误重试或切换备引擎无意义（换引擎同样没有有效 Key），直接上抛。
+    """
+
+
 class GoogleLensSerpApi(BaseSearchReq[GoogleLensResponse]):
     """SerpApi 实现：通过 Google Lens 引擎搜索图片。
 
@@ -40,7 +47,7 @@ class GoogleLensSerpApi(BaseSearchReq[GoogleLensResponse]):
         params = {
             "engine": self.engine,
             "api_key": self.api_key,
-            "country": kwargs.get("country", "us"),
+            "country": kwargs.get("country", "HK"),
             "hl": kwargs.get("hl", "en"),
             "q": kwargs.get("q"),
             "no_cache": kwargs.get("no_cache", False),
@@ -64,6 +71,11 @@ class GoogleLensSerpApi(BaseSearchReq[GoogleLensResponse]):
     async def _fetch_serpapi(self, params: dict) -> dict:
         """调用 SerpApi 搜索接口并返回 JSON 结果"""
         resp = await self._client.get("https://serpapi.com/search", params=params)
+        if 400 <= resp.status_code < 500:
+            raise SearchAPIError(
+                f"SerpApi 请求被拒（HTTP {resp.status_code}）："
+                f"{resp.text[:200]}。请检查 api_key 是否有效或额度是否用完"
+            )
         resp.raise_for_status()
         return resp.json()
 
@@ -119,6 +131,11 @@ class GoogleLensZenserp(BaseSearchReq[GoogleLensResponse]):
         resp = await self._client.get(
             "https://app.zenserp.com/api/v2/search", headers=headers, params=params
         )
+        if 400 <= resp.status_code < 500:
+            raise SearchAPIError(
+                f"Zenserp 请求被拒（HTTP {resp.status_code}）："
+                f"{resp.text[:200]}。请检查 zenserp_key 是否有效或额度是否用完"
+            )
         resp.raise_for_status()
         return resp.json()
 
@@ -173,6 +190,9 @@ class GoogleLens(BaseSearchReq[GoogleLensResponse]):
         if self.primary:
             try:
                 return await self._try_search(self.primary, file, url, **kwargs)
+            except SearchAPIError:
+                # 4xx 业务错误（Key 无效/额度用完）：重试与切换备引擎都无意义，直接上抛
+                raise
             except (httpx.ConnectError, httpx.TimeoutException, httpx.ReadError) as e:
                 logger.warning(
                     f"[GoogleLens] Primary Connection Error: {e}. Retrying once..."
@@ -180,6 +200,8 @@ class GoogleLens(BaseSearchReq[GoogleLensResponse]):
                 try:
                     await asyncio.sleep(1)
                     return await self._try_search(self.primary, file, url, **kwargs)
+                except SearchAPIError:
+                    raise
                 except Exception as retry_e:
                     logger.error(f"[GoogleLens] Primary Retry Failed: {retry_e}")
             except Exception as e:
