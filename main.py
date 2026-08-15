@@ -98,11 +98,14 @@ def get_img_urls(message) -> str:
         无
     """
     # AstrBot 标准组件链（QQ 官方等平台的 raw_message 是 SDK 对象，正则提取不到）
+    # 注意：Image.fromURL 把 URL 存在 file 字段（url 字段为空），需同时检查两者
     for component in getattr(message, "message", []) or []:
         if isinstance(component, AstrImage):
-            url = getattr(component, "url", "") or ""
-            if url:
-                return url
+            img_ref = (
+                getattr(component, "url", "") or getattr(component, "file", "") or ""
+            )
+            if img_ref:
+                return img_ref
     # 旧逻辑兜底
     raw_message = getattr(message, "raw_message", "")
     if isinstance(raw_message, dict) and "message" in raw_message:
@@ -206,7 +209,8 @@ class ReverseSearcherPlugin(Star):
             无
         """
         super().__init__(context)
-        self.client = httpx.AsyncClient()
+        # 下载图片走配置的代理（国内服务器访问 pixiv 等缩略图必需）
+        self.client = httpx.AsyncClient(proxy=config.get("proxies", "") or None)
         self.user_states = {}
         self.cleanup_task = asyncio.create_task(self.cleanup_loop())
         available_apis_config = config.get("available_apis", {})
