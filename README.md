@@ -246,17 +246,19 @@
 
 Cookie 就是浏览器登录网站后自动保存的一段身份凭证。要填的是**一整行 `name1=value1; name2=value2` 格式的字符串**。两种获取方法（任选其一）：
 
-**方法一：Network 面板复制（推荐，包含全部字段）**
-1. 浏览器访问目标网站并**登录**（Yandex 用 https://yandex.com/images，E-Hentai 用 https://e-hentai.org；ExHentai 用 https://exhentai.org）
-2. 按 **F12** 打开开发者工具 → **点击顶部 "Network（网络）" 标签页**（不是 Application！）
-3. **刷新页面**，左侧会出现请求列表，点击**任意一条请求**
-4. 右侧打开 **Headers（标头）** → 展开 **Request Headers（请求标头）**
-5. 找到 **`Cookie:` 那一行**，**整行复制**（`Cookie:` 等号后面的完整内容）
+**方法一：控制台一键获取（最简单，先试这个）**
+1. 浏览器访问目标网站并**登录**（E-Hentai 用 https://e-hentai.org；ExHentai 用 https://exhentai.org；Yandex 用 https://yandex.com/images）
+2. 按 **F12** → 点顶部 **Console（控制台）** 标签页
+3. 在下方输入框输入 `document.cookie` 然后**回车**
+4. 控制台会直接输出一整行 Cookie 字符串 → **复制它**（形如 `ipb_member_id=123; ipb_pass_hash=abc; ...`）
+5. ⚠️ 局限：拿不到 **HttpOnly** 的字段——**E-Hentai 够用**；**Yandex 部分关键字段是 HttpOnly，建议用方法二**
 
-**方法二：控制台一键获取（更简单，但拿不到 HttpOnly 字段）**
-1. 在目标网站登录后按 F12 → 点 **Console（控制台）** 标签页
-2. 输入 `document.cookie` 回车 → 控制台直接输出一整行 Cookie 字符串 → 复制
-3. ⚠️ 局限：拿不到 HttpOnly 的 Cookie（Yandex 部分关键字段是 HttpOnly），E-Hentai 的 `ipb_member_id`/`ipb_pass_hash` 通常可以；**Yandex 建议用方法一**
+**方法二：Network 面板（完整版，Yandex 建议）**
+1. 登录目标网站后按 **F12** → 点 **Network（网络）** 标签页
+2. ⚠️ **注意：顶部那个过滤输入框不要填任何东西**（填了会过滤掉请求，列表变空！），保持空白
+3. **刷新页面**（F5）→ 左侧出现请求列表 → **点击第一条请求**
+4. 右侧打开 **Headers（标头）** → 往下找 **Request Headers（请求标头）** 区域
+5. 找到 **`Cookie:`** 开头的那一行 → **复制整行**（`Cookie:` 等号后面的完整内容）
 
 复制的内容形如（值以实际为准）：
 ```
