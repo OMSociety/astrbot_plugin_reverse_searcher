@@ -110,13 +110,13 @@
                 "description": "Yandex Cookie",
                 "type": "string",
                 "default": "",
-                "hint": "获取：浏览器访问 yandex.com/images 并登录 → F12 → Network 面板 → 刷新页面 → 点击任意请求 → 找到请求头里的 Cookie 行 → 复制等号后的完整内容（形如：yandexuid=123456; ymex=abc; Session_id=xyz）。填 Cookie 整行字符串，留空则匿名访问（可能触发验证码导致无结果）"
+                "hint": "获取：登录 yandex.com/images 后按 F12 → 点「Network(网络)」标签（不是 Application）→ 刷新页面 → 点任意请求 → Headers → 请求头里找 Cookie 行 → 整行复制（形如 yandexuid=xxx; ymex=xxx; Session_id=xxx）。或用 Console 输入 document.cookie 回车复制（但拿不到 HttpOnly 字段，Yandex 建议用 Network 方法）。留空可能触发验证码导致无结果"
             },
             "ehentai": {
                 "description": "E-Hentai Cookie",
                 "type": "string",
                 "default": "",
-                "hint": "获取：浏览器访问 e-hentai.org（ExHentai 需访问 exhentai.org）并登录 → 同上 F12 → Network → 请求头 Cookie 整行复制（关键字段：ipb_member_id=xxx; ipb_pass_hash=xxx; igneous=xxx）。仅搜索 E-Hentai 可留空，搜索 ExHentai 必需"
+                "hint": "获取：登录 e-hentai.org（ExHentai 需 exhentai.org）后 F12 → Network 标签 → 刷新 → 请求头 Cookie 行整行复制，或用 Console 输入 document.cookie 回车复制（E-Hentai 关键字段 ipb_member_id/ipb_pass_hash/igneous 通常非 HttpOnly 可拿到）。仅搜 E-Hentai 可留空，搜 ExHentai 必需"
             }
         },
         "default": {}
