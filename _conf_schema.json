@@ -110,12 +110,13 @@
                 "description": "Yandex Cookie",
                 "type": "string",
                 "default": "",
-                "hint": "浏览器登录 yandex.com/images 后从 Cookie 复制整行填入。Yandex 反爬严格，不填时可能触发 CAPTCHA 导致搜索无结果"
+                "hint": "获取：浏览器访问 yandex.com/images 并登录 → F12 → Network 面板 → 刷新页面 → 点击任意请求 → 找到请求头里的 Cookie 行 → 复制等号后的完整内容（形如：yandexuid=123456; ymex=abc; Session_id=xyz）。填 Cookie 整行字符串，留空则匿名访问（可能触发验证码导致无结果）"
             },
             "ehentai": {
                 "description": "E-Hentai Cookie",
                 "type": "string",
-                "default": ""
+                "default": "",
+                "hint": "获取：浏览器访问 e-hentai.org（ExHentai 需访问 exhentai.org）并登录 → 同上 F12 → Network → 请求头 Cookie 整行复制（关键字段：ipb_member_id=xxx; ipb_pass_hash=xxx; igneous=xxx）。仅搜索 E-Hentai 可留空，搜索 ExHentai 必需"
             }
         },
         "default": {}
@@ -176,8 +177,8 @@
                     "cookies": {
                         "description": "E-Hentai Cookies",
                         "type": "string",
-                        "hint": "格式如: ipb_member_id=...; ipb_pass_hash=...; igneous=.... ExHentai搜索必需。",
-                        "default": null
+                        "hint": "获取：浏览器访问 e-hentai.org（ExHentai 需 exhentai.org）登录后，F12 → Network → 请求头 Cookie 整行复制（关键字段：ipb_member_id=xxx; ipb_pass_hash=xxx; igneous=xxx）。与上方全局 default_cookies.ehentai 等价，此处优先级更高",
+                        "default": ""
                     }
                 }
             },

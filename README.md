@@ -143,8 +143,8 @@
 
 | 配置项 | 类型 | 默认 | 说明 |
 |--------|------|------|------|
-| `yandex` | string | `""` | Yandex 全局 Cookie（浏览器访问 yandex.com 后从 Cookie 复制；不填可能触发 CAPTCHA 导致无结果） |
-| `ehentai` | string | `""` | E-Hentai 全局 Cookie（ExHentai 必需） |
+| `yandex` | string | `""` | Yandex Cookie（形如 `yandexuid=xxx; ymex=xxx; Session_id=xxx`；获取方法见常见问题 Q5，不填可能 CAPTCHA 无结果） |
+| `ehentai` | string | `""` | E-Hentai Cookie（关键字段 `ipb_member_id`/`ipb_pass_hash`/`igneous`；ExHentai 必需，获取方法见 Q5） |
 
 ### 引擎默认参数 `default_params`
 
@@ -241,6 +241,24 @@
 ### Q4：搜索结果卡片图没生成？
 
 插件优先走 AstrBot 云端文转图（t2i）渲染 HTML 卡片；若云端不可达/超时，**自动降级为内置 PIL 渲染**（仍会出图）。若两者都失败才回退纯文本。升级 AstrBot 到最新版可改善云端渲染稳定性。
+
+### Q5：Yandex / E-Hentai 的 Cookie 怎么获取、填什么？
+
+Cookie 就是浏览器登录网站后自动保存的一段身份凭证（形如 `name1=value1; name2=value2` 的整行字符串）。获取步骤（电脑浏览器）：
+
+1. 用浏览器访问目标网站并**登录**：
+   - Yandex：https://yandex.com/images
+   - E-Hentai：https://e-hentai.org（ExHentai 需 https://exhentai.org）
+2. 按 **F12** 打开开发者工具 → 切到 **Network（网络）** 面板
+3. **刷新页面**，点击任意一个请求（如最上面那条）
+4. 在右侧找到 **Request Headers（请求标头）** → 找到 `Cookie:` 那一行
+5. **复制 `Cookie:` 后面的完整内容**（一整行，含所有 `key=value`，用分号空格分隔）
+
+把复制的内容整个粘贴到插件配置里即可。示例（值以实际为准）：
+```
+yandexuid=1587138991653; ymex=1986384493.yrts.159; Session_id=3:163...:0
+```
+> 💡 Yandex 反爬严格，不填 Cookie 可能触发验证码导致搜索无结果；E-Hentai 搜索 ExHentai 内容必须填 Cookie（含 `ipb_member_id`、`ipb_pass_hash`、`igneous` 三个关键字段）。
 
 ---
 
