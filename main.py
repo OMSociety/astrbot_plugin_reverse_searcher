@@ -85,6 +85,9 @@ def get_img_urls(message) -> str:
     """
     从消息对象中提取第一张图片的URL
 
+    优先使用 AstrBot 标准消息组件链（跨平台统一），
+    旧版 raw_message 正则逻辑保留作兜底。
+
     参数:
         message: 消息体对象，可含message或raw_message属性
 
@@ -94,6 +97,13 @@ def get_img_urls(message) -> str:
     异常:
         无
     """
+    # AstrBot 标准组件链（QQ 官方等平台的 raw_message 是 SDK 对象，正则提取不到）
+    for component in getattr(message, "message", []) or []:
+        if isinstance(component, AstrImage):
+            url = getattr(component, "url", "") or ""
+            if url:
+                return url
+    # 旧逻辑兜底
     raw_message = getattr(message, "raw_message", "")
     if isinstance(raw_message, dict) and "message" in raw_message:
         raw_message_str = str(raw_message.get("message", []))
@@ -128,6 +138,10 @@ def get_message_text(message) -> str:
     """
     提取消息对象中的文本内容（忽略图片和其他非文本消息段落）
 
+    优先使用 AstrBot 标准 message_str 字段（所有平台适配器统一填充；
+    QQ 官方等平台的 raw_message 是 SDK 对象，旧正则逻辑无法提取），
+    旧逻辑保留作兜底。
+
     参数:
         message: 消息体对象
 
@@ -137,6 +151,11 @@ def get_message_text(message) -> str:
     异常:
         无
     """
+    # AstrBot 标准纯文本字段（跨平台统一）
+    message_str = getattr(message, "message_str", "")
+    if isinstance(message_str, str) and message_str.strip():
+        return message_str.strip()
+    # 旧逻辑兜底
     raw_message = getattr(message, "raw_message", "")
     if isinstance(raw_message, str):
         return raw_message.strip()
