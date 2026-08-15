@@ -34,25 +34,20 @@ class BaseSearchModel:
         cookies: dict | None = None,
         timeout: int = 60,
         default_params: dict | None = None,
-        default_cookies: dict | None = None,
     ):
         """
         初始化搜索模型
 
         参数:
             proxies: 代理服务器配置
-            cookies: Cookie配置
+            cookies: Cookie配置（兜底，各引擎 Cookie 优先在 default_params 对应栏目配置）
             timeout: 请求超时时间(秒)
-            default_params: 各引擎的默认参数
-            default_cookies: 各引擎的默认Cookie
+            default_params: 各引擎的默认参数（含 yandex/ehentai 的 cookies）
         """
         self.proxies = proxies
         self.cookies = cookies
         self.timeout = timeout
         self.default_params = default_params or {}
-        self.default_cookies = default_cookies or {}
-        self._yandex_cookie = None
-        self._yandex_cookie_timestamp = 0
 
     def _prepare_engine_params(self, api: str, search_params: dict) -> dict:
         """从搜索参数中提取引擎专属配置。
@@ -83,6 +78,7 @@ class BaseSearchModel:
                 "covers": search_params.pop("covers", False),
                 "similar": search_params.pop("similar", True),
                 "exp": search_params.pop("exp", False),
+                "cookies": search_params.pop("cookies", None),
             }
         elif api == "saucenao":
             engine_params = {
@@ -118,32 +114,10 @@ class BaseSearchModel:
             engine_params = {
                 "max_results": search_params.get("max_results", 10),
                 "use_ru_fallback": search_params.get("use_ru_fallback", True),
+                "cookies": search_params.pop("cookies", None),
             }
 
         return engine_params
-
-    async def _check_yandex_cookie(self, cookie: dict) -> bool:
-        """
-        验证 Yandex Cookie 是否有效 (尝试访问主页)
-        """
-        if not cookie:
-            return False
-        try:
-            # 简单 HEAD 请求或 GET 请求，检查是否返回 200 且无 CAPTCHA
-            async with Network(
-                cookies=cookie, proxies=self.proxies, timeout=10
-            ) as client:
-                resp = await client.get("https://yandex.com/images/")
-                if resp.status_code == 200 and "captcha" not in resp.text.lower():
-                    return True
-        except Exception:
-            pass
-        return False
-
-    async def _get_yandex_cookie(self):
-        # Automated cookie fetching removed.
-        # Fallback to manual default cookie if provided.
-        return self.default_cookies.get("yandex")
 
     def _is_gif(self, file: FileContent) -> bool:
         """
@@ -247,16 +221,12 @@ class BaseSearchModel:
         # 提取引擎专属参数 (api_key, dbmask 等)，从 search_params 中弹出
         engine_params = self._prepare_engine_params(api, dict(search_params))
 
-        # ── Cookie 解析 ──
+        # ── Cookie 解析（从 default_params 的 yandex/ehentai 栏目取）──
         network_kwargs = {}
         if self.proxies:
             network_kwargs["proxies"] = self.proxies
-        effective_cookies = None
-        if api == "yandex":
-            effective_cookies = await self._get_yandex_cookie()
-        elif api in self.default_cookies:
-            effective_cookies = self.default_cookies.get(api)
-        elif self.cookies:
+        effective_cookies = engine_params.get("cookies")
+        if not effective_cookies:
             effective_cookies = self.cookies
         if effective_cookies:
             network_kwargs["cookies"] = effective_cookies

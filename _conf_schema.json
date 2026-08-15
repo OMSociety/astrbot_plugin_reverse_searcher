@@ -101,26 +101,6 @@
             }
         }
     },
-    "default_cookies": {
-        "description": "各引擎的默认Cookie（全局）",
-        "type": "object",
-        "hint": "为各引擎设置全局默认Cookie，如 {\"yandex\": \"cookie_str\", \"ehentai\": \"cookie_str\"}。引擎自身的cookies参数优先级更高。",
-        "items": {
-            "yandex": {
-                "description": "Yandex Cookie",
-                "type": "string",
-                "default": "",
-                "hint": "获取：登录 yandex.com/images 后 F12 → Console 标签 → 输入 document.cookie 回车复制（拿不到 HttpOnly 字段时改用：F12 → Network 标签（过滤框保持空白！）→ 刷新 → 点第一条请求 → Headers → 请求头 Cookie 行整行复制）。留空可能触发验证码导致无结果"
-            },
-            "ehentai": {
-                "description": "E-Hentai Cookie（唯一配置位置）",
-                "type": "string",
-                "default": "",
-                "hint": "获取：登录 e-hentai.org（ExHentai 需 exhentai.org）后 F12 → Console 标签 → 输入 document.cookie 回车 → 复制输出的整行（含 ipb_member_id/ipb_pass_hash/igneous）。仅搜 E-Hentai 可留空，搜 ExHentai 必需"
-            }
-        },
-        "default": {}
-    },
     "default_params": {
         "description": "默认参数",
         "type": "object",
@@ -173,6 +153,12 @@
                         "description": "是否启用实验性搜索模式",
                         "type": "bool",
                         "default": false
+                    },
+                    "cookies": {
+                        "description": "E-Hentai Cookie",
+                        "type": "string",
+                        "default": "",
+                        "hint": "获取：登录 e-hentai.org（ExHentai 需 exhentai.org）后 F12 → Console 标签 → 输入 document.cookie 回车 → 复制输出的整行（含 ipb_member_id/ipb_pass_hash/igneous）。仅搜 E-Hentai 可留空，搜 ExHentai 必需"
                     }
                 }
             },
@@ -258,6 +244,12 @@
                         "type": "bool",
                         "hint": "当 .com 访问失败时尝试使用 yandex.ru",
                         "default": true
+                    },
+                    "cookies": {
+                        "description": "Yandex Cookie",
+                        "type": "string",
+                        "default": "",
+                        "hint": "获取：登录 yandex.com/images 后 F12 → Console 标签 → 输入 document.cookie 回车复制（拿不到 HttpOnly 字段时改用：F12 → Network 标签（过滤框保持空白！）→ 刷新 → 点第一条请求 → Headers → 请求头 Cookie 行整行复制）。留空可能触发验证码导致无结果"
                     }
                 }
             }

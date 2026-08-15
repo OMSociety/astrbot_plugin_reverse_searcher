@@ -139,13 +139,6 @@
 |--------|------|------|------|
 | `animetrace` / `ehentai` / `google` / `yandex` / `saucenao` | bool | `true` | 各引擎启停开关 |
 
-### 全局 Cookie `default_cookies`
-
-| 配置项 | 类型 | 默认 | 说明 |
-|--------|------|------|------|
-| `yandex` | string | `""` | Yandex Cookie（形如 `yandexuid=xxx; ymex=xxx; Session_id=xxx`；获取方法见常见问题 Q5，不填可能 CAPTCHA 无结果） |
-| `ehentai` | string | `""` | E-Hentai Cookie（关键字段 `ipb_member_id`/`ipb_pass_hash`/`igneous`；ExHentai 必需，获取方法见 Q5） |
-
 ### 引擎默认参数 `default_params`
 
 | 配置项 | 说明 |
@@ -153,10 +146,12 @@
 | `animetrace.model` | 识别模型，默认 `full_game_model_kira` |
 | `animetrace.is_multi` / `ai_detect` | 多角色搜索 / AI 检测开关 |
 | `ehentai.is_ex` / `covers` / `similar` / `exp` | ExHentai 开关、封面/相似/实验模式 |
+| `ehentai.cookies` | **E-Hentai Cookie**（ExHentai 必需，获取方法见常见问题 Q5） |
 | `google.serpapi_key` / `zenserp_key` | SerpAPI（推荐）/ Zenserp（备用）Key |
 | `google.hl` / `country` / `max_results` | 语言 / 地区 / 最大结果数 |
 | `saucenao.api_key` / `minsim` / `numres` | API Key / 最低相似度 / 结果数 |
 | `yandex.max_results` / `use_ru_fallback` | 结果数 / `.ru` 域名回退 |
+| `yandex.cookies` | **Yandex Cookie**（反爬严格，不填可能 CAPTCHA 无结果，获取方法见 Q5） |
 
 ### 快速配置模板
 
@@ -172,13 +167,12 @@
     "engine_keywords": { "animetrace": "a", "ehentai": "e", "google": "g", "yandex": "y", "saucenao": "s" }
   },
   "available_apis": { "animetrace": true, "ehentai": true, "google": true, "yandex": true, "saucenao": true },
-  "default_cookies": { "yandex": "", "ehentai": "" },
   "default_params": {
     "animetrace": { "model": "full_game_model_kira", "is_multi": false, "ai_detect": false },
-    "ehentai": { "is_ex": false, "covers": false, "similar": true, "exp": false },
+    "ehentai": { "is_ex": false, "covers": false, "similar": true, "exp": false, "cookies": "" },
     "google": { "serpapi_key": "", "zenserp_key": "", "hl": "zh-CN", "country": "HK", "max_results": 10 },
     "saucenao": { "api_key": "", "hide": 3, "numres": 5, "minsim": 30, "output_type": 2 },
-    "yandex": { "max_results": 10, "use_ru_fallback": true }
+    "yandex": { "max_results": 10, "use_ru_fallback": true, "cookies": "" }
   }
 }
 ```
@@ -232,7 +226,7 @@
 
 ### Q2：E-Hentai 搜不了 / 想看 ExHentai 内容？
 
-- E-Hentai 免配置可搜；**ExHentai** 需要账号 Cookie（`ipb_member_id`、`ipb_pass_hash`、`igneous`），填在全局 `default_cookies.ehentai`，并开启 `is_ex`
+- E-Hentai 免配置可搜；**ExHentai** 需要账号 Cookie（`ipb_member_id`、`ipb_pass_hash`、`igneous`），填在 `default_params.ehentai.cookies`，并开启 `is_ex`
 
 ### Q3：国内服务器搜图很慢 / 搜不到？
 
@@ -264,7 +258,7 @@ Cookie 就是浏览器登录网站后自动保存的一段身份凭证。要填�
 ```
 yandexuid=1587138991653; ymex=1986384493.yrts.159; Session_id=3:163...:0
 ```
-把整行粘贴到插件配置 `default_cookies.yandex` / `default_cookies.ehentai` 即可。
+把整行粘贴到插件配置 `default_params.yandex.cookies` / `default_params.ehentai.cookies` 即可。
 
 > 💡 Yandex 反爬严格，不填 Cookie 可能触发验证码导致搜索无结果；E-Hentai 搜索 ExHentai 内容必须填 Cookie（含 `ipb_member_id`、`ipb_pass_hash`、`igneous` 三个关键字段）。从插件实际请求的域名（yandex.com）获取最稳妥。
 

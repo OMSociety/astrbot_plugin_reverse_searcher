@@ -49,7 +49,7 @@ class YandexResponse(BaseSearchResponse[YandexItem]):
             # 无 data-state：可能是被 CAPTCHA 拦截、未登录或页面结构变化
             if "captcha" in resp_data.lower():
                 logger.warning(
-                    "[Yandex] 响应疑似 CAPTCHA 验证页，建议在插件配置中填写 Yandex Cookie（default_cookies.yandex）"
+                    "[Yandex] 响应疑似 CAPTCHA 验证页，建议在插件配置的 default_params.yandex.cookies 中填写 Yandex Cookie"
                 )
             else:
                 logger.warning(

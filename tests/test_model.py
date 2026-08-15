@@ -133,6 +133,7 @@ class TestPrepareEngineParams:
             "covers": False,
             "similar": True,
             "exp": False,
+            "cookies": "ipb_member_id=1; ipb_pass_hash=2",
             "keep_this": 42,
         }
         engine_params = model._prepare_engine_params("ehentai", params)
@@ -140,7 +141,7 @@ class TestPrepareEngineParams:
         assert engine_params["covers"] is False
         assert engine_params["similar"] is True
         assert engine_params["exp"] is False
-        assert "cookies" not in engine_params  # cookie 统一走 default_cookies.ehentai
+        assert engine_params["cookies"] == "ipb_member_id=1; ipb_pass_hash=2"
         assert "is_ex" not in params
         assert params["keep_this"] == 42
 

@@ -207,7 +207,6 @@ class ReverseSearcherPlugin(Star):
             proxies=config.get("proxies", ""),
             timeout=60,
             default_params=default_params,
-            default_cookies=config.get("default_cookies", {}),
         )
         self.state_handlers = {
             "waiting_engine": self._handle_waiting_engine,
