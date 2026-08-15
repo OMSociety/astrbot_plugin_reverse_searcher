@@ -370,7 +370,7 @@ class ReverseSearcherPlugin(Star):
                     elif hasattr(seg_data, "url"):
                         img_url = seg_data.url
 
-                    if img_url and self._is_safe_url(img_url):
+                    if img_url and (self._is_safe_url(img_url) or os.path.exists(img_url)):
                         urls.append(img_url)
 
             if urls:
@@ -455,8 +455,12 @@ class ReverseSearcherPlugin(Star):
         """
         异步下载图片数据，转为BytesIO对象
 
+        支持两种来源：
+        - 本地文件路径（QQ 官方等平台会把图片提前下载到 data/temp/，file 字段是本地路径）
+        - 网络 URL
+
         参数:
-            url (str): 图片URL
+            url (str): 图片URL或本地路径
 
         返回:
             io.BytesIO or None: 成功则为图片数据流，否则None
@@ -465,6 +469,11 @@ class ReverseSearcherPlugin(Star):
             网络异常会吞掉，返回None
         """
         try:
+            # 本地文件路径：直接读取
+            if url and os.path.exists(url):
+                with open(url, "rb") as f:
+                    return io.BytesIO(f.read())
+            # 网络 URL
             r = await self.client.get(url, timeout=15)
             if r.status_code == 200:
                 return io.BytesIO(r.content)
