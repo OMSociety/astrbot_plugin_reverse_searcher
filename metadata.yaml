@@ -4,3 +4,7 @@ desc: 支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 五大引�
 version: 1.0.0
 author: OMSociety
 repo: https://github.com/OMSociety/astrbot_plugin_reverse_searcher
+tags:
+  - 搜图
+  - 找图
+  - 溯源
