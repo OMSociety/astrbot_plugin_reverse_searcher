@@ -9,6 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 from .engine_registry import ENGINE_REGISTRY, inject_request_classes
 from .utils import Network
 from .utils.render_card import ResultCardRenderer
+from .utils.security import is_safe_image_ref
 from .utils.types import FileContent
 
 inject_request_classes()  # 注入请求类到注册表
@@ -189,6 +190,10 @@ class BaseSearchModel:
             raise ValueError("必须提供 file 或 url 参数")
         if file and url:
             raise ValueError("file 和 url 参数不能同时提供")
+        # SSRF/本地文件读取防护：url 必须为公网图片地址（覆盖所有引擎，
+        # 包括会直接下载 url 的 ehentai 等）
+        if url and not is_safe_image_ref(url):
+            raise ValueError("图片地址不安全：仅支持公网图片 URL 或消息内图片")
         if file and not url and self._is_gif(file):
             file = await self._convert_gif_to_jpeg(file)
 

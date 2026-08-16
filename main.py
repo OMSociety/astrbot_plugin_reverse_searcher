@@ -1,21 +1,18 @@
 import asyncio
 import io
-import ipaddress
 import os
 import re
-import socket
 import tempfile
 import time
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import urljoin
 
 import httpx
-from PIL import Image, ImageDraw, ImageFont
-
 from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.message_components import Image as AstrImage
 from astrbot.api.star import Context, Star
+from PIL import Image, ImageDraw, ImageFont
 
 from .ReverseSearcher.engine_registry import (
     ALL_ENGINES,
@@ -23,6 +20,11 @@ from .ReverseSearcher.engine_registry import (
     ENGINE_REGISTRY,
 )
 from .ReverseSearcher.model import BaseSearchModel
+from .ReverseSearcher.utils.security import (
+    is_safe_image_ref,
+    is_safe_image_url,
+    is_safe_local_image_path,
+)
 
 # 保留兼容旧引用的变量名
 ENGINE_INFO = {
@@ -33,20 +35,21 @@ ENGINE_INFO = {
 
 def is_image_url(text: str) -> bool:
     """
-    判断文本是否为图片URL（http开头，常见图片扩展名结尾）
+    判断文本是否为图片URL（https开头、常见图片扩展名结尾、公网主机）
 
     参数:
         text (str): 待检测文本
 
     返回:
-        bool: 是图片则True，否则False
+        bool: 是安全的图片URL则True，否则False
 
     异常:
         无
     """
-    return bool(
-        re.match(r"^https://.*\.(jpg|jpeg|png|gif|webp|bmp)$", text, re.IGNORECASE)
-    )
+    if not re.match(r"^https://.*\.(jpg|jpeg|png|gif|webp|bmp)$", text, re.IGNORECASE):
+        return False
+    # SSRF 防护：拒绝内网/元数据地址
+    return is_safe_image_url(text)
 
 
 def get_img_urls(message) -> str:
@@ -226,44 +229,6 @@ class ReverseSearcherPlugin(Star):
 
             traceback.print_exc()
 
-    @staticmethod
-    def _is_safe_url(url: str) -> bool:
-        """
-        检查 URL 是否安全 (防止 SSRF)
-        """
-        try:
-            parsed = urlparse(url)
-            if parsed.scheme not in ("http", "https"):
-                return False
-
-            hostname = parsed.hostname
-            if not hostname:
-                return False
-
-            # 获取 IP 地址
-            try:
-                addr_info = socket.getaddrinfo(hostname, None)
-            except socket.gaierror:
-                return False
-
-            for family, socktype, proto, canonname, sockaddr in addr_info:
-                ip_str = sockaddr[0]
-                ip = ipaddress.ip_address(ip_str)
-                # 禁止以下类型的 IP
-                if (
-                    ip.is_private
-                    or ip.is_loopback
-                    or ip.is_link_local
-                    or ip.is_multicast
-                ):
-                    # logger.warning(f"检测到不安全的 IP 地址: {ip_str} ({hostname})")
-                    return False
-
-            return True
-        except Exception:
-            # logger.warning(f"URL 安全检查失败: {e}")
-            return False
-
     async def _fetch_reply_images_via_api(
         self, event: AstrMessageEvent, reply_id: str
     ) -> list[io.BytesIO]:
@@ -333,9 +298,7 @@ class ReverseSearcherPlugin(Star):
                     elif hasattr(seg_data, "url"):
                         img_url = seg_data.url
 
-                    if img_url and (
-                        self._is_safe_url(img_url) or os.path.exists(img_url)
-                    ):
+                    if img_url and is_safe_image_ref(img_url):
                         urls.append(img_url)
 
             if urls:
@@ -418,9 +381,11 @@ class ReverseSearcherPlugin(Star):
         """
         异步下载图片数据，转为BytesIO对象
 
-        支持两种来源：
-        - 本地文件路径（QQ 官方等平台会把图片提前下载到 data/temp/，file 字段是本地路径）
-        - 网络 URL
+        支持两种来源（均经过安全校验）：
+        - 本地文件路径（仅限 AstrBot 数据目录内；QQ 官方等平台会把图片
+          提前下载到 data/temp/，file 字段是本地路径）
+        - 网络 URL（仅公网 http/https，拒绝内网/元数据地址；手动逐跳
+          校验重定向，防止跳转到内网）
 
         参数:
             url (str): 图片URL或本地路径
@@ -432,17 +397,52 @@ class ReverseSearcherPlugin(Star):
             网络异常会吞掉，返回None
         """
         try:
-            # 本地文件路径：直接读取
-            if url and os.path.exists(url):
+            # 本地文件路径：仅允许 AstrBot 数据目录内（防任意本地文件读取）
+            if url and is_safe_local_image_path(url):
                 with open(url, "rb") as f:
                     return io.BytesIO(f.read())
-            # 网络 URL
-            r = await self.client.get(url, timeout=15)
-            if r.status_code == 200:
-                return io.BytesIO(r.content)
-        except Exception as e:
+            # 网络 URL：SSRF 防护（公网主机 + 手动逐跳校验重定向）
+            if url and is_safe_image_url(url):
+                resp = await self._safe_get(url)
+                if resp is not None and resp.status_code == 200:
+                    return io.BytesIO(resp.content)
+        except Exception as e:  # noqa: BLE001 - 兜底：下载失败返回 None，不崩溃
             logger.debug(f"下载图片失败 {url}: {e}")
-            pass
+        return None
+
+    async def _safe_get(self, url: str, max_redirects: int = 3):
+        """
+        手动跟随重定向下载，逐跳校验目标地址安全性
+
+        防止攻击者用公网 URL 302 跳转到内网/元数据地址（重定向型 SSRF）。
+
+        参数:
+            url (str): 起始 URL
+            max_redirects (int): 最大重定向跳数
+
+        返回:
+            httpx.Response or None: 最终响应；任一跳不安全/超限返回None
+        """
+        current = url
+        for _ in range(max_redirects + 1):
+            if not is_safe_image_url(current):
+                logger.debug(f"[security] 拦截不安全地址: {current[:80]}")
+                return None
+            try:
+                resp = await self.client.get(
+                    current, timeout=15, follow_redirects=False
+                )
+            except Exception as e:  # noqa: BLE001 - 兜底：请求失败返回 None
+                logger.debug(f"请求失败 {current[:80]}: {e}")
+                return None
+            if resp.status_code in (301, 302, 303, 307, 308):
+                location = resp.headers.get("Location", "")
+                if not location:
+                    return resp
+                current = urljoin(current, location)
+                continue
+            return resp
+        logger.debug(f"[security] 重定向次数超限: {url[:80]}")
         return None
 
     async def get_imgs(self, img_urls: list[str]) -> list[io.BytesIO]:

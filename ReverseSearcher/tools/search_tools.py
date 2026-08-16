@@ -12,15 +12,20 @@ from __future__ import annotations
 import base64
 import re
 
+from astrbot.core.agent.run_context import ContextWrapper
+from astrbot.core.agent.tool import FunctionTool
+from astrbot.core.astr_agent_context import AstrAgentContext
 from pydantic import Field
 from pydantic.dataclasses import dataclass
 
 from astrbot import logger
-from astrbot.core.agent.run_context import ContextWrapper
-from astrbot.core.agent.tool import FunctionTool
-from astrbot.core.astr_agent_context import AstrAgentContext
 
 from ..engine_registry import IntentRouter
+from ..utils.security import (
+    is_safe_image_ref,
+    is_safe_image_url,
+    is_safe_local_image_path,
+)
 
 # ============ 图片提取（两个 tool 共用）=============
 
@@ -58,17 +63,22 @@ def _extract_image_from_context(
                 )
                 if path_match:
                     local_path = path_match.group(1)
-                    try:
-                        with open(local_path, "rb") as f:
-                            base64_str = base64.b64encode(f.read()).decode()
-                    except Exception:
-                        url_str = local_path
+                    # 本地路径仅允许 AstrBot 数据目录内（防任意本地文件读取）
+                    if is_safe_local_image_path(local_path):
+                        try:
+                            with open(local_path, "rb") as f:
+                                base64_str = base64.b64encode(f.read()).decode()
+                        except Exception:
+                            url_str = local_path
                 else:
                     img_matches = re.findall(
                         r"https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)", content
                     )
                     if img_matches:
-                        url_str = img_matches[0]
+                        # 仅取公网图片 URL（防 SSRF：拒绝内网/元数据地址）
+                        url_str = next(
+                            (u for u in img_matches if is_safe_image_url(u)), None
+                        )
 
     return base64_str, url_str
 
@@ -185,6 +195,10 @@ class _BaseSearchTool(FunctionTool[AstrAgentContext]):
         # 1. 提取图片
         base64_str = kwargs.get("image_base64") or kwargs.get("base64")
         url_str = kwargs.get("image_url") or kwargs.get("url")
+
+        # SSRF/本地文件读取防护：LLM 传入的 URL 必须为公网图片地址
+        if url_str and not is_safe_image_ref(url_str):
+            return "图片地址不安全：仅支持公网图片 URL 或消息内图片（已拒绝内网地址与本地文件）。"
 
         if not base64_str and not url_str:
             base64_str, url_str = _extract_image_from_context(context)

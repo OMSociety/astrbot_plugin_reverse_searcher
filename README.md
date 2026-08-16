@@ -6,7 +6,7 @@
 
 **五大引擎反向搜图** —— AnimeTrace 认角色 · SauceNAO 找出处 · Google Lens 兜底 · Yandex 找相似 · E-Hentai 搜本子
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
 [![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A5v4-green.svg)](https://github.com/AstrBotDevs/AstrBot)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/stargazers)
