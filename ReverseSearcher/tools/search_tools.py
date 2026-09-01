@@ -9,6 +9,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import re
 
@@ -195,12 +196,14 @@ class _BaseSearchTool(FunctionTool[AstrAgentContext]):
         base64_str = kwargs.get("image_base64") or kwargs.get("base64")
         url_str = kwargs.get("image_url") or kwargs.get("url")
 
-        # SSRF/本地文件读取防护：LLM 传入的 URL 必须为公网图片地址
-        if url_str and not is_safe_image_ref(url_str):
+        # SSRF/本地文件读取防护：LLM 传入的 URL 必须为公网图片地址（DNS 放线程池）
+        if url_str and not await asyncio.to_thread(is_safe_image_ref, url_str):
             return "图片地址不安全：仅支持公网图片 URL 或消息内图片（已拒绝内网地址与本地文件）。"
 
         if not base64_str and not url_str:
-            base64_str, url_str = _extract_image_from_context(context)
+            base64_str, url_str = await asyncio.to_thread(
+                _extract_image_from_context, context
+            )
 
         if not base64_str and not url_str:
             return "未找到图片。请附上图片再调用此工具。"

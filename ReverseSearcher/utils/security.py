@@ -15,6 +15,7 @@ from __future__ import annotations
 import ipaddress
 import os
 import socket
+import time
 from urllib.parse import urlparse
 
 from astrbot.api import logger
@@ -63,6 +64,28 @@ def is_private_ip(ip: str) -> bool:
     )
 
 
+# 进程级 DNS 结果缓存：host -> (IP 列表, 时间戳)。
+# 本模块可能被 asyncio.to_thread 多线程调用；dict 读写受 GIL 保护，
+# 偶发并发下的重复解析无害（最坏多解析一次）。
+_DNS_CACHE: dict[str, tuple[list[str], float]] = {}
+_DNS_CACHE_TTL = 300.0  # 5 分钟
+
+
+def _resolve_host_ips(host: str) -> list[str] | None:
+    """带缓存的域名解析，返回 IP 列表；解析失败返回 None（调用方保守拒绝）"""
+    now = time.monotonic()
+    cached = _DNS_CACHE.get(host)
+    if cached and now - cached[1] < _DNS_CACHE_TTL:
+        return cached[0]
+    try:
+        infos = socket.getaddrinfo(host, None)
+    except socket.gaierror:
+        return None
+    ips = [info[4][0] for info in infos]
+    _DNS_CACHE[host] = (ips, now)
+    return ips
+
+
 def is_safe_image_url(url: str) -> bool:
     """校验图片 URL 是否安全（http/https + 公网主机）
 
@@ -105,14 +128,12 @@ def is_safe_image_url(url: str) -> bool:
     except ValueError:
         pass  # 是域名，继续 DNS 解析校验
 
-    # DNS 解析二次校验：任一结果指向内网即拒绝
-    try:
-        infos = socket.getaddrinfo(host, None)
-    except socket.gaierror:
+    # DNS 解析二次校验：任一结果指向内网即拒绝（带缓存，调用方用 to_thread 避免阻塞事件循环）
+    ips = _resolve_host_ips(host)
+    if ips is None:
         logger.debug(f"[security] 域名解析失败，保守拒绝: {host}")
         return False
-    for info in infos:
-        ip = info[4][0]
+    for ip in ips:
         if is_private_ip(ip):
             logger.debug(f"[security] 域名解析到内网，拒绝: {host} -> {ip}")
             return False

@@ -298,7 +298,7 @@ class ReverseSearcherPlugin(Star):
                     elif hasattr(seg_data, "url"):
                         img_url = seg_data.url
 
-                    if img_url and is_safe_image_ref(img_url):
+                    if img_url and await asyncio.to_thread(is_safe_image_ref, img_url):
                         urls.append(img_url)
 
             if urls:
@@ -402,7 +402,7 @@ class ReverseSearcherPlugin(Star):
                 with open(url, "rb") as f:
                     return io.BytesIO(f.read())
             # 网络 URL：SSRF 防护（公网主机 + 手动逐跳校验重定向）
-            if url and is_safe_image_url(url):
+            if url and await asyncio.to_thread(is_safe_image_url, url):
                 resp = await self._safe_get(url)
                 if resp is not None and resp.status_code == 200:
                     return io.BytesIO(resp.content)
@@ -425,7 +425,7 @@ class ReverseSearcherPlugin(Star):
         """
         current = url
         for _ in range(max_redirects + 1):
-            if not is_safe_image_url(current):
+            if not await asyncio.to_thread(is_safe_image_url, current):
                 logger.debug(f"[security] 拦截不安全地址: {current[:80]}")
                 return None
             try:
@@ -955,7 +955,7 @@ class ReverseSearcherPlugin(Star):
         img_buffer = None
         if collected_imgs:
             img_buffer = collected_imgs[0]
-        elif is_image_url(message_text):
+        elif await asyncio.to_thread(is_image_url, message_text):
             img_buffer = await self._download_img(message_text)
         if img_buffer and not state.get("preloaded_img"):
             state["preloaded_img"] = img_buffer
@@ -974,7 +974,7 @@ class ReverseSearcherPlugin(Star):
                 async for result in self._send_engine_prompt(event, state):
                     yield result
                 return
-            elif not is_image_url(message_text):
+            elif not await asyncio.to_thread(is_image_url, message_text):
                 # 无效引擎名（非引擎非URL）
                 state.setdefault("invalid_attempts", 0)
                 state["invalid_attempts"] += 1
@@ -1073,7 +1073,7 @@ class ReverseSearcherPlugin(Star):
         error = None
         url_from_text = None
         if len(parts) > 1:
-            if is_image_url(parts[1]):
+            if await asyncio.to_thread(is_image_url, parts[1]):
                 url_from_text = parts[1]
             else:
                 potential_engine = parts[1].lower()
@@ -1092,7 +1092,7 @@ class ReverseSearcherPlugin(Star):
                         "engine_name": potential_engine,
                         "message": f"引擎 '{potential_engine}' 不存在，请提供有效的引擎名（如{example_engine}）",
                     }
-                if len(parts) > 2 and is_image_url(parts[2]):
+                if len(parts) > 2 and await asyncio.to_thread(is_image_url, parts[2]):
                     url_from_text = parts[2]
         # Try to collect images using new logic
         img_buffer = None
