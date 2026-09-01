@@ -6,7 +6,7 @@
 
 **五大引擎反向搜图** —— AnimeTrace 认角色 · SauceNAO 找出处 · Google Lens 兜底 · Yandex 找相似 · E-Hentai 搜本子
 
-[![Version](https://img.shields.io/badge/version-1.0.2-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
+[![Version](https://img.shields.io/badge/version-1.0.3-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
 [![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A5v4-green.svg)](https://github.com/AstrBotDevs/AstrBot)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-orange.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/stargazers)
@@ -119,6 +119,7 @@
 |--------|------|------|------|
 | `enable_keyword_trigger` | bool | `true` | 关键词触发开关；关闭后仅 LLM 工具可用 |
 | `proxies` | string | `""` | 代理地址，如 `http://127.0.0.1:7890`（国内访问必填） |
+| `allow_third_party_image_host` | bool | `true` | 是否允许把本地图上传到第三方临时图床（Google/Yandex 本地图搜需要；关闭后这两引擎不可用本地图搜） |
 
 ### 超时配置 `timeout_settings`
 
@@ -153,12 +154,15 @@
 | `yandex.max_results` / `use_ru_fallback` | 结果数 / `.ru` 域名回退 |
 | `yandex.cookies` | **Yandex Cookie**（反爬严格，不填可能 CAPTCHA 无结果，获取方法见 Q5） |
 
+> 🔐 **隐私披露：本地图会上传第三方图床**——使用**本地图片**搜 **Google / Yandex** 时，插件需把图片先上传到临时图床（`tmpfiles.org` / `uguu.se` / `litterbox.catbox.moe` / `tmp.ninja`）再以 URL 形式搜索。**这意味着你的图片会被上传到公网临时图床**，保留时长由第三方决定。若需关闭，将 `allow_third_party_image_host` 设为 `false`（此时这两引擎不可用本地图搜，需改用图片 URL 或换用其他引擎）。
+
 ### 快速配置模板
 
 ```json
 {
   "enable_keyword_trigger": true,
   "proxies": "",
+  "allow_third_party_image_host": true,
   "timeout_settings": {
     "search_params_timeout": 30
   },

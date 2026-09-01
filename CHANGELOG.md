@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.0.3] - 2026-09-01
+
+### 🔒 安全修复
+
+- **修复重定向型 SSRF 绕过（Network 客户端）**：`Network` 的 httpx 客户端此前 `follow_redirects=True`，只校验初始 URL、未校验重定向目标。现改为 `download()` 手动逐跳跟随并对每一跳重新校验（`is_safe_image_url`，最多 3 跳），公网 URL 302 到内网（`169.254.169.254` 等）会被拦截
+- **修复 HTML 注入**：搜索引擎返回的 `title/url/author/error_msg` 是第三方内容，此前直接拼进 HTML 模板再交给云端 t2i。现于渲染前用 `html.escape` 逐字段转义（云端渲染器是否转义不受控），防止被当作 HTML/脚本渲染
+
+### ⚙️ 配置变更
+
+- **新增 `allow_third_party_image_host` 开关**（默认 `true`）：允许把本地图上传到第三方临时图床（`tmpfiles.org` / `uguu.se` / `litterbox.catbox.moe` / `tmp.ninja`）。关闭后 Google/Yandex 本地图搜不可用，需改用图片 URL
+
+### 📝 文档
+
+- README 新增「隐私披露」：明确说明本地图搜 Google/Yandex 时图片会先上传到上述临时图床、保留时长由第三方决定、如何关闭
+
 ## [1.0.2] - 2026-09-01
 
 ### 🐛 Bug 修复

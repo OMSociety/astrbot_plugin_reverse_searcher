@@ -11,6 +11,12 @@
         "hint": "http://host:port，例如：http://127.0.0.1:7890",
         "default": ""
     },
+    "allow_third_party_image_host": {
+        "description": "允许上传到第三方图床",
+        "type": "bool",
+        "hint": "Google/Yandex 本地图搜需先把图片上传到临时图床（tmpfiles/uguu/litterbox 等）。关闭后这两引擎不可用本地图搜，需改用图片 URL",
+        "default": true
+    },
     "timeout_settings": {
         "description": "超时配置",
         "type": "object",

@@ -35,6 +35,7 @@ class BaseSearchModel:
         cookies: dict | None = None,
         timeout: int = 60,
         default_params: dict | None = None,
+        allow_third_party_image_host: bool = True,
     ):
         """
         初始化搜索模型
@@ -44,11 +45,13 @@ class BaseSearchModel:
             cookies: Cookie配置（兜底，各引擎 Cookie 优先在 default_params 对应栏目配置）
             timeout: 请求超时时间(秒)
             default_params: 各引擎的默认参数（含 yandex/ehentai 的 cookies）
+            allow_third_party_image_host: 是否允许把本地图上传到第三方临时图床（Google/Yandex 本地图搜需要）
         """
         self.proxies = proxies
         self.cookies = cookies
         self.timeout = timeout
         self.default_params = default_params or {}
+        self.allow_third_party_image_host = allow_third_party_image_host
 
     def _prepare_engine_params(self, api: str, search_params: dict) -> dict:
         """从搜索参数中提取引擎专属配置。
@@ -238,6 +241,18 @@ class BaseSearchModel:
         # base64 → bytes: animetrace 原生支持 base64，其他引擎需要解码为 bytes
         if search_params.get("base64") and api != "animetrace":
             file = base64.b64decode(search_params.pop("base64"))
+
+        # 第三方图床合规：Google/Yandex 本地图搜需把图片上传到临时图床。
+        # 若用户在配置中关闭了“允许上传第三方图床”，则此处直接拒绝，避免图片外泄。
+        if (
+            api in ("google", "yandex")
+            and file is not None
+            and not self.allow_third_party_image_host
+        ):
+            raise ValueError(
+                "本地图搜 Google/Yandex 需要把图片上传到第三方临时图床，"
+                "当前已在配置中禁用。请开启“允许上传第三方图床”，或改用图片 URL。"
+            )
 
         async with Network(**network_kwargs) as network:
             engine_instance = engine_class(network=network, **engine_params)

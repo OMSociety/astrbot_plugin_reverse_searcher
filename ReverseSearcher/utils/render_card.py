@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import html
 import io
 from pathlib import Path
 
@@ -129,12 +130,14 @@ class ResultCardRenderer:
             "source_image_b64": _img_to_data_uri(source_image, max_size=400),
             "results": [
                 {
-                    "source": item.get("source") or "未知来源",
-                    "title": item.get("title") or "",
-                    "author": item.get("author") or "",
+                    # 引擎返回的 title/url/author 是第三方内容，拼进 HTML 前
+                    # 主动转义，防止当作 HTML/脚本渲染（云端 t2i 是否转义不受控）。
+                    "source": html.escape(str(item.get("source") or "未知来源")),
+                    "title": html.escape(str(item.get("title") or "")),
+                    "author": html.escape(str(item.get("author") or "")),
                     "similarity": item.get("similarity") or "",
                     "sim_class": _sim_class(item.get("similarity")),
-                    "url": item.get("url") or "",
+                    "url": html.escape(str(item.get("url") or "")),
                     "thumbnail_b64": _img_to_data_uri(
                         item.get("thumbnail_image"), max_size=256
                     ),
@@ -169,7 +172,8 @@ class ResultCardRenderer:
         data = {
             "engine_label": _engine_label(engine),
             "engine_color": _engine_color_hex(engine),
-            "error_msg": error_msg,
+            # error_msg 可能含第三方文本，转义防 HTML/脚本注入
+            "error_msg": html.escape(str(error_msg)),
         }
         try:
             return await asyncio.wait_for(

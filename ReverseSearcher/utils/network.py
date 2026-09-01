@@ -7,13 +7,20 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
 import re
 import ssl
 from dataclasses import dataclass
 from types import TracebackType
 from typing import Any
+from urllib.parse import urljoin
 
 from httpx import AsyncClient, Proxy
+
+from .security import is_safe_image_url
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_HEADERS = {
     "User-Agent": (
@@ -49,6 +56,9 @@ class RESP:
 
 class Network:
     """异步 HTTP 客户端，支持上下文管理"""
+
+    # 手动跟随重定向的最大跳数（防 SSRF：公网 URL 302 到内网的防护上限）
+    MAX_REDIRECTS = 3
 
     def __init__(
         self,
@@ -127,8 +137,42 @@ class Network:
         return RESP(resp.text, str(resp.url), resp.status_code, dict(resp.headers))
 
     async def download(self, url: str, headers: dict[str, str] | None = None) -> bytes:
-        resp = await self._client.get(url, headers=headers)
-        return resp.read()
+        """下载 URL 内容并返回 bytes。
+
+        防 SSRF：这里不自动跟随重定向，改为手动逐跳跟随，并在每一跳
+        用 is_safe_image_url 重新校验目标地址（公网 http/https），
+        避免“初始 URL 已校验、但 302 到内网（169.254.169.254 等）”绕过。
+        超过最大跳数或遇到不安全目标则停止并返回当前响应。
+
+        Args:
+            url: 待下载的 URL（应为公网图片地址）
+            headers: 额外请求头
+
+        Returns:
+            响应 bytes；重定向链不安全/超限时返回最后一次（可能是 3xx）的 body。
+        """
+        current_url = url
+        last_resp = None
+        for _ in range(self.MAX_REDIRECTS):
+            resp = await self._client.get(
+                current_url, headers=headers, follow_redirects=False
+            )
+            last_resp = resp
+            if resp.status_code in (301, 302, 303, 307, 308):
+                location = resp.headers.get("Location")
+                if not location:
+                    break
+                next_url = urljoin(str(current_url), location)
+                if not await asyncio.to_thread(is_safe_image_url, next_url):
+                    logger.warning(
+                        f"[network] 拒绝不安全的重定向目标，停止跟随: "
+                        f"{current_url} -> {next_url}"
+                    )
+                    break
+                current_url = next_url
+                continue
+            return resp.read()
+        return last_resp.read() if last_resp is not None else b""
 
     # ── 生命周期 ──────────────────────────────────────────
 
