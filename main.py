@@ -406,7 +406,7 @@ class ReverseSearcherPlugin(Star):
                 resp = await self._safe_get(url)
                 if resp is not None and resp.status_code == 200:
                     return io.BytesIO(resp.content)
-        except Exception as e:  # noqa: BLE001 - 兜底：下载失败返回 None，不崩溃
+        except Exception as e:
             logger.debug(f"下载图片失败 {url}: {e}")
         return None
 
@@ -432,7 +432,7 @@ class ReverseSearcherPlugin(Star):
                 resp = await self.client.get(
                     current, timeout=15, follow_redirects=False
                 )
-            except Exception as e:  # noqa: BLE001 - 兜底：请求失败返回 None
+            except Exception as e:
                 logger.debug(f"请求失败 {current[:80]}: {e}")
                 return None
             if resp.status_code in (301, 302, 303, 307, 308):
@@ -543,7 +543,7 @@ class ReverseSearcherPlugin(Star):
                 async for result in self._send_image(event, content):
                     yield result
                 return
-        except Exception as e:  # noqa: BLE001 - 渲染失败降级 PIL
+        except Exception as e:
             logger.warning(f"[ReverseSearcher] 引擎表格 HTML 渲染失败，降级 PIL: {e}")
 
         # ── PIL 回退 ──
@@ -837,7 +837,7 @@ class ReverseSearcherPlugin(Star):
 
         try:
             return await asyncio.to_thread(compress)
-        except Exception as e:  # noqa: BLE001 - 压缩失败回退原图
+        except Exception as e:
             logger.warning(f"[ReverseSearcher] 图片压缩失败，使用原图: {e}")
             img_buffer.seek(0)
             return img_buffer.getvalue()

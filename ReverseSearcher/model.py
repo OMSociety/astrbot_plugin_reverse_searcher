@@ -65,9 +65,6 @@ class BaseSearchModel:
         """
         engine_params = {}
 
-        if api == "ascii2d":
-            engine_params = {}
-
         if api == "animetrace":
             engine_params = {
                 "is_multi": search_params.pop("is_multi", None),
@@ -257,31 +254,6 @@ class BaseSearchModel:
                 )
             return response
 
-    async def search_and_print(
-        self,
-        api: str,
-        file: FileContent = None,
-        url: str | None = None,
-        **kwargs: Any,
-    ) -> None:
-        """
-        执行搜索并打印结果到控制台
-
-        参数:
-            api: 搜索引擎API名称
-            file: 本地文件内容
-            url: 图像URL
-            **kwargs: 其他搜索参数
-
-        返回:
-            None
-        """
-        try:
-            result = await self.search(api=api, file=file, url=url, **kwargs)
-            print(result)
-        except Exception:
-            print(f"❌ {api} 搜索失败")
-
     async def search_and_draw(
         self,
         api: str,
@@ -415,7 +387,7 @@ class BaseSearchModel:
             )
             if img_path:
                 return await asyncio.to_thread(Image.open, img_path)
-        except Exception:  # noqa: BLE001 - 任何异常都降级 PIL
+        except Exception:
             pass
         return await asyncio.to_thread(
             self._draw_results_pil, api, items, source_image, ai_detect=ai_detect
@@ -486,9 +458,8 @@ class BaseSearchModel:
     @staticmethod
     def _format_similarity(sim) -> str:
         """将相似度数值格式化为字符串"""
-        if isinstance(sim, (int, float)):
-            if sim > 0:
-                return f"{sim:.1f}%"
+        if isinstance(sim, (int, float)) and sim > 0:
+            return f"{sim:.1f}%"
         return str(sim) if sim else ""
 
     async def _download_thumbnail(
@@ -618,6 +589,6 @@ class BaseSearchModel:
             img_path = await renderer.render_error_html_async(api, error_msg)
             if img_path:
                 return await asyncio.to_thread(Image.open, img_path)
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
         return await asyncio.to_thread(renderer.render_error_pil, api, error_msg)

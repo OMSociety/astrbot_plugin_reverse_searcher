@@ -67,7 +67,7 @@ class SauceNAOItem(BaseResParser):
                         "source",
                         "created_at",
                     ]
-                    if i in data and data[i]
+                    if data.get(i)
                 ),
                 "",
             )
@@ -127,7 +127,7 @@ class SauceNAOItem(BaseResParser):
                         "artist",
                         "company",
                     ]
-                    if i in data and data[i]
+                    if data.get(i)
                 ),
                 "",
             )

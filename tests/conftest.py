@@ -1,8 +1,16 @@
 """测试夹具与辅助工具"""
 
 import io
+import os
+import sys
 
 import pytest
+
+# 让测试能 import 到顶层包 ReverseSearcher（插件根目录须在 sys.path 上）。
+# pytest 默认只把 tests/ 目录加入 sys.path，无法解析到上一级的 ReverseSearcher 包。
+_PLUGIN_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _PLUGIN_DIR not in sys.path:
+    sys.path.insert(0, _PLUGIN_DIR)
 
 # ── 示例图片 ──────────────────────────────
 

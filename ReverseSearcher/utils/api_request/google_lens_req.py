@@ -1,10 +1,10 @@
+import asyncio
 import json
 from typing import Any
 
 import httpx
-from typing_extensions import override
-
 from astrbot.api import logger
+from typing_extensions import override
 
 from ..response_parser.google_lens_parser import GoogleLensResponse
 from .base_req import BaseSearchReq
@@ -23,8 +23,9 @@ class GoogleLensSerpApi(BaseSearchReq[GoogleLensResponse]):
     SerpApi 只接受公开 URL，本地文件需要先上传到图床再传入。
     """
 
-    def __init__(self, api_key: str, **kwargs: Any):
-        super().__init__("https://serpapi.com/search")
+    def __init__(self, api_key: str, network: Any = None, **kwargs: Any):
+        # 转发共享 network（代理/超时配置），避免子引擎各自新建且不关闭的 client
+        super().__init__("https://serpapi.com/search", network=network)
         self.api_key = api_key
         self.engine = "google_lens"
 
@@ -86,8 +87,8 @@ class GoogleLensZenserp(BaseSearchReq[GoogleLensResponse]):
     同样只接受公开 URL，本地文件需先上传到图床。
     """
 
-    def __init__(self, api_key: str, **kwargs: Any):
-        super().__init__("https://app.zenserp.com/api/v2/search")
+    def __init__(self, api_key: str, network: Any = None, **kwargs: Any):
+        super().__init__("https://app.zenserp.com/api/v2/search", network=network)
         self.api_key = api_key
 
     @override
@@ -150,8 +151,9 @@ class GoogleLens(BaseSearchReq[GoogleLensResponse]):
     主引擎失败时会自动切换到备引擎。
     """
 
-    def __init__(self, **kwargs: Any):
-        super().__init__("https://google.com")
+    def __init__(self, network: Any = None, **kwargs: Any):
+        # 转发共享 network 给编排器自身及子引擎，避免 proxy/timeout 配置失效和 client 泄漏
+        super().__init__("https://google.com", network=network)
         self.api_keys = kwargs.get("api_keys", {})
         self.serpapi_key = self.api_keys.get("serpapi") or kwargs.get("serpapi_key")
         self.zenserp_key = self.api_keys.get("zenserp") or kwargs.get("zenserp_key")
@@ -160,11 +162,13 @@ class GoogleLens(BaseSearchReq[GoogleLensResponse]):
         self.backup = None
 
         if self.serpapi_key:
-            self.primary = GoogleLensSerpApi(self.serpapi_key, **kwargs)
+            self.primary = GoogleLensSerpApi(
+                self.serpapi_key, network=network, **kwargs
+            )
             logger.info("[GoogleLens] Primary Engine: SerpApi (Google Lens)")
 
         if self.zenserp_key:
-            self.backup = GoogleLensZenserp(self.zenserp_key, **kwargs)
+            self.backup = GoogleLensZenserp(self.zenserp_key, network=network, **kwargs)
             logger.info("[GoogleLens] Backup Engine: Zenserp (Google Reverse Image)")
 
         if not self.primary and not self.backup:
@@ -184,8 +188,6 @@ class GoogleLens(BaseSearchReq[GoogleLensResponse]):
             3. 仍失败则切换到备引擎 (Zenserp)
             4. 全部失败则抛 RuntimeError
         """
-        import asyncio
-
         # 1. Try Primary (if available)
         if self.primary:
             try:

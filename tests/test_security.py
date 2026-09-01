@@ -8,13 +8,9 @@
 
 import os
 import socket
-import sys
-
-sys.path.insert(
-    0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-)
 
 from astrbot.core.utils.astrbot_path import get_astrbot_data_path
+
 from ReverseSearcher.utils.security import (
     is_private_ip,
     is_safe_image_ref,

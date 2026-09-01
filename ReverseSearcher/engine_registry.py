@@ -237,9 +237,8 @@ def resolve_engine_name(
     # 2. 用户自定义关键词
     if engine_keywords:
         for kw, eng in engine_keywords.items():
-            if kw.lower().strip() == key:
-                if eng in ENGINE_REGISTRY:
-                    return eng
+            if kw.lower().strip() == key and eng in ENGINE_REGISTRY:
+                return eng
 
     # 3. 模糊匹配（取前几个字符）
     for name in ENGINE_REGISTRY:

@@ -38,7 +38,6 @@ class BaseResParser(ABC):
         异常:
             NotImplementedError: 子类必须实现此方法
         """
-        pass
 
 
 class BaseSearchResponse(ABC, Generic[T]):
@@ -76,7 +75,6 @@ class BaseSearchResponse(ABC, Generic[T]):
         异常:
             NotImplementedError: 子类必须实现此方法
         """
-        pass
 
     @abstractmethod
     def show_result(self) -> str | None:
@@ -89,4 +87,3 @@ class BaseSearchResponse(ABC, Generic[T]):
         异常:
             NotImplementedError: 子类必须实现此方法
         """
-        pass

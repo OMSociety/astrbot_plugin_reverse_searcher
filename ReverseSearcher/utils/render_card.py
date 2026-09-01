@@ -14,10 +14,9 @@ import base64
 import io
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
-
 from astrbot.api import logger
 from astrbot.core import html_renderer
+from PIL import Image, ImageDraw, ImageFont
 
 from ..engine_registry import ENGINE_REGISTRY
 from .templates import ERROR_TMPL, RESULT_CARD_TMPL
@@ -102,7 +101,7 @@ def _img_to_data_uri(
         return (
             f"data:image/jpeg;base64,{base64.b64encode(buf.getvalue()).decode('ascii')}"
         )
-    except Exception:  # noqa: BLE001 - 单张图失败不影响整体
+    except Exception:
         return ""
 
 
@@ -159,7 +158,7 @@ class ResultCardRenderer:
                 f"[ReverseSearcher] HTML 卡片渲染超时（>{HTML_RENDER_TIMEOUT}s，云端 t2i 服务慢/不可达），降级 PIL"
             )
             return None
-        except Exception as e:  # noqa: BLE001 - 渲染失败/超时降级 PIL
+        except Exception as e:
             logger.warning(
                 f"[ReverseSearcher] HTML 卡片渲染失败（{type(e).__name__}: {e}），降级 PIL"
             )
@@ -182,7 +181,7 @@ class ResultCardRenderer:
                 ),
                 timeout=HTML_RENDER_TIMEOUT,
             )
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             logger.warning(f"[ReverseSearcher] 错误卡片 HTML 渲染失败，降级 PIL: {e}")
             return None
 

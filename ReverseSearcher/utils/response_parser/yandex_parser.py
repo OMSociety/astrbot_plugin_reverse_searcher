@@ -1,10 +1,9 @@
 import json
 from typing import Any
 
+from astrbot.api import logger
 from pyquery import PyQuery
 from typing_extensions import override
-
-from astrbot.api import logger
 
 from .base_parser import BaseResParser, BaseSearchResponse
 

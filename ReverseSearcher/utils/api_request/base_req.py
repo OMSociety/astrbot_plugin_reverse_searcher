@@ -5,8 +5,12 @@
 
 from __future__ import annotations
 
+import json
 from abc import ABC, abstractmethod
+from types import TracebackType
 from typing import Any, Generic, TypeVar
+
+from astrbot.api import logger
 
 from ..network import RESP, Network
 from ..response_parser.base_parser import BaseSearchResponse
@@ -92,8 +96,6 @@ class BaseSearchReq(Network, ABC, Generic[T]):
 
                 # 尝试 JSON 解析
                 if json_path:
-                    import json
-
                     try:
                         obj = json.loads(text)
                         url = obj
@@ -120,8 +122,6 @@ class BaseSearchReq(Network, ABC, Generic[T]):
                     return url
             except Exception as e:
                 last_error = e
-                from astrbot.api import logger
-
                 logger.debug(
                     f"[BaseSearchReq] Upload to {upload_url} failed, trying next: {e}"
                 )
@@ -133,7 +133,7 @@ class BaseSearchReq(Network, ABC, Generic[T]):
         self,
         exc_type: type[BaseException] | None = None,
         exc_val: BaseException | None = None,
-        exc_tb: Any | None = None,
+        exc_tb: TracebackType | None = None,
     ) -> None:
         # 只有自己创建的 client 才关闭，复用的不关闭
         if getattr(self, "_owned_client", True):

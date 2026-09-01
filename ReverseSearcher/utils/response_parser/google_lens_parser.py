@@ -1,5 +1,6 @@
 import json
 from typing import Any
+from urllib.parse import urlparse
 
 from typing_extensions import override
 
@@ -203,8 +204,6 @@ class GoogleLensResponse(BaseSearchResponse[GoogleLensItem]):
         source = _s(match.get("source")) or _s(match.get("destination"))
         if not source and url.startswith("http"):
             try:
-                from urllib.parse import urlparse
-
                 source = urlparse(url).netloc.replace("www.", "")
             except Exception:
                 pass
@@ -227,7 +226,6 @@ class GoogleLensResponse(BaseSearchResponse[GoogleLensItem]):
             )
 
         lines = ["Google Lens Result:", "-" * 40]
-        # ... (rest same) ...
 
         if self.ai_overview:
             lines.append(f"[AI 摘要]:\n{self.ai_overview}")

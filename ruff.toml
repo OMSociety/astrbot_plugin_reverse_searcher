@@ -1,0 +1,19 @@
+# ruff 配置（astrbot_plugin_reverse_searcher）
+# 与 MaiBot 版 maibot_plugin_reverse_searcher 保持一致，并为 AstrBot 版适配：
+# - BLE001 / S110 / S112 / TRY201：有意的"单点异常不崩溃"兜底模式（搜索引擎 API 容错），
+#   逐个加 noqa 会让代码噪音过大，插件级豁免并保持逻辑不变。
+# - N999：包名 ReverseSearcher 是历史遗留（与 MaiBot 版一致），不改名以保持模块路径兼容。
+# - PYI034：Network.__aenter__ 被 @dataclass 装饰导致静态分析误报（运行时正确返回 self）。
+# - ASYNC230：main.py 中的本地图片读取用阻塞 open（小文件、非热路径），
+#   属历史实现，改 asyncio.to_thread 风险大于收益，插件级豁免。
+
+[lint]
+ignore = [
+    "BLE001",  # 有意的兜底 except Exception（搜索引擎/渲染容错）
+    "S110",    # 有意的 try-except-pass（单张缩略图失败不影响整体）
+    "S112",    # 有意的 try-except-continue（多图床上传轮询）
+    "TRY201",  # 兜底 raise 带原异常即可，不强制 raise ... from
+    "N999",    # 历史包名 ReverseSearcher（与 MaiBot 版一致）
+    "PYI034",  # Network.__aenter__ 静态分析误报
+    "ASYNC230", # main.py 历史实现的小文件阻塞读取
+]

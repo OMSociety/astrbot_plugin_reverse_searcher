@@ -1,6 +1,7 @@
 """BaseSearchModel 核心方法测试"""
 
 import pytest
+
 from ReverseSearcher.model import BaseSearchModel
 
 # ── 测试用数据类 ────────────────────────────
@@ -152,11 +153,6 @@ class TestPrepareEngineParams:
         assert engine_params["ai_detect"] == "l2"
         assert "is_multi" not in params
         assert "ai_detect" not in params
-
-    def test_ascii2d_no_special_params(self, model):
-        params = {"url": "test"}
-        engine_params = model._prepare_engine_params("ascii2d", params)
-        assert engine_params == {}
 
     def test_unknown_engine_no_pop(self, model):
         params = {"url": "test", "something": 99}
