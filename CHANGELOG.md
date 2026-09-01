@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.0.2] - 2026-09-01
+
+### 🐛 Bug 修复
+
+- **修复 GoogleLens 引擎代理/超时配置失效 + HTTP client 泄漏**：GoogleLens 编排器及其子引擎（SerpApi / Zenserp）在构造时丢弃了共享的 Network 连接，导致代理与超时配置对 Google 引擎不生效，且每次搜索会新建 3 个不关闭的 httpx client。现已正确转发共享连接
+- **修复测试无法收集**：`tests/conftest.py` 缺 `sys.path` 注入、`test_security.py` 路径写错，导致 `pytest` 报 `No module named 'ReverseSearcher'`。已补齐（52 个用例现已可运行）
+
+### 🧹 代码清理
+
+- 移除死代码：`BaseSearchModel.search_and_print`（含控制台 print）、`_prepare_engine_params` 的 `ascii2d` 空分支及其测试
+- 清理 `yandex_req.py` / `google_lens_parser.py` 中过时的 "HandOver / requests" 注释与内联 `import`，统一提升到模块顶部
+- 新增 `ruff.toml` 统一代码规范（与 MaiBot 版一致的豁免策略）
+
 ## [1.0.1] - 2026-08-16
 
 ### 🔒 安全修复
