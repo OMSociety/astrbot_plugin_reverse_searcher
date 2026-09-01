@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw, ImageFont
 from .engine_registry import ENGINE_REGISTRY, inject_request_classes
 from .utils import Network
 from .utils.render_card import ResultCardRenderer
-from .utils.security import is_safe_image_ref
+from .utils.security import is_safe_image_ref, is_safe_image_url
 from .utils.types import FileContent
 
 inject_request_classes()  # 注入请求类到注册表
@@ -476,6 +476,9 @@ class BaseSearchModel:
             Optional[Image.Image]: 下载的缩略图，失败时返回 None
         """
         if not url:
+            return None
+        # 缩略图 URL 来自引擎响应，下载前重新校验（防第三方 API 被投毒返回内网地址）
+        if not await asyncio.to_thread(is_safe_image_url, url):
             return None
         try:
             data = await client.download(url)

@@ -8,7 +8,7 @@
 
 [![Version](https://img.shields.io/badge/version-1.0.2-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
 [![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A5v4-green.svg)](https://github.com/AstrBotDevs/AstrBot)
-[![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-orange.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/stargazers)
 [![Issues](https://img.shields.io/github/issues/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/issues)
 
@@ -283,7 +283,7 @@ yandexuid=1587138991653; ymex=1986384493.yrts.159; Session_id=3:163...:0
 
 ## 📜 许可证
 
-本项目采用 **MIT License** 开源协议。
+本项目采用 **AGPL-3.0** 开源协议。
 
 ---
 
