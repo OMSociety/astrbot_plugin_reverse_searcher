@@ -13,6 +13,10 @@
 - 清理 `yandex_req.py` / `google_lens_parser.py` 中过时的 "HandOver / requests" 注释与内联 `import`，统一提升到模块顶部
 - 新增 `ruff.toml` 统一代码规范（与 MaiBot 版一致的豁免策略）
 
+### ⚡ 性能优化
+
+- **DNS 解析不再阻塞事件循环**：`is_safe_image_url` 的域名解析加入进程级缓存（TTL 5 分钟），并在所有异步调用点用 `asyncio.to_thread` 挪出事件循环线程，消除 SSRF 校验时的同步 DNS 阻塞
+
 ## [1.0.1] - 2026-08-16
 
 ### 🔒 安全修复
