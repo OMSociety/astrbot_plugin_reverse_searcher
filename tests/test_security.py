@@ -9,6 +9,7 @@
 import os
 import socket
 
+import pytest
 from astrbot.core.utils.astrbot_path import get_astrbot_data_path
 
 from ReverseSearcher.utils.security import (
@@ -17,6 +18,26 @@ from ReverseSearcher.utils.security import (
     is_safe_image_url,
     is_safe_local_image_path,
 )
+
+
+@pytest.fixture(autouse=True)
+def _clear_dns_cache():
+    """每个用例前清空进程级 DNS 缓存，避免 mock 与真实解析结果跨用例污染"""
+    from ReverseSearcher.utils import security
+
+    security._DNS_CACHE.clear()
+
+
+def _mock_dns_public(monkeypatch):
+    """把 DNS 解析 mock 为公网 IP，使「公网 URL 应放行」用例不依赖真实网络环境。
+
+    沙箱/挂代理的机器（Clash fake-ip 等）系统 DNS 会返回私有段合成地址，
+    真实解析会让这些用例假失败；防护逻辑本身由 rebinding 专项用例覆盖。
+    """
+    monkeypatch.setattr(
+        "ReverseSearcher.utils.security.socket.getaddrinfo",
+        lambda host, port: [(socket.AF_INET, 0, 0, "", ("8.8.8.8", 0))],
+    )
 
 
 class TestIsPrivateIp:
@@ -51,10 +72,12 @@ class TestIsPrivateIp:
 class TestIsSafeImageUrl:
     """URL 公网校验（SSRF 防护）"""
 
-    def test_public_https_url(self):
+    def test_public_https_url(self, monkeypatch):
+        _mock_dns_public(monkeypatch)
         assert is_safe_image_url("https://example.com/a.jpg") is True
 
-    def test_public_http_url(self):
+    def test_public_http_url(self, monkeypatch):
+        _mock_dns_public(monkeypatch)
         assert is_safe_image_url("http://example.com/a.png") is True
 
     def test_private_ip_url(self):
@@ -136,7 +159,8 @@ class TestIsSafeLocalImagePath:
 class TestIsSafeImageRef:
     """统一图片引用入口"""
 
-    def test_public_url_ok(self):
+    def test_public_url_ok(self, monkeypatch):
+        _mock_dns_public(monkeypatch)
         assert is_safe_image_ref("https://example.com/a.jpg") is True
 
     def test_private_url_rejected(self):
