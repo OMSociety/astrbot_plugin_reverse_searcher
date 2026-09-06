@@ -5,7 +5,6 @@ import os
 import re
 import tempfile
 import time
-from pathlib import Path
 from urllib.parse import urljoin
 
 import httpx
@@ -14,13 +13,11 @@ from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.message_components import Image as AstrImage
 from astrbot.api.message_components import Reply
 from astrbot.api.star import Context, Star
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 
-from .ReverseSearcher.engine_registry import (
-    ALL_ENGINES,
-    COLOR_THEME,
-    ENGINE_REGISTRY,
-)
+from .ReverseSearcher.engine_intro_pil import create_engine_intro_image
+from .ReverseSearcher.engine_registry import ALL_ENGINES, ENGINE_REGISTRY
+from .ReverseSearcher.message_extract import get_img_urls, get_message_text
 from .ReverseSearcher.model import BaseSearchModel
 from .ReverseSearcher.utils.security import (
     is_safe_image_url,
@@ -51,96 +48,6 @@ def is_image_url(text: str) -> bool:
         return False
     # SSRF 防护：拒绝内网/元数据地址
     return is_safe_image_url(text)
-
-
-def get_img_urls(message) -> str:
-    """
-    从消息对象中提取第一张图片的URL
-
-    优先使用 AstrBot 标准消息组件链（跨平台统一），
-    旧版 raw_message 正则逻辑保留作兜底。
-
-    参数:
-        message: 消息体对象，可含message或raw_message属性
-
-    返回:
-        str: 图片URL，如果没有找到则返回空字符串
-
-    异常:
-        无
-    """
-    # AstrBot 标准组件链（QQ 官方等平台的 raw_message 是 SDK 对象，正则提取不到）
-    # 注意：Image.fromURL 把 URL 存在 file 字段（url 字段为空），需同时检查两者
-    for component in getattr(message, "message", []) or []:
-        if isinstance(component, AstrImage):
-            img_ref = (
-                getattr(component, "url", "") or getattr(component, "file", "") or ""
-            )
-            if img_ref:
-                return img_ref
-    # 旧逻辑兜底
-    raw_message = getattr(message, "raw_message", "")
-    if isinstance(raw_message, dict) and "message" in raw_message:
-        raw_message_str = str(raw_message.get("message", []))
-        image_match = re.search(
-            r"'type':\s*'image'.*?'url':\s*'([^']+)'", raw_message_str
-        )
-        if image_match:
-            return image_match.group(1)
-        file_match = re.search(
-            r"'type':\s*'file'.*?'file':\s*'([^']+)'", raw_message_str
-        )
-        if file_match:
-            filename = file_match.group(1)
-            IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff"}
-            if os.path.splitext(filename.lower())[1] in IMAGE_EXTS:
-                for component in getattr(message, "message", []):
-                    component_str = str(component)
-                    if "type='File'" in component_str:
-                        url_match = re.search(r"url='([^']+)'", component_str)
-                        if url_match:
-                            return url_match.group(1)
-    return ""
-
-
-def get_message_text(message) -> str:
-    """
-    提取消息对象中的文本内容（忽略图片和其他非文本消息段落）
-
-    优先使用 AstrBot 标准 message_str 字段（所有平台适配器统一填充；
-    QQ 官方等平台的 raw_message 是 SDK 对象，旧正则逻辑无法提取），
-    旧逻辑保留作兜底。
-
-    参数:
-        message: 消息体对象
-
-    返回:
-        str: 提取到的文本内容（去首尾空格）
-
-    异常:
-        无
-    """
-    # AstrBot 标准纯文本字段（跨平台统一）
-    message_str = getattr(message, "message_str", "")
-    if isinstance(message_str, str) and message_str.strip():
-        return message_str.strip()
-    # 旧逻辑兜底
-    raw_message = getattr(message, "raw_message", "")
-    if isinstance(raw_message, str):
-        return raw_message.strip()
-    elif isinstance(raw_message, dict) and "message" in raw_message:
-        texts = [
-            (
-                msg_part.get("data", {}).get("text", "")
-                if isinstance(msg_part, dict)
-                else str(msg_part)
-            )
-            for msg_part in raw_message.get("message", [])
-            if (isinstance(msg_part, dict) and msg_part.get("type") == "text")
-            or isinstance(msg_part, str)
-        ]
-        return " ".join(texts).strip()
-    return ""
 
 
 class ReverseSearcherPlugin(Star):
@@ -459,219 +366,11 @@ class ReverseSearcherPlugin(Star):
             logger.warning(f"[ReverseSearcher] 引擎表格 HTML 渲染失败，降级 PIL: {e}")
 
         # ── PIL 回退 ──
-
-        def create_engine_intro_image():
-            width = 1000
-            cell_height = 50
-            header_height = 60
-            title_height = 70
-            table_height = header_height + cell_height * len(self.available_engines)
-            height = title_height + table_height + 25
-            border_width = 2
-
-            def rounded_rectangle(draw, xy, radius, fill=None, outline=None, width=1):
-                x1, y1, x2, y2 = xy
-                diameter = 2 * radius
-                draw.rectangle(
-                    [x1 + radius, y1, x2 - radius, y2],
-                    fill=fill,
-                    outline=outline,
-                    width=width,
-                )
-                draw.rectangle(
-                    [x1, y1 + radius, x2, y2 - radius],
-                    fill=fill,
-                    outline=outline,
-                    width=width,
-                )
-                draw.pieslice(
-                    [x1, y1, x1 + diameter, y1 + diameter],
-                    180,
-                    270,
-                    fill=fill,
-                    outline=outline,
-                    width=width,
-                )
-                draw.pieslice(
-                    [x2 - diameter, y1, x2, y1 + diameter],
-                    270,
-                    360,
-                    fill=fill,
-                    outline=outline,
-                    width=width,
-                )
-                draw.pieslice(
-                    [x1, y2 - diameter, x1 + diameter, y2],
-                    90,
-                    180,
-                    fill=fill,
-                    outline=outline,
-                    width=width,
-                )
-                draw.pieslice(
-                    [x2 - diameter, y2 - diameter, x2, y2],
-                    0,
-                    90,
-                    fill=fill,
-                    outline=outline,
-                    width=width,
-                )
-
-            img = Image.new("RGB", (width, height), COLOR_THEME["bg"])
-            draw = ImageDraw.Draw(img)
-            workspace_root = Path(__file__).parent
-            try:
-                font_path = str(
-                    workspace_root
-                    / "ReverseSearcher/resource/font/NotoSansSC-Regular.otf"
-                )
-                title_font = ImageFont.truetype(font_path, 24)
-                header_font = ImageFont.truetype(font_path, 18)
-                body_font = ImageFont.truetype(font_path, 16)
-            except Exception:
-                title_font = ImageFont.load_default()
-                header_font = ImageFont.load_default()
-                body_font = ImageFont.load_default()
-            rounded_rectangle(
-                draw,
-                [20, 15, width - 20, title_height - 5],
-                10,
-                fill=COLOR_THEME["header_bg"],
-            )
-            title = "可用搜索引擎"
-            title_width = (
-                draw.textlength(title, font=title_font)
-                if hasattr(draw, "textlength")
-                else title_font.getsize(title)[0]
-            )
-            title_x = (width - title_width) // 2
-            draw.text(
-                (title_x, 25), title, font=title_font, fill=COLOR_THEME["header_text"]
-            )
-            table_x = 20
-            table_width = width - 40
-            col_widths = [
-                int(table_width * 0.15),
-                int(table_width * 0.40),
-                int(table_width * 0.20),
-                int(table_width * 0.25),
-            ]
-            table_y = title_height + 10
-            table_bottom = (
-                table_y + header_height + cell_height * len(self.available_engines)
-            )
-            draw.rectangle(
-                [table_x, table_y, table_x + sum(col_widths), table_y + header_height],
-                fill=COLOR_THEME["table_header"],
-            )
-            y = table_y + header_height
-            for idx, engine in enumerate(self.available_engines):
-                row_bg = (
-                    COLOR_THEME["cell_bg_even"]
-                    if idx % 2 == 0
-                    else COLOR_THEME["cell_bg_odd"]
-                )
-                draw.rectangle(
-                    [table_x, y, table_x + sum(col_widths), y + cell_height],
-                    fill=row_bg,
-                )
-                y += cell_height
-            headers = ["引擎", "网址", "二次元图片专用", "关键词"]
-            x = table_x
-            for i, header in enumerate(headers):
-                text_width = (
-                    draw.textlength(header, font=header_font)
-                    if hasattr(draw, "textlength")
-                    else header_font.getsize(header)[0]
-                )
-                text_x = x + (col_widths[i] - text_width) // 2
-                draw.text(
-                    (text_x, table_y + (header_height - 18) // 2),
-                    header,
-                    font=header_font,
-                    fill=COLOR_THEME["text"],
-                )
-                x += col_widths[i]
-            y = table_y + header_height
-            for idx, engine in enumerate(self.available_engines):
-                info = ENGINE_INFO[engine]
-                x = table_x
-                draw.text(
-                    (x + 15, y + (cell_height - 16) // 2),
-                    engine,
-                    font=body_font,
-                    fill=COLOR_THEME["text"],
-                )
-                x += col_widths[0]
-                draw.text(
-                    (x + 15, y + (cell_height - 16) // 2),
-                    info["url"],
-                    font=body_font,
-                    fill=COLOR_THEME["url"],
-                )
-                x += col_widths[1]
-                mark = "✓" if info["anime"] else "×"
-                mark_color = (
-                    COLOR_THEME["success"] if info["anime"] else COLOR_THEME["fail"]
-                )
-                mark_width = (
-                    draw.textlength(mark, font=header_font)
-                    if hasattr(draw, "textlength")
-                    else header_font.getsize(mark)[0]
-                )
-                draw.text(
-                    (
-                        x + (col_widths[2] - mark_width) // 2,
-                        y + (cell_height - 18) // 2,
-                    ),
-                    mark,
-                    font=header_font,
-                    fill=mark_color,
-                )
-                x += col_widths[2]
-                keyword = self._get_keyword_for(engine)
-                draw.text(
-                    (x + 15, y + (cell_height - 16) // 2),
-                    keyword,
-                    font=body_font,
-                    fill=COLOR_THEME["hint"],
-                )
-                y += cell_height
-            draw.rectangle(
-                [table_x, table_y, table_x + sum(col_widths), table_bottom],
-                outline=COLOR_THEME["border"],
-                width=border_width,
-            )
-            for i in range(1, len(self.available_engines) + 1):
-                line_y = table_y + header_height + cell_height * i
-                if i < len(self.available_engines):
-                    draw.line(
-                        [(table_x, line_y), (table_x + sum(col_widths), line_y)],
-                        fill=COLOR_THEME["border"],
-                        width=border_width,
-                    )
-            draw.line(
-                [
-                    (table_x, table_y + header_height),
-                    (table_x + sum(col_widths), table_y + header_height),
-                ],
-                fill=COLOR_THEME["border"],
-                width=border_width,
-            )
-            col_x = table_x
-            for i in range(len(col_widths) - 1):
-                col_x += col_widths[i]
-                draw.line(
-                    [(col_x, table_y), (col_x, table_bottom)],
-                    fill=COLOR_THEME["border"],
-                    width=border_width,
-                )
-            output = io.BytesIO()
-            img.save(output, format="JPEG", quality=85)
-            output.seek(0)
-            return output.getvalue()
-
-        img_bytes = await asyncio.to_thread(create_engine_intro_image)
+        img_bytes = await asyncio.to_thread(
+            create_engine_intro_image,
+            self.available_engines,
+            self._get_keyword_for,
+        )
         async for result in self._send_image(event, img_bytes):
             yield result
 
