@@ -6,7 +6,7 @@ main.py / search_tools.py / model.py 从本文件引。
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import ClassVar
 
 # 前向声明类型占位，实际引用由调用方注入
@@ -30,9 +30,6 @@ class EngineDef:
     # 运行时引用
     req_class: TYPE_REQUEST_CLASS | None = None  # api_request 请求类
 
-    # LLM 工具用
-    fallback: list[str] = field(default_factory=list)  # 自动切换候补
-
 
 # ── 注册表 ────────────────────────────────────────────
 
@@ -44,7 +41,6 @@ ENGINE_REGISTRY: dict[str, EngineDef] = {
         url="https://www.animetrace.com/",
         anime_focused=True,
         color=(99, 102, 241),  # #6366F1 靛蓝紫
-        fallback=["saucenao"],
     ),
     "saucenao": EngineDef(
         name="saucenao",
@@ -53,7 +49,6 @@ ENGINE_REGISTRY: dict[str, EngineDef] = {
         url="https://saucenao.com/",
         anime_focused=True,
         color=(30, 30, 46),  # #1E1E2E 暗炭黑
-        fallback=["google"],
     ),
     "ehentai": EngineDef(
         name="ehentai",
@@ -70,7 +65,6 @@ ENGINE_REGISTRY: dict[str, EngineDef] = {
         url="https://lens.google.com/",
         anime_focused=False,
         color=(66, 133, 244),
-        fallback=["yandex"],
     ),
     "yandex": EngineDef(
         name="yandex",
@@ -79,7 +73,6 @@ ENGINE_REGISTRY: dict[str, EngineDef] = {
         url="https://yandex.com/images/",
         anime_focused=False,
         color=(255, 204, 0),
-        fallback=["google"],
     ),
 }
 
@@ -204,48 +197,6 @@ class IntentRouter:
             return "animetrace"
 
         return max(scores, key=scores.get)  # type: ignore[arg-type]
-
-    @classmethod
-    def looks_anime(cls, intent: str | None = None) -> bool:
-        """快速判断意图是否偏向二次元"""
-        if not intent:
-            return True
-        return any(kw in intent.lower() for kw in cls.ANIME_IMAGE_KEYWORDS)
-
-
-# ── 引擎名标准化 ────────────────────────────────────────
-
-
-def resolve_engine_name(
-    keyword: str, engine_keywords: dict[str, str] | None = None
-) -> str | None:
-    """将用户输入的关键词/别名解析为标准引擎名
-
-    参数:
-        keyword: 用户输入的引擎名或关键词
-        engine_keywords: 自定义关键词→引擎名的映射
-
-    返回:
-        str | None: 标准引擎名，无法匹配则 None
-    """
-    key = keyword.lower().strip()
-
-    # 1. 精确匹配引擎名
-    if key in ENGINE_REGISTRY:
-        return key
-
-    # 2. 用户自定义关键词
-    if engine_keywords:
-        for kw, eng in engine_keywords.items():
-            if kw.lower().strip() == key and eng in ENGINE_REGISTRY:
-                return eng
-
-    # 3. 模糊匹配（取前几个字符）
-    for name in ENGINE_REGISTRY:
-        if name.startswith(key) or key in name:
-            return name
-
-    return None
 
 
 # ── 请求类注入 ──────────────────────────────────────────

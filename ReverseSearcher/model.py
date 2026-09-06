@@ -1,10 +1,12 @@
 import asyncio
 import base64
 import io
+import re
 from pathlib import Path
 from typing import Any
 
 from PIL import Image, ImageDraw, ImageFont
+from astrbot.api import logger
 
 from .engine_registry import ENGINE_REGISTRY, inject_request_classes
 from .utils import Network
@@ -301,6 +303,8 @@ class BaseSearchModel:
                 network_kwargs["timeout"] = self.timeout
 
             async def download_all_thumbs():
+                # 各缩略图下载相互独立、失败各自返回 None，并发执行；
+                # 无缩略图位以 asyncio.sleep(0) 占位保持与 items 对齐
                 async with Network(**network_kwargs) as client:
                     tasks = []
                     for item in items:
@@ -308,14 +312,8 @@ class BaseSearchModel:
                         if url:
                             tasks.append(self._download_thumbnail(client, url))
                         else:
-                            tasks.append(None)
-                    results = []
-                    for t in tasks:
-                        if t is not None:
-                            results.append(await t)
-                        else:
-                            results.append(None)
-                    return results
+                            tasks.append(asyncio.sleep(0, result=None))
+                    return list(await asyncio.gather(*tasks))
 
             thumb_images = await download_all_thumbs()
             for i, thumb in enumerate(thumb_images):
@@ -348,40 +346,12 @@ class BaseSearchModel:
             return await self.draw_results(
                 api, items, source_image, ai_detect=ai_detect
             )
-        except Exception:
-            return await self.draw_error(api, "搜索失败")
-
-    def _format_error(self, api: str, error_msg: str) -> str:
-        """
-        格式化错误信息
-
-        参数:
-            api: 搜索引擎API名称
-            error_msg: 原始错误信息
-
-        返回:
-            str: 格式化后的错误信息
-        """
-        friendly_msg = (
-            "未搜索到相关信息"
-            if "list index out of range" in error_msg.lower()
-            else error_msg
-        )
-        return f"""{"=" * 50}
-{api.upper()} 搜索失败
-{"=" * 50}
-错误信息: {friendly_msg}
-{"=" * 50}"""
-
-    @classmethod
-    def get_supported_engines(cls) -> list[str]:
-        """
-        获取所有支持的搜索引擎列表
-
-        返回:
-            list[str]: 支持的搜索引擎名称列表
-        """
-        return list(ENGINE_MAP.keys())
+        except Exception as e:
+            # 错误卡片透出具体原因（渲染层已有转义）；
+            # 先脱敏，防止 httpx 异常把含 api_key 的请求 URL 画进卡片
+            detail = re.sub(r"(api[_-]?key=)[^&\s]+", r"\1***", str(e), flags=re.I)
+            logger.warning(f"[ReverseSearcher] {api} 搜索失败: {type(e).__name__}: {e}")
+            return await self.draw_error(api, detail[:200] or "搜索失败")
 
     async def draw_results(
         self,

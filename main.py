@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import io
 import os
 import re
@@ -11,6 +12,7 @@ import httpx
 from astrbot.api import logger
 from astrbot.api.event import AstrMessageEvent, filter
 from astrbot.api.message_components import Image as AstrImage
+from astrbot.api.message_components import Reply
 from astrbot.api.star import Context, Star
 from PIL import Image, ImageDraw, ImageFont
 
@@ -21,7 +23,6 @@ from .ReverseSearcher.engine_registry import (
 )
 from .ReverseSearcher.model import BaseSearchModel
 from .ReverseSearcher.utils.security import (
-    is_safe_image_ref,
     is_safe_image_url,
     is_safe_local_image_path,
 )
@@ -215,9 +216,9 @@ class ReverseSearcherPlugin(Star):
             ),
         )
         self.state_handlers = {
-            "waiting_engine": self._handle_waiting_engine,
-            "waiting_both": self._handle_waiting_both,
-            "waiting_image": self._handle_waiting_image,
+            "waiting_engine": self._handle_waiting,
+            "waiting_both": self._handle_waiting,
+            "waiting_image": self._handle_waiting,
         }
 
         # 注册 LLM 工具
@@ -226,90 +227,8 @@ class ReverseSearcherPlugin(Star):
 
             register_search_tools(self)
             logger.info("[ReverseSearcher] LLM 搜图工具注册完成")
-        except Exception as e:
-            logger.error(f"[ReverseSearcher] 工具注册失败: {e}")
-            import traceback
-
-            traceback.print_exc()
-
-    async def _fetch_reply_images_via_api(
-        self, event: AstrMessageEvent, reply_id: str
-    ) -> list[io.BytesIO]:
-        """通过 OneBot API 获取被引用消息中的图片"""
-        images = []
-        try:
-            # 尝试获取底层 client 并调用 get_msg API
-            client = None
-
-            # 方式1：从 event.raw_event 获取 bot 实例
-            if hasattr(event, "raw_event") and event.raw_event:
-                raw = event.raw_event
-                if hasattr(raw, "bot"):
-                    client = raw.bot
-                elif hasattr(raw, "_bot"):
-                    client = raw._bot
-
-            # 方式2：从 context 获取
-            if not client and hasattr(self, "context") and self.context:
-                # AstrBot 3.4+
-                if hasattr(self.context, "get_platform_client"):
-                    client = self.context.get_platform_client()
-                elif hasattr(self.context, "platform_manager"):
-                    pm = self.context.platform_manager
-                    if hasattr(pm, "get_client"):
-                        client = pm.get_client("aiocqhttp")
-
-            if not client:
-                return images
-
-            # 调用 get_msg API
-            result = None
-            if hasattr(client, "call_api"):
-                result = await client.call_api("get_msg", message_id=int(reply_id))
-            elif hasattr(client, "get_msg"):
-                result = await client.get_msg(message_id=int(reply_id))
-
-            if not result:
-                return images
-
-            # 解析返回的消息
-            message_content = None
-            if isinstance(result, dict):
-                message_content = result.get("message", [])
-            elif hasattr(result, "message"):
-                message_content = result.message
-
-            if not message_content:
-                return images
-
-            urls = []
-            for seg in message_content:
-                seg_type = None
-                seg_data = None
-
-                if isinstance(seg, dict):
-                    seg_type = seg.get("type")
-                    seg_data = seg.get("data", {})
-                elif hasattr(seg, "type"):
-                    seg_type = seg.type
-                    seg_data = getattr(seg, "data", {})
-
-                if seg_type == "image":
-                    img_url = None
-                    if isinstance(seg_data, dict):
-                        img_url = seg_data.get("url") or seg_data.get("file")
-                    elif hasattr(seg_data, "url"):
-                        img_url = seg_data.url
-
-                    if img_url and await asyncio.to_thread(is_safe_image_ref, img_url):
-                        urls.append(img_url)
-
-            if urls:
-                images = await self.get_imgs(urls)
-        except Exception as e:
-            logger.warning(f"通过 API 获取被引用消息失败: {e}")
-
-        return images
+        except Exception:
+            logger.exception("[ReverseSearcher] 工具注册失败")
 
     async def _collect_input_images(self, event: AstrMessageEvent) -> list[io.BytesIO]:
         """收集图片（BytesIO格式），支持直接发送和引用回复"""
@@ -333,21 +252,23 @@ class ReverseSearcherPlugin(Star):
             ]
             logger.warning(f"[ReverseSearcher] 未从消息提取到图片 URL，组件链: {comps}")
 
-        # 2. 检查引用回复
-        reply_id = None
-        raw_evt = getattr(event, "raw_event", None)
-        if raw_evt and isinstance(raw_evt, dict):
-            msg_segs = raw_evt.get("message", [])
-            if isinstance(msg_segs, list):
-                for seg in msg_segs:
-                    if seg.get("type") == "reply":
-                        reply_id = seg.get("data", {}).get("id")
-                        break
-
-        if reply_id and not images:
-            fetched = await self._fetch_reply_images_via_api(event, reply_id)
-            if fetched:
-                images.extend(fetched)
+        # 2. 检查引用回复：框架已把被引用消息解析为 Reply 组件，
+        #    其 chain 字段携带原消息的组件链（aiocqhttp 适配器 get_reply=True 时自动填充）
+        if not images:
+            for component in getattr(event.message_obj, "message", []) or []:
+                if not isinstance(component, Reply):
+                    continue
+                reply_urls = []
+                for comp in component.chain or []:
+                    if isinstance(comp, AstrImage):
+                        img_ref = (
+                            getattr(comp, "url", "") or getattr(comp, "file", "") or ""
+                        )
+                        if img_ref:
+                            reply_urls.append(img_ref)
+                if reply_urls:
+                    images.extend(await self.get_imgs(reply_urls))
+                    break
 
         return images
 
@@ -379,6 +300,8 @@ class ReverseSearcherPlugin(Star):
         await self.client.aclose()
         if hasattr(self, "cleanup_task"):
             self.cleanup_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self.cleanup_task
 
     async def _download_img(self, url: str):
         """
@@ -508,26 +431,18 @@ class ReverseSearcherPlugin(Star):
         # ── HTML 模板渲染（优先）──
         from astrbot.core import html_renderer
 
-        from .ReverseSearcher.engine_registry import ENGINE_REGISTRY
         from .ReverseSearcher.utils.templates import ENGINE_INTRO_TMPL
 
         engines_data = []
         for engine in self.available_engines:
-            if engine not in ENGINE_INFO:
-                continue
             info = ENGINE_INFO[engine]
             engine_def = ENGINE_REGISTRY.get(engine)
-            keyword = engine
-            for custom_keyword, engine_name in self.engine_keywords.items():
-                if engine_name == engine:
-                    keyword = custom_keyword
-                    break
             engines_data.append(
                 {
                     "label": engine_def.label if engine_def else engine,
                     "url": info["url"],
                     "anime": info["anime"],
-                    "keyword": keyword,
+                    "keyword": self._get_keyword_for(engine),
                 }
             )
         try:
@@ -657,8 +572,6 @@ class ReverseSearcherPlugin(Star):
             )
             y = table_y + header_height
             for idx, engine in enumerate(self.available_engines):
-                if engine not in ENGINE_INFO:
-                    continue
                 row_bg = (
                     COLOR_THEME["cell_bg_even"]
                     if idx % 2 == 0
@@ -687,8 +600,6 @@ class ReverseSearcherPlugin(Star):
                 x += col_widths[i]
             y = table_y + header_height
             for idx, engine in enumerate(self.available_engines):
-                if engine not in ENGINE_INFO:
-                    continue
                 info = ENGINE_INFO[engine]
                 x = table_x
                 draw.text(
@@ -724,11 +635,7 @@ class ReverseSearcherPlugin(Star):
                     fill=mark_color,
                 )
                 x += col_widths[2]
-                keyword = engine
-                for custom_keyword, engine_name in self.engine_keywords.items():
-                    if engine_name == engine:
-                        keyword = custom_keyword
-                        break
+                keyword = self._get_keyword_for(engine)
                 draw.text(
                     (x + 15, y + (cell_height - 16) // 2),
                     keyword,
@@ -793,13 +700,10 @@ class ReverseSearcherPlugin(Star):
 
         # 压缩源图：大图上传搜索 API 慢（用户反馈），统一缩到最长边 1500px 转 JPEG
         file_bytes = await self._prepare_image_bytes(img_buffer)
-        user_id = event.get_sender_id()
-        state = self.user_states.get(user_id, {})
-        extra_kwargs = state.get("search_extra_params", {})
 
         # search_and_draw 内部已处理异常 → 返回错误图片
         result_img = await self.search_model.search_and_draw(
-            api=engine, file=file_bytes, **extra_kwargs
+            api=engine, file=file_bytes
         )
 
         def encode_image():
@@ -919,6 +823,13 @@ class ReverseSearcherPlugin(Star):
             return self.engine_keywords[engine_name_lower]
         return engine_name
 
+    def _get_keyword_for(self, engine: str) -> str:
+        """获取引擎的自定义触发关键词；未配置时返回引擎名本身。"""
+        for custom_keyword, engine_name in self.engine_keywords.items():
+            if engine_name == engine:
+                return custom_keyword
+        return engine
+
     def _clear_waiting_states_before_search(self, user_id: str):
         """
         在执行搜索前清除用户等待状态
@@ -1032,21 +943,7 @@ class ReverseSearcherPlugin(Star):
 
     # ── 薄封装处理器 ──────────────────────────────
 
-    async def _handle_waiting_engine(
-        self, event: AstrMessageEvent, state: dict, user_id: str
-    ):
-        async for result in self._resolve_and_search(event, state, user_id):
-            yield result
-        event.stop_event()
-
-    async def _handle_waiting_both(self, event, state, user_id):
-        async for result in self._resolve_and_search(event, state, user_id):
-            yield result
-        event.stop_event()
-
-    async def _handle_waiting_image(
-        self, event: AstrMessageEvent, state: dict, user_id: str
-    ):
+    async def _handle_waiting(self, event: AstrMessageEvent, state: dict, user_id: str):
         async for result in self._resolve_and_search(event, state, user_id):
             yield result
         event.stop_event()

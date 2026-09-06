@@ -10,10 +10,10 @@
 from __future__ import annotations
 
 import asyncio
-import base64
-import re
 
-from astrbot import logger
+from astrbot.api import logger
+from astrbot.api.message_components import Image as AstrImage
+from astrbot.api.message_components import Reply
 from astrbot.core.agent.run_context import ContextWrapper
 from astrbot.core.agent.tool import FunctionTool
 from astrbot.core.astr_agent_context import AstrAgentContext
@@ -21,11 +21,7 @@ from pydantic import Field
 from pydantic.dataclasses import dataclass
 
 from ..engine_registry import IntentRouter
-from ..utils.security import (
-    is_safe_image_ref,
-    is_safe_image_url,
-    is_safe_local_image_path,
-)
+from ..utils.security import is_safe_image_ref
 
 # ============ 图片提取（两个 tool 共用）=============
 
@@ -33,59 +29,47 @@ from ..utils.security import (
 def _extract_image_from_context(
     context: ContextWrapper[AstrAgentContext],
 ) -> tuple[str | None, str | None]:
-    """从 context 中提取图片，返回 (base64, url)
+    """从当前消息上下文提取图片引用，返回 (base64, url)。
 
-    优先级：
-    1. base64 参数（显式传入）
-    2. URL 参数（显式传入）
-    3. 消息中的 image_list
-    4. 消息内容中的 URL（https://.../*.jpg|png|...）
-    5. 消息内容中的本地路径（path /xxx/xxx.jpg）
+    读 AstrBot 标准组件链：直发图片取第一个 Image 组件的 url/file
+    （Image.fromURL 把 URL 存在 file 字段，两者都查）；引用回复从
+    Reply.chain 中取（aiocqhttp 适配器 get_reply=True 时自动填充）。
+    URL 安全性由调用方 is_safe_image_ref 校验。
     """
-    base64_str = None
     url_str = None
-
-    # 从消息上下文中提取
     event = (
         getattr(context.context, "event", None) if hasattr(context, "context") else None
     )
-    if event:
-        msg_obj = getattr(event, "message_obj", None)
-        if msg_obj:
-            # image_list
-            if hasattr(msg_obj, "image_list") and msg_obj.image_list:
-                url_str = msg_obj.image_list[0]
-            # 内容中的 URL 或本地路径
-            content = getattr(msg_obj, "content", "") or ""
-            if content:
-                path_match = re.search(
-                    r"path[/\s]+(/[^\s]+\.(?:jpg|jpeg|png|gif|webp))", content
-                )
-                if path_match:
-                    local_path = path_match.group(1)
-                    # 本地路径仅允许 AstrBot 数据目录内（防任意本地文件读取）
-                    if is_safe_local_image_path(local_path):
-                        try:
-                            with open(local_path, "rb") as f:
-                                base64_str = base64.b64encode(f.read()).decode()
-                        except Exception:
-                            url_str = local_path
-                else:
-                    img_matches = re.findall(
-                        r"https?://[^\s]+\.(?:jpg|jpeg|png|gif|webp)", content
-                    )
-                    if img_matches:
-                        # 仅取公网图片 URL（防 SSRF：拒绝内网/元数据地址）
-                        url_str = next(
-                            (u for u in img_matches if is_safe_image_url(u)), None
-                        )
+    msg_obj = getattr(event, "message_obj", None) if event else None
+    if not msg_obj:
+        return None, None
 
-    return base64_str, url_str
+    def _img_ref(comp) -> str:
+        return getattr(comp, "url", "") or getattr(comp, "file", "") or ""
+
+    for component in getattr(msg_obj, "message", []) or []:
+        if isinstance(component, AstrImage):
+            ref = _img_ref(component)
+            if ref:
+                url_str = ref
+                break
+    if not url_str:
+        for component in getattr(msg_obj, "message", []) or []:
+            if isinstance(component, Reply):
+                for comp in component.chain or []:
+                    if isinstance(comp, AstrImage):
+                        ref = _img_ref(comp)
+                        if ref:
+                            url_str = ref
+                            break
+                if url_str:
+                    break
+    return None, url_str
 
 
 async def _perform_search(
     search_model, engine: str, base64_str: str | None, url_str: str | None
-) -> any:
+) -> str | None:
     """执行搜索，统一处理 base64/URL 参数"""
     if base64_str:
         return await search_model.search(api=engine, base64=base64_str)
@@ -95,48 +79,16 @@ async def _perform_search(
         raise ValueError("No image provided")
 
 
-def _format_search_result(result: any, engine: str) -> str:
-    """格式化搜索结果为文本"""
+def _format_search_result(result: str | None, engine: str) -> str:
+    """格式化搜索结果为文本（search() 返回 str | None）"""
     from ..engine_registry import ENGINE_REGISTRY
 
     engine_def = ENGINE_REGISTRY.get(engine)
     label = engine_def.label if engine_def else engine
 
-    if result is None or result == "":
+    if result is None or not result.strip():
         return f"🔍 [{label}] 未找到结果"
-
-    if isinstance(result, str):
-        if result.strip():
-            return f"🔍 [{label}]\n{result[:500]}"
-        return f"🔍 [{label}] 未找到结果"
-
-    images = result.get("images", []) if isinstance(result, dict) else []
-    extra_text = result.get("extra_text", "") if isinstance(result, dict) else ""
-    error_msg = result.get("error", "") if isinstance(result, dict) else ""
-
-    if error_msg:
-        return f"❌ [{label}] 搜索失败：{error_msg}"
-
-    if not images:
-        return f"🔍 [{label}] 未找到结果"
-
-    lines_out = [f"🔍 [{label}] 找到 {len(images)} 个结果"]
-
-    for i, img in enumerate(images[:5], 1):
-        source = img.get("source", "未知来源")
-        similarity = img.get("similarity", "")
-        img_url = img.get("url", "")
-
-        lines_out.append(f"\n{i}. {source}")
-        if similarity:
-            lines_out.append(f"   📊 相似度: {similarity}")
-        if img_url:
-            lines_out.append(f"   🔗 {img_url[:80]}")
-
-    if extra_text:
-        lines_out.append(f"\n📝 {extra_text}")
-
-    return "\n".join(lines_out)
+    return f"🔍 [{label}]\n{result[:500]}"
 
 
 # ============ 基类 ============
