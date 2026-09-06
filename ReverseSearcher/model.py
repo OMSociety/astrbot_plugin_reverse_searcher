@@ -333,6 +333,9 @@ class BaseSearchModel:
             if file is not None:
                 source_image = await asyncio.to_thread(load_image)
             elif url is not None:
+                # 与 search() 的 url 入口对齐：下载源图前同样过安全校验
+                if not await asyncio.to_thread(is_safe_image_ref, url):
+                    raise ValueError(f"不安全的图片地址: {url[:80]}")
                 async with Network(**network_kwargs) as client:
                     resp = await client.download(url)
 

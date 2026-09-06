@@ -154,6 +154,11 @@ class Network:
         current_url = url
         last_resp = None
         for _ in range(self.MAX_REDIRECTS):
+            # 首跳同样自查：本方法作为独立入口时（如 search_and_draw 的 url 路径）
+            # 不能依赖调用方已校验初始 URL
+            if not await asyncio.to_thread(is_safe_image_url, current_url):
+                logger.warning(f"[network] 拒绝不安全的下载地址: {current_url}")
+                return b""
             resp = await self._client.get(
                 current_url, headers=headers, follow_redirects=False
             )

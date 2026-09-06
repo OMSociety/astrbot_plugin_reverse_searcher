@@ -50,9 +50,11 @@ class GoogleLensSerpApi(BaseSearchReq[GoogleLensResponse]):
             "api_key": self.api_key,
             "country": kwargs.get("country", "HK"),
             "hl": kwargs.get("hl", "en"),
-            "q": kwargs.get("q"),
             "no_cache": kwargs.get("no_cache", False),
         }
+        # q 是可选的补充关键词，无值时不发空参数
+        if kwargs.get("q"):
+            params["q"] = kwargs["q"]
 
         if url:
             params["url"] = url

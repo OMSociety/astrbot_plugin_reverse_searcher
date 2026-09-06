@@ -5,6 +5,14 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.0.5] - 2026-09-07
+
+### ⚙️ 变更
+
+- **下载链路 SSRF 加固**：`download()` 首跳不再依赖调用方自查，逐跳校验补齐；`search_and_draw` 的 URL 入口补安全校验（与 `search()` 对齐）。
+- DNS 结果缓存增加 512 条上限保底；E-Hentai 标签翻译表改为按路径缓存（不再每次显示结果重读磁盘）；SerpApi 请求不再发送空的 `q=` 参数。
+- 移除 `get_img_urls` 中不可达的组件 repr 扫描段（标准组件链与 raw_message 兜底保留，行为不变）。
+
 ## [1.0.4] - 2026-09-06
 
 ### 🐛 修复

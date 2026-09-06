@@ -82,6 +82,9 @@ def _resolve_host_ips(host: str) -> list[str] | None:
     except socket.gaierror:
         return None
     ips = [info[4][0] for info in infos]
+    # 保底防膨胀：正常流量远达不到该量级；超过即整体清空（条目本就有 TTL）
+    if len(_DNS_CACHE) >= 512:
+        _DNS_CACHE.clear()
     _DNS_CACHE[host] = (ips, now)
     return ips
 

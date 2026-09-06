@@ -27,7 +27,7 @@ from .ReverseSearcher.utils.security import (
     is_safe_local_image_path,
 )
 
-# 保留兼容旧引用的变量名
+# 渲染用引擎信息视图（从 ENGINE_REGISTRY 派生，仅本文件使用）
 ENGINE_INFO = {
     name: {"url": def_.url, "anime": def_.anime_focused}
     for name, def_ in ENGINE_REGISTRY.items()
@@ -100,12 +100,6 @@ def get_img_urls(message) -> str:
                         url_match = re.search(r"url='([^']+)'", component_str)
                         if url_match:
                             return url_match.group(1)
-    for component in getattr(message, "message", []):
-        component_str = str(component)
-        if "type='Image'" in component_str:
-            url_match = re.search(r"url='([^']+)'", component_str)
-            if url_match:
-                return url_match.group(1)
     return ""
 
 

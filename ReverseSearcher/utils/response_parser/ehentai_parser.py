@@ -8,6 +8,20 @@ from typing_extensions import override
 from ..ext_tools import parse_html
 from .base_parser import BaseResParser, BaseSearchResponse
 
+# ehViewer 标签翻译表按路径缓存：文件内容基本不变，避免每次 show_result 重读磁盘
+_TRANSLATIONS_CACHE: dict[str, dict] = {}
+
+
+def _load_translations(path: Path) -> dict:
+    key = str(path)
+    if key not in _TRANSLATIONS_CACHE:
+        try:
+            with open(path, encoding="utf-8") as f:
+                _TRANSLATIONS_CACHE[key] = json.load(f)
+        except Exception:
+            _TRANSLATIONS_CACHE[key] = {}
+    return _TRANSLATIONS_CACHE[key]
+
 
 class EHentaiItem(BaseResParser):
     """
@@ -140,13 +154,9 @@ class EHentaiResponse(BaseSearchResponse[EHentaiItem]):
         返回:
             str: 格式化的搜索结果文本
         """
-        try:
-            base_dir = Path(__file__).parent.parent.parent
-            abs_translations_file = base_dir / translations_file
-            with open(abs_translations_file, encoding="utf-8") as f:
-                translations = json.load(f)
-        except Exception:
-            translations = {}
+        translations = _load_translations(
+            Path(__file__).parent.parent.parent / translations_file
+        )
         has_valid_results = False
         if self.raw:
             for item in self.raw:
