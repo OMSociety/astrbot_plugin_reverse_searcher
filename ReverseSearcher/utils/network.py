@@ -142,6 +142,8 @@ class Network:
         防 SSRF：这里不自动跟随重定向，改为手动逐跳跟随，并在每一跳
         用 is_safe_image_url 重新校验目标地址（公网 http/https），
         避免“初始 URL 已校验、但 302 到内网（169.254.169.254 等）”绕过。
+        首跳同样做校验——本方法作为独立入口时（如 search_and_draw 的
+        url 路径）不依赖调用方已校验初始 URL，首跳不安全直接返回 b""。
         超过最大跳数或遇到不安全目标则停止并返回当前响应。
 
         Args:
@@ -149,7 +151,8 @@ class Network:
             headers: 额外请求头
 
         Returns:
-            响应 bytes；重定向链不安全/超限时返回最后一次（可能是 3xx）的 body。
+            响应 bytes；首跳不安全返回 b""，重定向链不安全/超限时返回
+            最后一次（可能是 3xx）的 body。
         """
         current_url = url
         last_resp = None
