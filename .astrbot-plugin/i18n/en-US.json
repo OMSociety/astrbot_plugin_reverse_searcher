@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "display_name": "Reverse Image Search Assistant",
+    "desc": "Reverse image search across five engines — AnimeTrace, E-Hentai, Google Lens, Yandex, and SauceNAO. Results are rendered as polished card images, and an LLM tool for image search is provided."
+  },
+  "config": {
+    "enable_keyword_trigger": {
+      "description": "Enable keyword-triggered search",
+      "hint": "When disabled, users can still search images via the LLM tool, but keywords such as '以图搜图' no longer trigger a search"
+    },
+    "proxies": {
+      "description": "Proxy server address",
+      "hint": "http://host:port, e.g. http://127.0.0.1:7890"
+    },
+    "allow_third_party_image_host": {
+      "description": "Allow uploading to third-party image hosts",
+      "hint": "Local image search on Google/Yandex requires uploading the image to a temporary image host first (tmpfiles/uguu/litterbox, etc.). When disabled, local image search is unavailable for these two engines and an image URL must be used instead"
+    },
+    "timeout_settings": {
+      "description": "Timeout settings",
+      "search_params_timeout": {
+        "description": "Time to wait for search parameters (engine name, image, etc.) in seconds",
+        "hint": "Maximum time to wait for the engine name and image after the user sends the '以图搜图' command"
+      }
+    },
+    "keyword": {
+      "description": "Keywords",
+      "hint": "Configure the search trigger keyword and custom keywords for each search engine",
+      "trigger_keywords": {
+        "description": "List of keywords that trigger a search",
+        "hint": "Image search is triggered when the user sends any one of these keywords; leave blank to use the default keyword"
+      },
+      "engine_keywords": {
+        "description": "Custom keywords (aliases) for each search engine",
+        "hint": "Configure a custom keyword for each search engine; users can use it to select the engine. Leave blank to use the default engine name",
+        "animetrace": {
+          "description": "AnimeTrace"
+        },
+        "ehentai": {
+          "description": "E-Hentai"
+        },
+        "google": {
+          "description": "Google"
+        },
+        "yandex": {
+          "description": "Yandex"
+        },
+        "saucenao": {
+          "description": "SauceNAO"
+        }
+      }
+    },
+    "available_apis": {
+      "description": "Enable/disable status",
+      "animetrace": {
+        "description": "AnimeTrace"
+      },
+      "ehentai": {
+        "description": "E-Hentai/ExHentai"
+      },
+      "google": {
+        "description": "Google Lens"
+      },
+      "yandex": {
+        "description": "Yandex"
+      },
+      "saucenao": {
+        "description": "SauceNAO"
+      }
+    },
+    "default_params": {
+      "description": "Default parameters",
+      "animetrace": {
+        "description": "AnimeTrace",
+        "model": {
+          "description": "Recognition model (default: full_game_model_kira)",
+          "hint": "Available models: anime_model_lovelive, pre_stable, anime, full_game_model_kira"
+        },
+        "is_multi": {
+          "description": "Multi-character search mode",
+          "hint": "Detect multiple characters in the image"
+        },
+        "ai_detect": {
+          "description": "AI detection mode",
+          "hint": "Detect whether the image is AI-generated"
+        }
+      },
+      "ehentai": {
+        "description": "EHentai",
+        "is_ex": {
+          "description": "Use ExHentai instead of E-Hentai",
+          "hint": "Requires an ExHentai account and a valid Cookie"
+        },
+        "covers": {
+          "description": "Include cover search results"
+        },
+        "similar": {
+          "description": "Include similar results"
+        },
+        "exp": {
+          "description": "Enable experimental search mode"
+        },
+        "cookies": {
+          "description": "E-Hentai Cookie",
+          "hint": "How to get it: log in to e-hentai.org (exhentai.org for ExHentai), press F12 → Console tab → type document.cookie and press Enter → copy the whole output line (including ipb_member_id/ipb_pass_hash/igneous). Can be left blank if you only search E-Hentai; required for ExHentai"
+        }
+      },
+      "google": {
+        "description": "Google API",
+        "serpapi_key": {
+          "description": "SerpApi API Key",
+          "hint": "Optional (recommended). Apply at https://serpapi.com/. Implemented via Google Lens."
+        },
+        "zenserp_key": {
+          "description": "Zenserp API Key",
+          "hint": "Optional (fallback). Apply at https://zenserp.com/. Implemented via Google Reverse Image."
+        },
+        "hl": {
+          "description": "Language",
+          "hint": "Google interface language code (e.g. zh-CN, en, ja)"
+        },
+        "country": {
+          "description": "Country/region",
+          "hint": "Country/region code for search results (e.g. cn, us, jp)"
+        },
+        "max_results": {
+          "description": "Maximum number of results",
+          "hint": "Maximum number of results returned by the API (note: SerpApi/Zenserp pagination may consume quota)"
+        }
+      },
+      "saucenao": {
+        "description": "SauceNAO",
+        "api_key": {
+          "description": "SauceNAO API key",
+          "hint": "Used to access the SauceNAO API. A free account is limited to 150 requests per day and 4 per 30 seconds"
+        },
+        "hide": {
+          "description": "Hide level"
+        },
+        "numres": {
+          "description": "Number of results returned"
+        },
+        "minsim": {
+          "description": "Minimum similarity"
+        },
+        "output_type": {
+          "description": "Output type (2 means JSON output)"
+        }
+      },
+      "yandex": {
+        "description": "Yandex",
+        "max_results": {
+          "description": "Maximum number of results"
+        },
+        "use_ru_fallback": {
+          "description": "Enable .ru domain fallback",
+          "hint": "Try yandex.ru when .com is unreachable"
+        },
+        "cookies": {
+          "description": "Yandex Cookie",
+          "hint": "How to get it: log in to yandex.com/images, press F12 → Console tab → type document.cookie and press Enter to copy (if HttpOnly fields are missing, use: F12 → Network tab (keep the filter box empty!) → refresh → click the first request → Headers → copy the entire Cookie request-header line). Leaving it blank may trigger a CAPTCHA and produce no results"
+        }
+      }
+    }
+  }
+}

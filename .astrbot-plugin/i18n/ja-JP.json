@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "display_name": "画像逆検索アシスタント",
+    "desc": "AnimeTrace・E-Hentai・Google Lens・Yandex・SauceNAO の 5 エンジンによる画像逆検索に対応。検索結果は自動で美しいカード画像としてレンダリングされ、LLM による能動的な画像検索ツールも提供します。"
+  },
+  "config": {
+    "enable_keyword_trigger": {
+      "description": "キーワードによる検索トリガーを有効にする",
+      "hint": "無効にしても、ユーザーは LLM ツールから引き続き画像検索できますが、「以图搜图」などのキーワードには反応しなくなります"
+    },
+    "proxies": {
+      "description": "プロキシサーバーのアドレス",
+      "hint": "http://host:port（例：http://127.0.0.1:7890）"
+    },
+    "allow_third_party_image_host": {
+      "description": "サードパーティの画像ホストへのアップロードを許可する",
+      "hint": "Google/Yandex のローカル画像検索では、先に画像を一時的な画像ホスト（tmpfiles/uguu/litterbox など）へアップロードする必要があります。無効にするとこの 2 エンジンではローカル画像検索が使えなくなり、画像 URL を使う必要があります"
+    },
+    "timeout_settings": {
+      "description": "タイムアウト設定",
+      "search_params_timeout": {
+        "description": "検索パラメータ（エンジン名、画像など）を待つ時間（秒）",
+        "hint": "ユーザーが「以图搜图」コマンドを送信した後、エンジン名と画像の提供を待つ最大時間"
+      }
+    },
+    "keyword": {
+      "description": "キーワード",
+      "hint": "検索をトリガーするキーワードと、各検索エンジンのカスタムキーワードを設定します",
+      "trigger_keywords": {
+        "description": "検索をトリガーするキーワードのリスト",
+        "hint": "ユーザーがいずれか 1 つのキーワードを送信すると画像検索が実行されます。空欄の場合はデフォルトのキーワードを使用します"
+      },
+      "engine_keywords": {
+        "description": "各検索エンジンのカスタムキーワード（別名）",
+        "hint": "各検索エンジンにカスタムキーワードを設定します。ユーザーはこのキーワードでエンジンを指定できます。空欄の場合はデフォルトのエンジン名を使用します",
+        "animetrace": {
+          "description": "AnimeTrace"
+        },
+        "ehentai": {
+          "description": "E-Hentai"
+        },
+        "google": {
+          "description": "Google"
+        },
+        "yandex": {
+          "description": "Yandex"
+        },
+        "saucenao": {
+          "description": "SauceNAO"
+        }
+      }
+    },
+    "available_apis": {
+      "description": "有効/無効状態",
+      "animetrace": {
+        "description": "AnimeTrace"
+      },
+      "ehentai": {
+        "description": "E-Hentai/ExHentai"
+      },
+      "google": {
+        "description": "Google Lens"
+      },
+      "yandex": {
+        "description": "Yandex"
+      },
+      "saucenao": {
+        "description": "SauceNAO"
+      }
+    },
+    "default_params": {
+      "description": "デフォルトパラメータ",
+      "animetrace": {
+        "description": "AnimeTrace",
+        "model": {
+          "description": "認識モデル（デフォルト：full_game_model_kira）",
+          "hint": "選択可能なモデル：anime_model_lovelive, pre_stable, anime, full_game_model_kira"
+        },
+        "is_multi": {
+          "description": "複数キャラクター検索モード",
+          "hint": "画像内の複数のキャラクターを検出します"
+        },
+        "ai_detect": {
+          "description": "AI 検出モード",
+          "hint": "画像が AI 生成かどうかを検出します"
+        }
+      },
+      "ehentai": {
+        "description": "EHentai",
+        "is_ex": {
+          "description": "E-Hentai ではなく ExHentai を使用する",
+          "hint": "ExHentai アカウントと有効な Cookie が必要です"
+        },
+        "covers": {
+          "description": "表紙の検索結果を含める"
+        },
+        "similar": {
+          "description": "類似結果を含める"
+        },
+        "exp": {
+          "description": "実験的な検索モードを有効にする"
+        },
+        "cookies": {
+          "description": "E-Hentai Cookie",
+          "hint": "取得方法：e-hentai.org（ExHentai の場合は exhentai.org）にログインし、F12 → Console タブ → document.cookie と入力して Enter → 出力された行全体（ipb_member_id/ipb_pass_hash/igneous を含む）をコピーします。E-Hentai のみの検索なら空欄で構いませんが、ExHentai の検索には必須です"
+        }
+      },
+      "google": {
+        "description": "Google API",
+        "serpapi_key": {
+          "description": "SerpApi API Key",
+          "hint": "任意（推奨）。https://serpapi.com/ で申請します。Google Lens を使用して実装されています。"
+        },
+        "zenserp_key": {
+          "description": "Zenserp API Key",
+          "hint": "任意（予備）。https://zenserp.com/ で申請します。Google Reverse Image を使用して実装されています。"
+        },
+        "hl": {
+          "description": "言語（Language）",
+          "hint": "Google のインターフェース言語コード（例：zh-CN, en, ja）"
+        },
+        "country": {
+          "description": "国・地域（Country）",
+          "hint": "検索結果の対象となる国・地域コード（例：cn, us, jp）"
+        },
+        "max_results": {
+          "description": "結果の最大数",
+          "hint": "API が返す結果の最大数（注意：SerpApi/Zenserp のページングはクォータを消費する場合があります）"
+        }
+      },
+      "saucenao": {
+        "description": "SauceNAO",
+        "api_key": {
+          "description": "SauceNAO API キー",
+          "hint": "SauceNAO API へのアクセスに使用します。無料アカウントは 1 日 150 回、30 秒あたり 4 回の制限があります"
+        },
+        "hide": {
+          "description": "非表示レベル"
+        },
+        "numres": {
+          "description": "返却する結果数"
+        },
+        "minsim": {
+          "description": "類似度の下限"
+        },
+        "output_type": {
+          "description": "出力タイプ（2 は JSON 出力）"
+        }
+      },
+      "yandex": {
+        "description": "Yandex",
+        "max_results": {
+          "description": "結果の最大数"
+        },
+        "use_ru_fallback": {
+          "description": ".ru ドメインへのフォールバックを有効にする",
+          "hint": ".com へのアクセスが失敗したときに yandex.ru を試します"
+        },
+        "cookies": {
+          "description": "Yandex Cookie",
+          "hint": "取得方法：yandex.com/images にログインし、F12 → Console タブ → document.cookie と入力して Enter でコピーします（HttpOnly フィールドが取得できない場合は、F12 → Network タブ（フィルタ欄は空のまま！）→ 更新 → 最初のリクエストをクリック → Headers → リクエストヘッダーの Cookie 行をまるごとコピー）。空欄のままだと CAPTCHA が発生して結果が得られない場合があります"
+        }
+      }
+    }
+  }
+}

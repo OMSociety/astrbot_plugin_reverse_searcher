@@ -1,0 +1,166 @@
+{
+  "metadata": {
+    "display_name": "Помощник обратного поиска изображений",
+    "desc": "Обратный поиск изображений по пяти движкам — AnimeTrace, E-Hentai, Google Lens, Yandex и SauceNAO. Результаты автоматически отрисовываются в виде аккуратных карточек-изображений; также доступен LLM-инструмент активного поиска картинок."
+  },
+  "config": {
+    "enable_keyword_trigger": {
+      "description": "Включить поиск по ключевым словам",
+      "hint": "Если выключено, пользователи по-прежнему могут искать изображения через инструмент LLM, но ключевые слова вроде '以图搜图' больше не запускают поиск"
+    },
+    "proxies": {
+      "description": "Адрес прокси-сервера",
+      "hint": "http://host:port, например http://127.0.0.1:7890"
+    },
+    "allow_third_party_image_host": {
+      "description": "Разрешить загрузку на сторонние хостинги изображений",
+      "hint": "Локальный поиск по изображению в Google/Yandex требует сначала загрузить картинку на временный хостинг изображений (tmpfiles/uguu/litterbox и т. п.). Если выключено, локальный поиск для этих двух движков недоступен — нужно использовать URL изображения"
+    },
+    "timeout_settings": {
+      "description": "Настройки тайм-аутов",
+      "search_params_timeout": {
+        "description": "Время ожидания параметров поиска (имя движка, изображение и т. д.) в секундах",
+        "hint": "Максимальное время ожидания имени движка и изображения после отправки пользователем команды '以图搜图'"
+      }
+    },
+    "keyword": {
+      "description": "Ключевые слова",
+      "hint": "Настройте ключевое слово для запуска поиска и пользовательские ключевые слова для каждого движка",
+      "trigger_keywords": {
+        "description": "Список ключевых слов, запускающих поиск",
+        "hint": "Поиск изображений запускается, когда пользователь отправляет любое из этих слов; оставьте пустым, чтобы использовать ключевое слово по умолчанию"
+      },
+      "engine_keywords": {
+        "description": "Пользовательские ключевые слова (псевдонимы) для каждого движка",
+        "hint": "Задайте пользовательское ключевое слово для каждого движка; с его помощью пользователь выбирает движок. Оставьте пустым, чтобы использовать имя движка по умолчанию",
+        "animetrace": {
+          "description": "AnimeTrace"
+        },
+        "ehentai": {
+          "description": "E-Hentai"
+        },
+        "google": {
+          "description": "Google"
+        },
+        "yandex": {
+          "description": "Yandex"
+        },
+        "saucenao": {
+          "description": "SauceNAO"
+        }
+      }
+    },
+    "available_apis": {
+      "description": "Статус включения",
+      "animetrace": {
+        "description": "AnimeTrace"
+      },
+      "ehentai": {
+        "description": "E-Hentai/ExHentai"
+      },
+      "google": {
+        "description": "Google Lens"
+      },
+      "yandex": {
+        "description": "Yandex"
+      },
+      "saucenao": {
+        "description": "SauceNAO"
+      }
+    },
+    "default_params": {
+      "description": "Параметры по умолчанию",
+      "animetrace": {
+        "description": "AnimeTrace",
+        "model": {
+          "description": "Модель распознавания (по умолчанию: full_game_model_kira)",
+          "hint": "Доступные модели: anime_model_lovelive, pre_stable, anime, full_game_model_kira"
+        },
+        "is_multi": {
+          "description": "Режим поиска нескольких персонажей",
+          "hint": "Обнаруживать несколько персонажей на изображении"
+        },
+        "ai_detect": {
+          "description": "Режим обнаружения ИИ",
+          "hint": "Определять, сгенерировано ли изображение ИИ"
+        }
+      },
+      "ehentai": {
+        "description": "EHentai",
+        "is_ex": {
+          "description": "Использовать ExHentai вместо E-Hentai",
+          "hint": "Требуется аккаунт ExHentai и действующий Cookie"
+        },
+        "covers": {
+          "description": "Включать результаты поиска по обложкам"
+        },
+        "similar": {
+          "description": "Включать похожие результаты"
+        },
+        "exp": {
+          "description": "Включить экспериментальный режим поиска"
+        },
+        "cookies": {
+          "description": "E-Hentai Cookie",
+          "hint": "Как получить: войдите в e-hentai.org (для ExHentai — exhentai.org), нажмите F12 → вкладка Console → введите document.cookie и нажмите Enter → скопируйте всю выведенную строку (включая ipb_member_id/ipb_pass_hash/igneous). Можно оставить пустым, если ищете только по E-Hentai; для ExHentai обязательно"
+        }
+      },
+      "google": {
+        "description": "Google API",
+        "serpapi_key": {
+          "description": "SerpApi API Key",
+          "hint": "Необязательно (рекомендуется). Оформите на https://serpapi.com/. Реализовано через Google Lens."
+        },
+        "zenserp_key": {
+          "description": "Zenserp API Key",
+          "hint": "Необязательно (резервный вариант). Оформите на https://zenserp.com/. Реализовано через Google Reverse Image."
+        },
+        "hl": {
+          "description": "Язык (Language)",
+          "hint": "Код языка интерфейса Google (например, zh-CN, en, ja)"
+        },
+        "country": {
+          "description": "Страна/регион (Country)",
+          "hint": "Код страны/региона для результатов поиска (например, cn, us, jp)"
+        },
+        "max_results": {
+          "description": "Максимальное количество результатов",
+          "hint": "Максимальное число результатов, возвращаемых API (внимание: пагинация SerpApi/Zenserp может расходовать квоту)"
+        }
+      },
+      "saucenao": {
+        "description": "SauceNAO",
+        "api_key": {
+          "description": "Ключ API SauceNAO",
+          "hint": "Используется для доступа к API SauceNAO. Бесплатный аккаунт ограничен 150 запросами в день и 4 запросами за 30 секунд"
+        },
+        "hide": {
+          "description": "Уровень скрытия"
+        },
+        "numres": {
+          "description": "Количество возвращаемых результатов"
+        },
+        "minsim": {
+          "description": "Минимальное сходство"
+        },
+        "output_type": {
+          "description": "Тип вывода (2 — вывод JSON)"
+        }
+      },
+      "yandex": {
+        "description": "Yandex",
+        "max_results": {
+          "description": "Максимальное количество результатов"
+        },
+        "use_ru_fallback": {
+          "description": "Включить резервный домен .ru",
+          "hint": "Пробовать yandex.ru, если .com недоступен"
+        },
+        "cookies": {
+          "description": "Yandex Cookie",
+          "hint": "Как получить: войдите в yandex.com/images, нажмите F12 → вкладка Console → введите document.cookie и нажмите Enter, чтобы скопировать (если поля HttpOnly недоступны, используйте: F12 → вкладка Network (поле фильтра оставьте пустым!) → обновите → нажмите первый запрос → Headers → скопируйте строку Cookie из заголовков запроса целиком). Пустое значение может вызвать CAPTCHA и привести к отсутствию результатов"
+        }
+      }
+    }
+  }
+}
