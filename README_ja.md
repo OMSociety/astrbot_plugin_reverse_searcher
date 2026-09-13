@@ -38,27 +38,27 @@
 ### 検索カードのレンダリング
 検索完了後、カード画像を自動生成。元画像と結果サムネイルを同じ画面に並べ、類似度がひと目でわかります:
 
-<img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/docs/search_example.png" alt="搜索结果卡片示例" width="480" />
+<img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/docs/search_example.png" alt="検索結果カードの例" width="480" />
 
 ### キーワードトリガー
 `以图搜图` に画像を添えて送信（または引用メッセージへの返信）すると、ガイドに沿って検索できます:
 
 ```
-用户: 以图搜图
-🤖 → 发送引擎介绍卡片，请选择引擎
-用户: a 这张图
-🤖 → 已选择 AnimeTrace，正在搜索...
-     → 发送搜索结果卡片 ✅
+ユーザー: 以图搜图
+🤖 → エンジン紹介カードを送信しました。エンジンを選択してください
+ユーザー: a この画像
+🤖 → AnimeTrace を選択しました。検索中...
+     → 検索結果カードを送信 ✅
 ```
 
 ### LLM による自律検索
 ボットには `reverse_search` ツールが組み込まれており、会話内容から検索の要否を自律的に判断します:
 
 ```
-用户: 芙兰，帮我看看这张图的角色是谁
-🤖 → reverse_search(intent=找角色)
-    🔍 [AnimeTrace] 找到 3 个结果
-    角色: 芙兰朵露·斯卡蕾特 | 作品: 东方Project...
+ユーザー: フラン、この画像のキャラクターは誰？
+🤖 → reverse_search(intent=キャラ特定)
+    🔍 [AnimeTrace] 3 件の結果が見つかりました
+    キャラクター: フランドール・スカーレット | 作品: 東方Project...
 ```
 
 ### インテントルーティング
@@ -134,6 +134,8 @@
 | `trigger_keywords` | list | `["以图搜图"]` | 検索をトリガーするキーワードのリスト |
 | `engine_keywords` | object | `a/s/e/g/y` | 各エンジンのカスタム別名（animetrace=`a`、saucenao=`s`、ehentai=`e`、google=`g`、yandex=`y`） |
 
+> 💡 トリガーはどの言語でも設定できます。英語圏向けに `"image search"` を追加するのも有効です。
+
 ### エンジンの有効化 `available_apis`
 
 | 設定項目 | 型 | デフォルト | 説明 |
@@ -167,7 +169,7 @@
     "search_params_timeout": 30
   },
   "keyword": {
-    "trigger_keywords": ["以图搜图"],
+    "trigger_keywords": ["以图搜图", "image search"],
     "engine_keywords": { "animetrace": "a", "ehentai": "e", "google": "g", "yandex": "y", "saucenao": "s" }
   },
   "available_apis": { "animetrace": true, "ehentai": true, "google": true, "yandex": true, "saucenao": true },
@@ -188,15 +190,15 @@
 プラグインは 2 つの LLM ツールを登録しており、ボットが呼び出しタイミングを自律的に判断します:
 
 ```
-用户: 这张图是什么角色？
-🤖 → reverse_search(intent=找角色)
-    🔍 [AnimeTrace] 找到 3 个结果
-    角色: 芙兰朵露·斯卡蕾特 | 作品: 东方Project...
+ユーザー: この画像は何のキャラクター？
+🤖 → reverse_search(intent=キャラ特定)
+    🔍 [AnimeTrace] 3 件の結果が見つかりました
+    キャラクター: フランドール・スカーレット | 作品: 東方Project...
 
-用户: 用 SauceNAO 查一下这张图的画师
+ユーザー: SauceNAO でこの画像のイラストレーターを調べて
 🤖 → reverse_search_with_engine(engine=saucenao)
-    🔍 [SauceNAO] 找到 5 个结果
-    Pixiv: 画师 KuroNeko | 相似度 95.2%
+    🔍 [SauceNAO] 5 件の結果が見つかりました
+    Pixiv: イラストレーター KuroNeko | 類似度 95.2%
 ```
 
 ### reverse_search

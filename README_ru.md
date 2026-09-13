@@ -38,27 +38,27 @@
 ### Рендеринг карточек результатов
 После завершения поиска автоматически создаётся карточка-изображение: исходное изображение и миниатюры результатов в одном кадре, схожесть видна с первого взгляда:
 
-<img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/docs/search_example.png" alt="搜索结果卡片示例" width="480" />
+<img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/docs/search_example.png" alt="пример карточки с результатами поиска" width="480" />
 
 ### Триггер по ключевому слову
 Отправьте `以图搜图` вместе с изображением (или в ответ на цитируемое сообщение) и следуйте подсказкам:
 
 ```
-用户: 以图搜图
-🤖 → 发送引擎介绍卡片，请选择引擎
-用户: a 这张图
-🤖 → 已选择 AnimeTrace，正在搜索...
-     → 发送搜索结果卡片 ✅
+Пользователь: 以图搜图
+🤖 → Отправляю карточку с обзором движков, выберите движок
+Пользователь: a это изображение
+🤖 → Выбран AnimeTrace, выполняю поиск...
+     → Отправляю карточку с результатами ✅
 ```
 
 ### Поиск по инициативе LLM
 В бота встроен инструмент `reverse_search`; он сам решает по содержанию диалога, нужно ли выполнять поиск:
 
 ```
-用户: 芙兰，帮我看看这张图的角色是谁
-🤖 → reverse_search(intent=找角色)
-    🔍 [AnimeTrace] 找到 3 个结果
-    角色: 芙兰朵露·斯卡蕾特 | 作品: 东方Project...
+Пользователь: Фландре, посмотри, кто персонаж на этой картинке
+🤖 → reverse_search(intent=найти персонажа)
+    🔍 [AnimeTrace] Найдено 3 результатов
+    Персонаж: Фландре Скарлет | Произведение: Touhou Project...
 ```
 
 ### Маршрутизация по намерению
@@ -134,6 +134,8 @@
 | `trigger_keywords` | list | `["以图搜图"]` | Список ключевых слов, запускающих поиск |
 | `engine_keywords` | object | `a/s/e/g/y` | Пользовательские псевдонимы движков (animetrace=`a`, saucenao=`s`, ehentai=`e`, google=`g`, yandex=`y`) |
 
+> 💡 Подойдёт триггер на любом языке, например добавьте `"image search"` для английских запросов.
+
 ### Включённые движки `available_apis`
 
 | Параметр | Тип | По умолчанию | Описание |
@@ -167,7 +169,7 @@
     "search_params_timeout": 30
   },
   "keyword": {
-    "trigger_keywords": ["以图搜图"],
+    "trigger_keywords": ["以图搜图", "image search"],
     "engine_keywords": { "animetrace": "a", "ehentai": "e", "google": "g", "yandex": "y", "saucenao": "s" }
   },
   "available_apis": { "animetrace": true, "ehentai": true, "google": true, "yandex": true, "saucenao": true },
@@ -188,15 +190,15 @@
 Плагин регистрирует 2 инструмента LLM; бот сам решает, когда их вызывать:
 
 ```
-用户: 这张图是什么角色？
-🤖 → reverse_search(intent=找角色)
-    🔍 [AnimeTrace] 找到 3 个结果
-    角色: 芙兰朵露·斯卡蕾特 | 作品: 东方Project...
+Пользователь: Кто этот персонаж на картинке?
+🤖 → reverse_search(intent=найти персонажа)
+    🔍 [AnimeTrace] Найдено 3 результатов
+    Персонаж: Фландре Скарлет | Произведение: Touhou Project...
 
-用户: 用 SauceNAO 查一下这张图的画师
+Пользователь: Найди через SauceNAO художника этой картинки
 🤖 → reverse_search_with_engine(engine=saucenao)
-    🔍 [SauceNAO] 找到 5 个结果
-    Pixiv: 画师 KuroNeko | 相似度 95.2%
+    🔍 [SauceNAO] Найдено 5 результатов
+    Pixiv: Художник KuroNeko | Схожесть 95.2%
 ```
 
 ### reverse_search
