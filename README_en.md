@@ -29,7 +29,7 @@
 | 🤖 **LLM-driven search** | The bot decides on its own when to search and which engine to use based on conversational intent — no manual commands needed |
 | 🧭 **Intent routing** | Automatically picks the best engine via weighted keyword matching — say "who is this" and AnimeTrace is selected |
 | 🎴 **Beautiful result cards** | Search results are rendered as modern card images (engine-colored gradient header, colorful similarity badges, AI-detection labels); automatically falls back to PIL when the cloud text-to-image service is unreachable |
-| 🔄 **Free multi-engine switching** | Enable/disable engines as needed; failed engines automatically switch to alternatives |
+| 🔄 **Free multi-engine switching** | Enable/disable engines as needed; on failure the reason is reported and you can retry with another engine |
 
 ---
 
