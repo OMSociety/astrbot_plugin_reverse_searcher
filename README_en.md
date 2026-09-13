@@ -44,7 +44,7 @@ After a search completes, a card image is generated automatically: the source im
 Send `以图搜图` with an image (or reply to a quoted message) and follow the prompts to complete the search:
 
 ```
-User: 以图搜图
+User: image search
 🤖 → Sending engine intro card, please choose an engine
 User: a this image
 🤖 → AnimeTrace selected, searching...
