@@ -39,7 +39,8 @@
                 "type": "list",
                 "hint": "用户发送任意一个关键词时触发图片搜索功能，留空则使用默认关键词",
                 "default": [
-                    "以图搜图"
+                    "以图搜图",
+                    "image search"
                 ]
             },
             "engine_keywords": {
