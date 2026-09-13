@@ -8,7 +8,7 @@
 
 **5 つのエンジンによる逆画像検索** —— AnimeTrace でキャラ判定 · SauceNAO で出典特定 · Google Lens で総合フォロー · Yandex で類似画像検索 · E-Hentai で同人誌検索
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
 [![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A5v4-green.svg)](https://github.com/AstrBotDevs/AstrBot)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-orange.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/stargazers)
@@ -131,7 +131,7 @@
 
 | 設定項目 | 型 | デフォルト | 説明 |
 |--------|------|------|------|
-| `trigger_keywords` | list | `["以图搜图"]` | 検索をトリガーするキーワードのリスト |
+| `trigger_keywords` | list | `["以图搜图", "image search"]` | 検索をトリガーするキーワードのリスト |
 | `engine_keywords` | object | `a/s/e/g/y` | 各エンジンのカスタム別名（animetrace=`a`、saucenao=`s`、ehentai=`e`、google=`g`、yandex=`y`） |
 
 > 💡 トリガーはどの言語でも設定できます。英語圏向けに `"image search"` を追加するのも有効です。

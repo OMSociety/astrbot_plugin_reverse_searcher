@@ -5,6 +5,13 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.1] - 2026-09-13
+
+### ⚙️ 变更
+
+- 默认触发关键词新增英文 `image search`（`trigger_keywords` 默认值现为 `["以图搜图", "image search"]`），非中文用户无需手动配置即可用英文触发图片搜索。
+- README 英/俄/日三语的示例对话、JSON 模板样例值本地化（说明性中文不再出现在译文中）。
+
 ## [1.1.0] - 2026-09-13
 
 ### ✨ 新增

@@ -8,7 +8,7 @@
 
 **五大引擎反向搜图** —— AnimeTrace 认角色 · SauceNAO 找出处 · Google Lens 兜底 · Yandex 找相似 · E-Hentai 搜本子
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
+[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
 [![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A5v4-green.svg)](https://github.com/AstrBotDevs/AstrBot)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-orange.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/stargazers)
@@ -133,7 +133,7 @@
 
 | 配置项 | 类型 | 默认 | 说明 |
 |--------|------|------|------|
-| `trigger_keywords` | list | `["以图搜图"]` | 触发搜索的关键词列表 |
+| `trigger_keywords` | list | `["以图搜图", "image search"]` | 触发搜索的关键词列表 |
 | `engine_keywords` | object | `a/s/e/g/y` | 各引擎的自定义别名（animetrace=`a`、saucenao=`s`、ehentai=`e`、google=`g`、yandex=`y`） |
 
 ### 引擎启用 `available_apis`
@@ -169,7 +169,7 @@
     "search_params_timeout": 30
   },
   "keyword": {
-    "trigger_keywords": ["以图搜图"],
+    "trigger_keywords": ["以图搜图", "image search"],
     "engine_keywords": { "animetrace": "a", "ehentai": "e", "google": "g", "yandex": "y", "saucenao": "s" }
   },
   "available_apis": { "animetrace": true, "ehentai": true, "google": true, "yandex": true, "saucenao": true },
