@@ -4,7 +4,7 @@
 
 <img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/logo.png" width="120" alt="ReverseSearcher Logo" />
 
-# 🔍 Reverse Image Search Assistant
+# Reverse Image Search Assistant
 
 **Reverse image search powered by five engines** — AnimeTrace recognizes characters · SauceNAO finds the source · Google Lens as the catch-all · Yandex finds similar images · E-Hentai searches doujinshi
 
@@ -16,24 +16,24 @@
 
 </div>
 
-> 🎨 This project was written by AI; part of the source code is based on [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2)
+> This project was written by AI; part of the source code is based on [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2)
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 | Feature | Description |
 |------|------|
-| 🔍 **Five search engines** | AnimeTrace recognizes characters, SauceNAO finds the source, Google Lens serves as the comprehensive fallback, Yandex finds similar images, and E-Hentai searches doujinshi — each with its own role |
-| 💬 **Keyword trigger** | Send `以图搜图` (reverse image search) plus an image to search; engine aliases (`a`/`s`/`e`/`g`/`y`) allow quick engine selection |
-| 🤖 **LLM-driven search** | The bot decides on its own when to search and which engine to use based on conversational intent — no manual commands needed |
-| 🧭 **Intent routing** | Automatically picks the best engine via weighted keyword matching — say "who is this" and AnimeTrace is selected |
-| 🎴 **Beautiful result cards** | Search results are rendered as modern card images (engine-colored gradient header, colorful similarity badges, AI-detection labels); automatically falls back to PIL when the cloud text-to-image service is unreachable |
-| 🔄 **Free multi-engine switching** | Enable/disable engines as needed; on failure the reason is reported and you can retry with another engine |
+| **Five search engines** | AnimeTrace recognizes characters, SauceNAO finds the source, Google Lens serves as the comprehensive fallback, Yandex finds similar images, and E-Hentai searches doujinshi — each with its own role |
+| **Keyword trigger** | Send `以图搜图` (reverse image search) plus an image to search; engine aliases (`a`/`s`/`e`/`g`/`y`) allow quick engine selection |
+| **LLM-driven search** | The bot decides on its own when to search and which engine to use based on conversational intent — no manual commands needed |
+| **Intent routing** | Automatically picks the best engine via weighted keyword matching — say "who is this" and AnimeTrace is selected |
+| **Beautiful result cards** | Search results are rendered as modern card images (engine-colored gradient header, colorful similarity badges, AI-detection labels); automatically falls back to PIL when the cloud text-to-image service is unreachable |
+| **Free multi-engine switching** | Enable/disable engines as needed; on failure the reason is reported and you can retry with another engine |
 
 ---
 
-## 📖 Feature Overview
+## Feature Overview
 
 ### Search card rendering
 After a search completes, a card image is generated automatically: the source image and result thumbnails side by side, with similarity at a glance:
@@ -74,16 +74,11 @@ No need to specify an engine — just state your intent and one is chosen automa
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Step 1: Installation
 
-**Option 1: Plugin marketplace**
-- AstrBot WebUI → Plugin marketplace → search for `astrbot_plugin_reverse_searcher`
-
-**Option 2: GitHub repository**
-- AstrBot WebUI → Plugin management → ＋ Install → paste the repository URL:
-- `https://github.com/OMSociety/astrbot_plugin_reverse_searcher`
+AstrBot WebUI → Plugin marketplace → search for `astrbot_plugin_reverse_searcher`
 
 ### Step 2: Minimal configuration (works out of the box)
 
@@ -92,26 +87,26 @@ No need to specify an engine — just state your intent and one is chosen automa
 1. After restarting AstrBot, simply send `以图搜图` + an image
 2. Or just tell the bot "help me find out who this character is" and let the LLM search automatically
 
-> 💡 Optional enhancements: configure the SauceNAO `api_key` ([apply here](https://saucenao.com/user.php)) to unlock artist/source search; the Google engine requires a [SerpAPI Key](https://serpapi.com/); ExHentai requires a valid Cookie.
+> **Note:** Optional enhancements: configure the SauceNAO `api_key` ([apply here](https://saucenao.com/user.php)) to unlock artist/source search; the Google engine requires a [SerpAPI Key](https://serpapi.com/); ExHentai requires a valid Cookie.
 
 ### Dependencies
 The plugin depends on `httpx`, `Pillow`, `pyquery`, etc.; AstrBot handles these automatically when installing the plugin.
 
 ---
 
-## 🔍 Supported Search Engines
+## Supported Search Engines
 
 | Engine | Description | Configuration |
 |:----|:----|:----|
-| **animetrace** | Anime character recognition (the strongest); returns work title + character name | ❌ None needed |
-| **yandex** | Similar image search | ⚠️ Cookie recommended (Yandex has strict anti-scraping; without it you may get CAPTCHA or no results) |
-| **ehentai** | E-Hentai doujinshi search | ❌ None needed (ExHentai requires a Cookie) |
-| **saucenao** | General source search; first choice for Pixiv illustrations | ⚠️ `api_key` recommended |
-| **google** | Google Lens catch-all | ✅ Requires a SerpAPI Key |
+| **animetrace** | Anime character recognition (the strongest); returns work title + character name | None needed |
+| **yandex** | Similar image search | Cookie recommended (Yandex has strict anti-scraping; without it you may get CAPTCHA or no results) |
+| **ehentai** | E-Hentai doujinshi search | None needed (ExHentai requires a Cookie) |
+| **saucenao** | General source search; first choice for Pixiv illustrations | `api_key` recommended |
+| **google** | Google Lens catch-all | Requires a SerpAPI Key |
 
 ---
 
-## ⚙️ Configuration Reference
+## Configuration Reference
 
 ### Top-level settings
 
@@ -134,7 +129,7 @@ The plugin depends on `httpx`, `Pillow`, `pyquery`, etc.; AstrBot handles these 
 | `trigger_keywords` | list | `["以图搜图", "image search"]` | List of keywords that trigger a search |
 | `engine_keywords` | object | `a/s/e/g/y` | Custom aliases per engine (animetrace=`a`, saucenao=`s`, ehentai=`e`, google=`g`, yandex=`y`) |
 
-> 💡 Any-language custom triggers work, e.g. add `"image search"` for English users.
+> **Note:** Any-language custom triggers work, e.g. add `"image search"` for English users.
 
 ### Engine switches `available_apis`
 
@@ -156,7 +151,7 @@ The plugin depends on `httpx`, `Pillow`, `pyquery`, etc.; AstrBot handles these 
 | `yandex.max_results` / `use_ru_fallback` | Number of results / `.ru` domain fallback |
 | `yandex.cookies` | **Yandex Cookie** (strict anti-scraping; without it you may get a CAPTCHA and no results; see Q5 for how to obtain it) |
 
-> 🔐 **Privacy notice: local images are uploaded to third-party image hosts** — when searching **Google / Yandex** with **local images**, the plugin must first upload the image to a temporary image host (`tmpfiles.org` / `uguu.se` / `litterbox.catbox.moe` / `tmp.ninja`) and then search by URL. **This means your image will be uploaded to a public temporary image host**, and how long it is retained is decided by the third party. To disable this, set `allow_third_party_image_host` to `false` (in that case these two engines cannot search local images; use an image URL or switch to another engine instead).
+> **Privacy notice: local images are uploaded to third-party image hosts** — when searching **Google / Yandex** with **local images**, the plugin must first upload the image to a temporary image host (`tmpfiles.org` / `uguu.se` / `litterbox.catbox.moe` / `tmp.ninja`) and then search by URL. **This means your image will be uploaded to a public temporary image host**, and how long it is retained is decided by the third party. To disable this, set `allow_third_party_image_host` to `false` (in that case these two engines cannot search local images; use an image URL or switch to another engine instead).
 
 ### Quick configuration template
 
@@ -185,7 +180,7 @@ The plugin depends on `httpx`, `Pillow`, `pyquery`, etc.; AstrBot handles these 
 
 ---
 
-## 🛠️ LLM-Callable Tools
+## LLM-Callable Tools
 
 The plugin registers 2 LLM tools; the bot decides on its own when to call them:
 
@@ -220,7 +215,7 @@ Search with a specified engine; called when the user explicitly requests a parti
 
 ---
 
-## 🔧 FAQ
+## FAQ
 
 ### Q1: Which engines need an API Key?
 
@@ -251,11 +246,11 @@ A Cookie is a credential your browser automatically saves after you log in to a 
 2. Press **F12** → click the **Console** tab at the top
 3. Type `document.cookie` into the input area below and press **Enter**
 4. The Console prints the entire Cookie string → **copy it** (something like `ipb_member_id=123; ipb_pass_hash=abc; ...`)
-5. ⚠️ Limitation: fields marked **HttpOnly** cannot be retrieved this way — **good enough for E-Hentai**; **some key Yandex fields are HttpOnly, so Method 2 is recommended**
+5. Limitation: fields marked **HttpOnly** cannot be retrieved this way — **good enough for E-Hentai**; **some key Yandex fields are HttpOnly, so Method 2 is recommended**
 
 **Method 2: Network panel (complete; recommended for Yandex)**
 1. After logging in to the target site, press **F12** → click the **Network** tab
-2. ⚠️ **Note: do not type anything into the filter box at the top** (typing filters out requests and empties the list!), leave it blank
+2. **Note: do not type anything into the filter box at the top** (typing filters out requests and empties the list!), leave it blank
 3. **Refresh the page** (F5) → a request list appears on the left → **click the first request**
 4. On the right, open **Headers** → scroll down to the **Request Headers** section
 5. Find the line starting with **`Cookie:`** → **copy the entire line** (everything after `Cookie:`)
@@ -266,33 +261,21 @@ yandexuid=1587138991653; ymex=1986384493.yrts.159; Session_id=3:163...:0
 ```
 Paste the entire line into the plugin configuration `default_params.yandex.cookies` / `default_params.ehentai.cookies`.
 
-> 💡 Yandex has strict anti-scraping; without a Cookie a CAPTCHA may appear and the search returns nothing. Searching ExHentai content through E-Hentai requires a Cookie (containing the three key fields `ipb_member_id`, `ipb_pass_hash`, and `igneous`). Getting it from the domain the plugin actually requests (yandex.com) is the most reliable.
+> **Note:** Yandex has strict anti-scraping; without a Cookie a CAPTCHA may appear and the search returns nothing. Searching ExHentai content through E-Hentai requires a Cookie (containing the three key fields `ipb_member_id`, `ipb_pass_hash`, and `igneous`). Getting it from the domain the plugin actually requests (yandex.com) is the most reliable.
 
----
+## Changelog
 
-## 📝 Changelog
+> **[View the changelog →](CHANGELOG.md)**
 
-> 📋 **[View the changelog →](CHANGELOG.md)**
+## Support & Acknowledgements
 
----
-
-## ⭐ Support This Project
-
-If you find this plugin helpful, please consider giving it a Star ⭐. For issues and suggestions, feel free to open an [Issue](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/issues) or a [Pull Request](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/pulls).
-
-## 🙏 Acknowledgements
+If you find this plugin helpful, please consider giving it a Star. For issues and suggestions, feel free to open an [Issue](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/issues) or a [Pull Request](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/pulls).
 
 - [AstrBot](https://github.com/AstrBotDevs/AstrBot) open-source chatbot framework
 - [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2) the original project
 
----
-
-## 📜 License
+## License & Author
 
 This project is licensed under **AGPL-3.0**.
-
----
-
-## 👤 Author
 
 [@OMSociety](https://github.com/OMSociety)

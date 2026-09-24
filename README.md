@@ -4,7 +4,7 @@
 
 <img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/logo.png" width="120" alt="ReverseSearcher Logo" />
 
-# 🔍 图片反搜助手
+# 图片反搜助手
 
 **五大引擎反向搜图** —— AnimeTrace 认角色 · SauceNAO 找出处 · Google Lens 兜底 · Yandex 找相似 · E-Hentai 搜本子
 
@@ -14,28 +14,28 @@
 [![Stars](https://img.shields.io/github/stars/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/stargazers)
 [![Issues](https://img.shields.io/github/issues/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/issues)
 
-[✨ 核心特性](#-核心特性) • [📖 功能概览](#-功能概览) • [🚀 快速开始](#-快速开始) • [🔍 支持的搜索引擎](#-支持的搜索引擎) • [⚙️ 配置项说明](#️-配置项说明) • [🛠️ LLM 可调用工具](#️-llm-可调用工具) • [🔧 常见问题](#-常见问题) • [📝 更新日志](CHANGELOG.md)
+[核心特性](#核心特性) • [功能概览](#功能概览) • [快速开始](#快速开始) • [支持的搜索引擎](#支持的搜索引擎) • [配置项说明](#配置项说明) • [LLM 可调用工具](#llm-可调用工具) • [常见问题](#常见问题) • [更新日志](CHANGELOG.md)
 
 </div>
 
-> 🎨 本项目由 AI 编写，部分源码基于 [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2)
+> 本项目由 AI 编写，部分源码基于 [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2)
 
 ---
 
-## ✨ 核心特性
+## 核心特性
 
 | 特性 | 说明 |
 |------|------|
-| 🔍 **五大搜索引擎** | AnimeTrace 认角色、SauceNAO 找出处、Google Lens 综合兜底、Yandex 找相似、E-Hentai 搜本子，各司其职 |
-| 💬 **关键词触发** | 发送 `以图搜图` + 图片即可搜索，支持引擎别名快捷指定（`a`/`s`/`e`/`g`/`y`） |
-| 🤖 **LLM 主动搜图** | 机器人根据对话意图自主判断何时搜图、用哪个引擎，无需手动指令 |
-| 🧭 **意图路由** | 基于关键词加权匹配自动选择最优引擎——说「这是谁」自动走 AnimeTrace |
-| 🎴 **精美结果卡片** | 搜索结果渲染为现代卡片图片（引擎色渐变 Header、相似度彩色徽章、AI 检测标签），云端文转图不可达时自动降级 PIL |
-| 🔄 **多引擎自由切换** | 引擎按需启停，失败时提示原因，可手动更换引擎重搜 |
+| **五大搜索引擎** | AnimeTrace 认角色、SauceNAO 找出处、Google Lens 综合兜底、Yandex 找相似、E-Hentai 搜本子，各司其职 |
+| **关键词触发** | 发送 `以图搜图` + 图片即可搜索，支持引擎别名快捷指定（`a`/`s`/`e`/`g`/`y`） |
+| **LLM 主动搜图** | 机器人根据对话意图自主判断何时搜图、用哪个引擎，无需手动指令 |
+| **意图路由** | 基于关键词加权匹配自动选择最优引擎——说「这是谁」自动走 AnimeTrace |
+| **精美结果卡片** | 搜索结果渲染为现代卡片图片（引擎色渐变 Header、相似度彩色徽章、AI 检测标签），云端文转图不可达时自动降级 PIL |
+| **多引擎自由切换** | 引擎按需启停，失败时提示原因，可手动更换引擎重搜 |
 
 ---
 
-## 📖 功能概览
+## 功能概览
 
 ### 搜索卡片渲染
 搜索完成后自动生成一张卡片图片：源图 + 结果缩略图同框，相似度一目了然：
@@ -76,16 +76,11 @@
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ### 第一步：安装
 
-**方式一：插件市场**
-- AstrBot WebUI → 插件市场 → 搜索 `astrbot_plugin_reverse_searcher`
-
-**方式二：GitHub 仓库**
-- AstrBot WebUI → 插件管理 → ＋ 安装 → 粘贴仓库地址：
-- `https://github.com/OMSociety/astrbot_plugin_reverse_searcher`
+AstrBot WebUI → 插件市场 → 搜索 `astrbot_plugin_reverse_searcher`
 
 ### 第二步：最小配置（装好即用）
 
@@ -94,26 +89,26 @@
 1. 重启 AstrBot 后，直接发送 `以图搜图` + 图片
 2. 或直接对机器人说「帮我看看这个角色是谁」让 LLM 自动搜图
 
-> 💡 可选增强：配置 SauceNAO `api_key`（[申请地址](https://saucenao.com/user.php)）解锁画师/出处搜索；Google 引擎需 [SerpAPI Key](https://serpapi.com/)；ExHentai 需有效 Cookie。
+> **提示：**可选增强：配置 SauceNAO `api_key`（[申请地址](https://saucenao.com/user.php)）解锁画师/出处搜索；Google 引擎需 [SerpAPI Key](https://serpapi.com/)；ExHentai 需有效 Cookie。
 
 ### 依赖安装
 插件依赖 `httpx`、`Pillow`、`pyquery` 等，AstrBot 安装插件时自动处理。
 
 ---
 
-## 🔍 支持的搜索引擎
+## 支持的搜索引擎
 
 | 引擎 | 说明 | 需要配置 |
 |:----|:----|:----|
-| **animetrace** | 动漫角色识别（最强），返回作品名 + 角色名 | ❌ 免配置 |
-| **yandex** | 相似图片搜索 | ⚠️ 建议配 Cookie（Yandex 反爬严格，未配置时可能 CAPTCHA/无结果） |
-| **ehentai** | E-Hentai 同人本搜索 | ❌ 免配置（ExHentai 需 Cookie） |
-| **saucenao** | 综合出处搜索，Pixiv 插画首选 | ⚠️ 建议配 `api_key` |
-| **google** | Google Lens 综合兜底 | ✅ 需 SerpAPI Key |
+| **animetrace** | 动漫角色识别（最强），返回作品名 + 角色名 | 免配置 |
+| **yandex** | 相似图片搜索 | 建议配 Cookie（Yandex 反爬严格，未配置时可能 CAPTCHA/无结果） |
+| **ehentai** | E-Hentai 同人本搜索 | 免配置（ExHentai 需 Cookie） |
+| **saucenao** | 综合出处搜索，Pixiv 插画首选 | 建议配 `api_key` |
+| **google** | Google Lens 综合兜底 | 需 SerpAPI Key |
 
 ---
 
-## ⚙️ 配置项说明
+## 配置项说明
 
 ### 顶层配置
 
@@ -156,7 +151,7 @@
 | `yandex.max_results` / `use_ru_fallback` | 结果数 / `.ru` 域名回退 |
 | `yandex.cookies` | **Yandex Cookie**（反爬严格，不填可能 CAPTCHA 无结果，获取方法见 Q5） |
 
-> 🔐 **隐私披露：本地图会上传第三方图床**——使用**本地图片**搜 **Google / Yandex** 时，插件需把图片先上传到临时图床（`tmpfiles.org` / `uguu.se` / `litterbox.catbox.moe` / `tmp.ninja`）再以 URL 形式搜索。**这意味着你的图片会被上传到公网临时图床**，保留时长由第三方决定。若需关闭，将 `allow_third_party_image_host` 设为 `false`（此时这两引擎不可用本地图搜，需改用图片 URL 或换用其他引擎）。
+> **隐私披露：本地图会上传第三方图床**——使用**本地图片**搜 **Google / Yandex** 时，插件需把图片先上传到临时图床（`tmpfiles.org` / `uguu.se` / `litterbox.catbox.moe` / `tmp.ninja`）再以 URL 形式搜索。**这意味着你的图片会被上传到公网临时图床**，保留时长由第三方决定。若需关闭，将 `allow_third_party_image_host` 设为 `false`（此时这两引擎不可用本地图搜，需改用图片 URL 或换用其他引擎）。
 
 ### 快速配置模板
 
@@ -185,7 +180,7 @@
 
 ---
 
-## 🛠️ LLM 可调用工具
+## LLM 可调用工具
 
 插件注册 2 个 LLM 工具，机器人会自主判断何时调用：
 
@@ -220,7 +215,7 @@
 
 ---
 
-## 🔧 常见问题
+## 常见问题
 
 ### Q1：哪些引擎需要 API Key？
 
@@ -251,11 +246,11 @@ Cookie 就是浏览器登录网站后自动保存的一段身份凭证。要填�
 2. 按 **F12** → 点顶部 **Console（控制台）** 标签页
 3. 在下方输入框输入 `document.cookie` 然后**回车**
 4. 控制台会直接输出一整行 Cookie 字符串 → **复制它**（形如 `ipb_member_id=123; ipb_pass_hash=abc; ...`）
-5. ⚠️ 局限：拿不到 **HttpOnly** 的字段——**E-Hentai 够用**；**Yandex 部分关键字段是 HttpOnly，建议用方法二**
+5. 局限：拿不到 **HttpOnly** 的字段——**E-Hentai 够用**；**Yandex 部分关键字段是 HttpOnly，建议用方法二**
 
 **方法二：Network 面板（完整版，Yandex 建议）**
 1. 登录目标网站后按 **F12** → 点 **Network（网络）** 标签页
-2. ⚠️ **注意：顶部那个过滤输入框不要填任何东西**（填了会过滤掉请求，列表变空！），保持空白
+2. **注意：顶部那个过滤输入框不要填任何东西**（填了会过滤掉请求，列表变空！），保持空白
 3. **刷新页面**（F5）→ 左侧出现请求列表 → **点击第一条请求**
 4. 右侧打开 **Headers（标头）** → 往下找 **Request Headers（请求标头）** 区域
 5. 找到 **`Cookie:`** 开头的那一行 → **复制整行**（`Cookie:` 等号后面的完整内容）
@@ -266,33 +261,21 @@ yandexuid=1587138991653; ymex=1986384493.yrts.159; Session_id=3:163...:0
 ```
 把整行粘贴到插件配置 `default_params.yandex.cookies` / `default_params.ehentai.cookies` 即可。
 
-> 💡 Yandex 反爬严格，不填 Cookie 可能触发验证码导致搜索无结果；E-Hentai 搜索 ExHentai 内容必须填 Cookie（含 `ipb_member_id`、`ipb_pass_hash`、`igneous` 三个关键字段）。从插件实际请求的域名（yandex.com）获取最稳妥。
+> **提示：**Yandex 反爬严格，不填 Cookie 可能触发验证码导致搜索无结果；E-Hentai 搜索 ExHentai 内容必须填 Cookie（含 `ipb_member_id`、`ipb_pass_hash`、`igneous` 三个关键字段）。从插件实际请求的域名（yandex.com）获取最稳妥。
 
----
+## 更新日志
 
-## 📝 更新日志
+> **[查看更新日志 →](CHANGELOG.md)**
 
-> 📋 **[查看更新日志 →](CHANGELOG.md)**
+## 支持与致谢
 
----
-
-## ⭐ 支持本项目
-
-如果这个插件对你有帮助，欢迎点亮 Star ⭐，有问题和建议请提交 [Issue](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/issues) 或 [Pull Request](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/pulls)。
-
-## 🙏 致谢
+如果这个插件对你有帮助，欢迎点亮 Star，有问题和建议请提交 [Issue](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/issues) 或 [Pull Request](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/pulls)。
 
 - [AstrBot](https://github.com/AstrBotDevs/AstrBot) 开源聊天机器人框架
 - [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2) 原始项目
 
----
-
-## 📜 许可证
+## 许可证与作者
 
 本项目采用 **AGPL-3.0** 开源协议。
-
----
-
-## 👤 作者
 
 [@OMSociety](https://github.com/OMSociety)

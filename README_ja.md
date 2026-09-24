@@ -4,7 +4,7 @@
 
 <img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/logo.png" width="120" alt="ReverseSearcher Logo" />
 
-# 🔍 逆画像検索アシスタント
+# 逆画像検索アシスタント
 
 **5 つのエンジンによる逆画像検索** —— AnimeTrace でキャラ判定 · SauceNAO で出典特定 · Google Lens で総合フォロー · Yandex で類似画像検索 · E-Hentai で同人誌検索
 
@@ -16,24 +16,24 @@
 
 </div>
 
-> 🎨 本プロジェクトは AI によって作成され、ソースコードの一部は [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2) を基にしています
+> 本プロジェクトは AI によって作成され、ソースコードの一部は [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2) を基にしています
 
 ---
 
-## ✨ 主な特徴
+## 主な特徴
 
 | 特徴 | 説明 |
 |------|------|
-| 🔍 **5 つの検索エンジン** | AnimeTrace はキャラ判定、SauceNAO は出典特定、Google Lens は総合バックアップ、Yandex は類似画像検索、E-Hentai は同人誌検索と、それぞれ役割分担 |
-| 💬 **キーワードトリガー** | `以图搜图`（画像検索）と画像を送るだけで検索でき、エンジンの別名（`a`/`s`/`e`/`g`/`y`）で素早く指定可能 |
-| 🤖 **LLM による自律検索** | ボットが会話の意図から検索の要否と使用エンジンを自主的に判断。手動コマンド不要 |
-| 🧭 **インテントルーティング** | キーワードの重み付きマッチングで最適なエンジンを自動選択。「これ誰」と言えば自動で AnimeTrace を使用 |
-| 🎴 **美しい結果カード** | 検索結果をモダンなカード画像としてレンダリング（エンジンカラーのグラデーションヘッダー、類似度のカラーバッジ、AI 検出ラベル）。クラウドのテキスト画像化サービスに接続できない場合は自動で PIL にフォールバック |
-| 🔄 **マルチエンジン自由切り替え** | エンジンは必要に応じて有効/無効化でき、失敗時は原因を表示し、別のエンジンで手動で再検索できます |
+| **5 つの検索エンジン** | AnimeTrace はキャラ判定、SauceNAO は出典特定、Google Lens は総合バックアップ、Yandex は類似画像検索、E-Hentai は同人誌検索と、それぞれ役割分担 |
+| **キーワードトリガー** | `以图搜图`（画像検索）と画像を送るだけで検索でき、エンジンの別名（`a`/`s`/`e`/`g`/`y`）で素早く指定可能 |
+| **LLM による自律検索** | ボットが会話の意図から検索の要否と使用エンジンを自主的に判断。手動コマンド不要 |
+| **インテントルーティング** | キーワードの重み付きマッチングで最適なエンジンを自動選択。「これ誰」と言えば自動で AnimeTrace を使用 |
+| **美しい結果カード** | 検索結果をモダンなカード画像としてレンダリング（エンジンカラーのグラデーションヘッダー、類似度のカラーバッジ、AI 検出ラベル）。クラウドのテキスト画像化サービスに接続できない場合は自動で PIL にフォールバック |
+| **マルチエンジン自由切り替え** | エンジンは必要に応じて有効/無効化でき、失敗時は原因を表示し、別のエンジンで手動で再検索できます |
 
 ---
 
-## 📖 機能概要
+## 機能概要
 
 ### 検索カードのレンダリング
 検索完了後、カード画像を自動生成。元画像と結果サムネイルを同じ画面に並べ、類似度がひと目でわかります:
@@ -74,16 +74,11 @@
 
 ---
 
-## 🚀 クイックスタート
+## クイックスタート
 
 ### ステップ 1: インストール
 
-**方法 1: プラグインマーケット**
-- AstrBot WebUI → プラグインマーケット → `astrbot_plugin_reverse_searcher` を検索
-
-**方法 2: GitHub リポジトリ**
-- AstrBot WebUI → プラグイン管理 → ＋ インストール → リポジトリ URL を貼り付け:
-- `https://github.com/OMSociety/astrbot_plugin_reverse_searcher`
+AstrBot WebUI → プラグインマーケット → `astrbot_plugin_reverse_searcher` を検索
 
 ### ステップ 2: 最小構成（インストールするだけですぐ使える）
 
@@ -92,26 +87,26 @@
 1. AstrBot 再起動後、`以图搜图` + 画像を送るだけ
 2. またはボットに「このキャラは誰？」と話しかければ LLM が自動で検索
 
-> 💡 任意の拡張: SauceNAO の `api_key`（[申請ページ](https://saucenao.com/user.php)）を設定するとイラストレーター/出典検索が利用可能に。Google エンジンには [SerpAPI Key](https://serpapi.com/) が必要。ExHentai には有効な Cookie が必要です。
+> **ヒント：**任意の拡張: SauceNAO の `api_key`（[申請ページ](https://saucenao.com/user.php)）を設定するとイラストレーター/出典検索が利用可能に。Google エンジンには [SerpAPI Key](https://serpapi.com/) が必要。ExHentai には有効な Cookie が必要です。
 
 ### 依存関係のインストール
 プラグインは `httpx`、`Pillow`、`pyquery` などに依存します。AstrBot がプラグインのインストール時に自動で処理します。
 
 ---
 
-## 🔍 対応検索エンジン
+## 対応検索エンジン
 
 | エンジン | 説明 | 必要な設定 |
 |:----|:----|:----|
-| **animetrace** | アニメキャラ認識（最強）。作品名 + キャラ名を返す | ❌ 設定不要 |
-| **yandex** | 類似画像検索 | ⚠️ Cookie 推奨（Yandex はボット対策が厳しく、未設定では CAPTCHA や結果なしになる場合あり） |
-| **ehentai** | E-Hentai 同人誌検索 | ❌ 設定不要（ExHentai には Cookie が必要） |
-| **saucenao** | 総合出典検索。Pixiv イラストの第一候補 | ⚠️ `api_key` 推奨 |
-| **google** | Google Lens 総合フォロー | ✅ SerpAPI Key が必要 |
+| **animetrace** | アニメキャラ認識（最強）。作品名 + キャラ名を返す | 設定不要 |
+| **yandex** | 類似画像検索 | Cookie 推奨（Yandex はボット対策が厳しく、未設定では CAPTCHA や結果なしになる場合あり） |
+| **ehentai** | E-Hentai 同人誌検索 | 設定不要（ExHentai には Cookie が必要） |
+| **saucenao** | 総合出典検索。Pixiv イラストの第一候補 | `api_key` 推奨 |
+| **google** | Google Lens 総合フォロー | SerpAPI Key が必要 |
 
 ---
 
-## ⚙️ 設定項目の説明
+## 設定項目の説明
 
 ### トップレベル設定
 
@@ -134,7 +129,7 @@
 | `trigger_keywords` | list | `["以图搜图", "image search"]` | 検索をトリガーするキーワードのリスト |
 | `engine_keywords` | object | `a/s/e/g/y` | 各エンジンのカスタム別名（animetrace=`a`、saucenao=`s`、ehentai=`e`、google=`g`、yandex=`y`） |
 
-> 💡 トリガーはどの言語でも設定できます。英語圏向けに `"image search"` を追加するのも有効です。
+> **ヒント：**トリガーはどの言語でも設定できます。英語圏向けに `"image search"` を追加するのも有効です。
 
 ### エンジンの有効化 `available_apis`
 
@@ -156,7 +151,7 @@
 | `yandex.max_results` / `use_ru_fallback` | 結果数 / `.ru` ドメインへのフォールバック |
 | `yandex.cookies` | **Yandex の Cookie**（ボット対策が厳しく、未記入だと CAPTCHA で結果なしになる可能性あり。取得方法は Q5 を参照） |
 
-> 🔐 **プライバシーに関する開示: ローカル画像はサードパーティの画像ホストへアップロードされます** —— **ローカル画像**で **Google / Yandex** を検索する場合、プラグインは画像をまず一時画像ホスト（`tmpfiles.org` / `uguu.se` / `litterbox.catbox.moe` / `tmp.ninja`）へアップロードし、URL 形式で検索する必要があります。**つまり、あなたの画像は公開の一時画像ホストへアップロードされます**。保持期間はサードパーティが決めます。無効化するには `allow_third_party_image_host` を `false` に設定してください（この場合、この 2 エンジンではローカル画像検索ができず、画像 URL の使用か他のエンジンへの切り替えが必要です）。
+> **プライバシーに関する開示: ローカル画像はサードパーティの画像ホストへアップロードされます** —— **ローカル画像**で **Google / Yandex** を検索する場合、プラグインは画像をまず一時画像ホスト（`tmpfiles.org` / `uguu.se` / `litterbox.catbox.moe` / `tmp.ninja`）へアップロードし、URL 形式で検索する必要があります。**つまり、あなたの画像は公開の一時画像ホストへアップロードされます**。保持期間はサードパーティが決めます。無効化するには `allow_third_party_image_host` を `false` に設定してください（この場合、この 2 エンジンではローカル画像検索ができず、画像 URL の使用か他のエンジンへの切り替えが必要です）。
 
 ### クイック設定テンプレート
 
@@ -185,7 +180,7 @@
 
 ---
 
-## 🛠️ LLM が呼び出せるツール
+## LLM が呼び出せるツール
 
 プラグインは 2 つの LLM ツールを登録しており、ボットが呼び出しタイミングを自律的に判断します:
 
@@ -220,7 +215,7 @@
 
 ---
 
-## 🔧 よくある質問
+## よくある質問
 
 ### Q1: API Key が必要なエンジンは？
 
@@ -251,11 +246,11 @@ Cookie とは、ブラウザがサイトへのログイン後に自動保存す�
 2. **F12** を押す → 上部の **Console（コンソール）** タブをクリック
 3. 下部の入力欄に `document.cookie` と入力し **Enter** を押す
 4. コンソールに Cookie 文字列 1 行がそのまま出力される → **それをコピー**（`ipb_member_id=123; ipb_pass_hash=abc; ...` のような形式）
-5. ⚠️ 制限: **HttpOnly** のフィールドはこの方法では取得できません —— **E-Hentai ならこれで十分**。**Yandex は重要フィールドの一部が HttpOnly のため、方法 2 を推奨**
+5. 制限: **HttpOnly** のフィールドはこの方法では取得できません —— **E-Hentai ならこれで十分**。**Yandex は重要フィールドの一部が HttpOnly のため、方法 2 を推奨**
 
 **方法 2: Network パネル（完全版。Yandex はこちらを推奨）**
 1. 対象サイトにログインした状態で **F12** を押す → **Network（ネットワーク）** タブをクリック
-2. ⚠️ **注意: 上部のフィルター入力欄には何も入力しないでください**（入力するとリクエストが絞り込まれ、リストが空になります！）。空のままにしておく
+2. **注意: 上部のフィルター入力欄には何も入力しないでください**（入力するとリクエストが絞り込まれ、リストが空になります！）。空のままにしておく
 3. **ページを再読み込み**（F5）→ 左側にリクエスト一覧が表示される → **最初のリクエストをクリック**
 4. 右側で **Headers（ヘッダー）** を開く → 下へスクロールして **Request Headers（リクエストヘッダー）** を探す
 5. **`Cookie:`** で始まる行を見つける → **行全体をコピー**（`Cookie:` の後ろの内容すべて）
@@ -266,33 +261,21 @@ yandexuid=1587138991653; ymex=1986384493.yrts.159; Session_id=3:163...:0
 ```
 行全体をプラグイン設定の `default_params.yandex.cookies` / `default_params.ehentai.cookies` に貼り付ければ完了です。
 
-> 💡 Yandex はボット対策が厳しく、Cookie 未記入だと CAPTCHA が発生して検索結果が得られない場合があります。E-Hentai で ExHentai のコンテンツを検索するには Cookie が必須です（`ipb_member_id`、`ipb_pass_hash`、`igneous` の 3 つの重要フィールドを含む）。プラグインが実際にリクエストするドメイン（yandex.com）から取得するのが最も確実です。
+> **ヒント：**Yandex はボット対策が厳しく、Cookie 未記入だと CAPTCHA が発生して検索結果が得られない場合があります。E-Hentai で ExHentai のコンテンツを検索するには Cookie が必須です（`ipb_member_id`、`ipb_pass_hash`、`igneous` の 3 つの重要フィールドを含む）。プラグインが実際にリクエストするドメイン（yandex.com）から取得するのが最も確実です。
 
----
+## 更新履歴
 
-## 📝 更新履歴
+> **[更新履歴を見る →](CHANGELOG.md)**
 
-> 📋 **[更新履歴を見る →](CHANGELOG.md)**
+## 応援と謝辞
 
----
-
-## ⭐ このプロジェクトを支援
-
-このプラグインが役に立ったら、Star ⭐ をお願いします。問題や提案があれば [Issue](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/issues) または [Pull Request](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/pulls) へお寄せください。
-
-## 🙏 謝辞
+このプラグインが役に立ったら、Star をお願いします。問題や提案があれば [Issue](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/issues) または [Pull Request](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/pulls) へお寄せください。
 
 - [AstrBot](https://github.com/AstrBotDevs/AstrBot) オープンソースのチャットボットフレームワーク
 - [astrbot_plugin_img_rev_searcher_Ver2](https://github.com/Yanlyn/astrbot_plugin_img_rev_searcher_Ver2) オリジナルプロジェクト
 
----
-
-## 📜 ライセンス
+## ライセンスと作者
 
 本プロジェクトは **AGPL-3.0** で公開されています。
-
----
-
-## 👤 作者
 
 [@OMSociety](https://github.com/OMSociety)
