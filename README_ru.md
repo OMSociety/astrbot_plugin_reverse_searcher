@@ -8,7 +8,7 @@
 
 **Обратный поиск изображений на пяти движках** —— AnimeTrace узнаёт персонажа · SauceNAO находит первоисточник · Google Lens подстраховывает · Yandex ищет похожее · E-Hentai ищет додзинси
 
-[![Version](https://img.shields.io/badge/version-1.1.1-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
+[![Version](https://img.shields.io/badge/version-1.1.2-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
 [![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A5v4-green.svg)](https://github.com/AstrBotDevs/AstrBot)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-orange.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/stargazers)

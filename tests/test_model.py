@@ -1,5 +1,8 @@
 """BaseSearchModel 核心方法测试"""
 
+import asyncio
+from unittest.mock import MagicMock
+
 import pytest
 
 from ReverseSearcher.model import BaseSearchModel
@@ -181,3 +184,50 @@ class TestFormatSimilarity:
 
     def test_none(self):
         assert BaseSearchModel._format_similarity(None) == ""
+
+
+class TestSearchParamGuard:
+    """search() 的前置参数校验
+
+    base64 是 search() 的合法入参（经 **kwargs 传入、由 _search_engine 解码），
+    LLM 工具的 image_base64 路径只传 base64、不传 file/url，前置校验必须放行。
+    """
+
+    @pytest.fixture
+    def model(self):
+        return BaseSearchModel.__new__(BaseSearchModel)
+
+    def test_base64_only_passes_guard(self, model, monkeypatch):
+        captured = {}
+
+        async def fake_search_engine(self, api, file=None, url=None, **kwargs):
+            captured["api"] = api
+            captured["file"] = file
+            captured["url"] = url
+            captured.update(kwargs)
+            return MagicMock(show_result=lambda: "ok")
+
+        monkeypatch.setattr(BaseSearchModel, "_search_engine", fake_search_engine)
+
+        result = asyncio.run(model.search(api="google", base64="ZmFrZQ=="))
+
+        assert result == "ok"
+        assert captured["api"] == "google"
+        assert captured["base64"] == "ZmFrZQ=="
+        assert captured["file"] is None
+        assert captured["url"] is None
+
+    def test_no_file_url_base64_still_raises(self, model):
+        """三者都缺时仍要报参数错误"""
+        with pytest.raises(ValueError, match="必须提供 file 或 url 参数"):
+            asyncio.run(model.search(api="google"))
+
+    def test_file_and_url_still_conflict(self, model):
+        """file 与 url 互斥校验不受影响"""
+        with pytest.raises(ValueError, match="不能同时提供"):
+            asyncio.run(model.search(api="google", file=b"x", url="https://e.com/a.jpg"))
+
+    def test_empty_base64_still_raises(self, model):
+        """base64 为空串（假值）等同未提供，不得绕过校验"""
+        with pytest.raises(ValueError, match="必须提供 file 或 url 参数"):
+            asyncio.run(model.search(api="google", base64=""))

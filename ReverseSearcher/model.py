@@ -188,7 +188,7 @@ class BaseSearchModel:
         if api not in ENGINE_MAP:
             available = ", ".join(ENGINE_MAP.keys())
             raise ValueError(f"不支持的引擎: {api}，支持的引擎: {available}")
-        if not file and not url:
+        if not file and not url and not kwargs.get("base64"):
             raise ValueError("必须提供 file 或 url 参数")
         if file and url:
             raise ValueError("file 和 url 参数不能同时提供")

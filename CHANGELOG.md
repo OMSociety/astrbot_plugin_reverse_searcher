@@ -5,6 +5,13 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)；
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.2] - 2026-09-25
+
+### 修复 (Fixed)
+
+- **`search()` 的参数前置校验放行 `image_base64`**：此前 LLM 走 base64 搜图必然报「必须提供 file 或 url 参数」，而工具参数表已对外宣传该参数。
+- **Google Lens 解析不再因单条畸形数据整批失败**：`knowledge_graph.header_images` 缺失、为空或为 null，KG 条目不是对象，`visual_matches`/`exact_matches` 混入非对象条目，Zenserp 的 `organic`/`pages_with_matching_images` 混入非对象条目，以及响应顶层不是对象时，都改为就地跳过或降级，已解析的 `ai_overview` 与正常条目保留。
+
 ## [1.1.1] - 2026-09-13
 
 ### 变更 (Changed)
