@@ -87,7 +87,7 @@ AstrBot WebUI → Plugin marketplace → search for `astrbot_plugin_reverse_sear
 1. After restarting AstrBot, simply send `以图搜图` + an image
 2. Or just tell the bot "help me find out who this character is" and let the LLM search automatically
 
-> **Note:** Optional enhancements: configure the SauceNAO `api_key` ([apply here](https://saucenao.com/user.php)) to unlock artist/source search; the Google engine requires a [SerpAPI Key](https://serpapi.com/); ExHentai requires a valid Cookie.
+> **Note**: Optional enhancements: configure the SauceNAO `api_key` ([apply here](https://saucenao.com/user.php)) to unlock artist/source search; the Google engine requires a [SerpAPI Key](https://serpapi.com/); ExHentai requires a valid Cookie.
 
 ### Dependencies
 The plugin depends on `httpx`, `Pillow`, `pyquery`, etc.; AstrBot handles these automatically when installing the plugin.
@@ -129,7 +129,7 @@ The plugin depends on `httpx`, `Pillow`, `pyquery`, etc.; AstrBot handles these 
 | `trigger_keywords` | list | `["以图搜图", "image search"]` | List of keywords that trigger a search |
 | `engine_keywords` | object | `a/s/e/g/y` | Custom aliases per engine (animetrace=`a`, saucenao=`s`, ehentai=`e`, google=`g`, yandex=`y`) |
 
-> **Note:** Any-language custom triggers work, e.g. add `"image search"` for English users.
+> **Note**: Any-language custom triggers work, e.g. add `"image search"` for English users.
 
 ### Engine switches `available_apis`
 
@@ -261,7 +261,7 @@ yandexuid=1587138991653; ymex=1986384493.yrts.159; Session_id=3:163...:0
 ```
 Paste the entire line into the plugin configuration `default_params.yandex.cookies` / `default_params.ehentai.cookies`.
 
-> **Note:** Yandex has strict anti-scraping; without a Cookie a CAPTCHA may appear and the search returns nothing. Searching ExHentai content through E-Hentai requires a Cookie (containing the three key fields `ipb_member_id`, `ipb_pass_hash`, and `igneous`). Getting it from the domain the plugin actually requests (yandex.com) is the most reliable.
+> **Note**: Yandex has strict anti-scraping; without a Cookie a CAPTCHA may appear and the search returns nothing. Searching ExHentai content through E-Hentai requires a Cookie (containing the three key fields `ipb_member_id`, `ipb_pass_hash`, and `igneous`). Getting it from the domain the plugin actually requests (yandex.com) is the most reliable.
 
 ## Changelog
 

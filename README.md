@@ -89,7 +89,7 @@ AstrBot WebUI → 插件市场 → 搜索 `astrbot_plugin_reverse_searcher`
 1. 重启 AstrBot 后，直接发送 `以图搜图` + 图片
 2. 或直接对机器人说「帮我看看这个角色是谁」让 LLM 自动搜图
 
-> **提示：**可选增强：配置 SauceNAO `api_key`（[申请地址](https://saucenao.com/user.php)）解锁画师/出处搜索；Google 引擎需 [SerpAPI Key](https://serpapi.com/)；ExHentai 需有效 Cookie。
+> **提示**：可选增强：配置 SauceNAO `api_key`（[申请地址](https://saucenao.com/user.php)）解锁画师/出处搜索；Google 引擎需 [SerpAPI Key](https://serpapi.com/)；ExHentai 需有效 Cookie。
 
 ### 依赖安装
 插件依赖 `httpx`、`Pillow`、`pyquery` 等，AstrBot 安装插件时自动处理。
@@ -261,7 +261,7 @@ yandexuid=1587138991653; ymex=1986384493.yrts.159; Session_id=3:163...:0
 ```
 把整行粘贴到插件配置 `default_params.yandex.cookies` / `default_params.ehentai.cookies` 即可。
 
-> **提示：**Yandex 反爬严格，不填 Cookie 可能触发验证码导致搜索无结果；E-Hentai 搜索 ExHentai 内容必须填 Cookie（含 `ipb_member_id`、`ipb_pass_hash`、`igneous` 三个关键字段）。从插件实际请求的域名（yandex.com）获取最稳妥。
+> **提示**：Yandex 反爬严格，不填 Cookie 可能触发验证码导致搜索无结果；E-Hentai 搜索 ExHentai 内容必须填 Cookie（含 `ipb_member_id`、`ipb_pass_hash`、`igneous` 三个关键字段）。从插件实际请求的域名（yandex.com）获取最稳妥。
 
 ## 更新日志
 

@@ -87,7 +87,7 @@ AstrBot WebUI → プラグインマーケット → `astrbot_plugin_reverse_sea
 1. AstrBot 再起動後、`以图搜图` + 画像を送るだけ
 2. またはボットに「このキャラは誰？」と話しかければ LLM が自動で検索
 
-> **ヒント：**任意の拡張: SauceNAO の `api_key`（[申請ページ](https://saucenao.com/user.php)）を設定するとイラストレーター/出典検索が利用可能に。Google エンジンには [SerpAPI Key](https://serpapi.com/) が必要。ExHentai には有効な Cookie が必要です。
+> **ヒント**：任意の拡張: SauceNAO の `api_key`（[申請ページ](https://saucenao.com/user.php)）を設定するとイラストレーター/出典検索が利用可能に。Google エンジンには [SerpAPI Key](https://serpapi.com/) が必要。ExHentai には有効な Cookie が必要です。
 
 ### 依存関係のインストール
 プラグインは `httpx`、`Pillow`、`pyquery` などに依存します。AstrBot がプラグインのインストール時に自動で処理します。
@@ -129,7 +129,7 @@ AstrBot WebUI → プラグインマーケット → `astrbot_plugin_reverse_sea
 | `trigger_keywords` | list | `["以图搜图", "image search"]` | 検索をトリガーするキーワードのリスト |
 | `engine_keywords` | object | `a/s/e/g/y` | 各エンジンのカスタム別名（animetrace=`a`、saucenao=`s`、ehentai=`e`、google=`g`、yandex=`y`） |
 
-> **ヒント：**トリガーはどの言語でも設定できます。英語圏向けに `"image search"` を追加するのも有効です。
+> **ヒント**：トリガーはどの言語でも設定できます。英語圏向けに `"image search"` を追加するのも有効です。
 
 ### エンジンの有効化 `available_apis`
 
@@ -261,7 +261,7 @@ yandexuid=1587138991653; ymex=1986384493.yrts.159; Session_id=3:163...:0
 ```
 行全体をプラグイン設定の `default_params.yandex.cookies` / `default_params.ehentai.cookies` に貼り付ければ完了です。
 
-> **ヒント：**Yandex はボット対策が厳しく、Cookie 未記入だと CAPTCHA が発生して検索結果が得られない場合があります。E-Hentai で ExHentai のコンテンツを検索するには Cookie が必須です（`ipb_member_id`、`ipb_pass_hash`、`igneous` の 3 つの重要フィールドを含む）。プラグインが実際にリクエストするドメイン（yandex.com）から取得するのが最も確実です。
+> **ヒント**：Yandex はボット対策が厳しく、Cookie 未記入だと CAPTCHA が発生して検索結果が得られない場合があります。E-Hentai で ExHentai のコンテンツを検索するには Cookie が必須です（`ipb_member_id`、`ipb_pass_hash`、`igneous` の 3 つの重要フィールドを含む）。プラグインが実際にリクエストするドメイン（yandex.com）から取得するのが最も確実です。
 
 ## 更新履歴
 
