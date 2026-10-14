@@ -63,9 +63,9 @@ class TestKnowledgeGraphHeaderImages:
             _payload({"description": "知识图谱描述", "header_images": []}),
             "http://serpapi",
         )
-        assert [item.title for item in resp.raw if item.source != "Knowledge Graph"] == [
-            "视觉匹配"
-        ]
+        assert [
+            item.title for item in resp.raw if item.source != "Knowledge Graph"
+        ] == ["视觉匹配"]
 
     def test_header_images_still_used_when_present(self):
         """正常形态不回退：标题与缩略图取自 header_images[0]"""

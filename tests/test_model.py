@@ -225,7 +225,9 @@ class TestSearchParamGuard:
     def test_file_and_url_still_conflict(self, model):
         """file 与 url 互斥校验不受影响"""
         with pytest.raises(ValueError, match="不能同时提供"):
-            asyncio.run(model.search(api="google", file=b"x", url="https://e.com/a.jpg"))
+            asyncio.run(
+                model.search(api="google", file=b"x", url="https://e.com/a.jpg")
+            )
 
     def test_empty_base64_still_raises(self, model):
         """base64 为空串（假值）等同未提供，不得绕过校验"""
