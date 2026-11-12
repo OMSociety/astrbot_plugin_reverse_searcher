@@ -177,13 +177,13 @@
                         "description": "SerpApi API Key",
                         "type": "string",
                         "hint": "可选 (推荐). 从 https://serpapi.com/ 申请. 使用Google Lens实现。",
-                        "default": null
+                        "default": ""
                     },
                     "zenserp_key": {
                         "description": "Zenserp API Key",
                         "type": "string",
                         "hint": "可选 (备用). 从 https://zenserp.com/ 申请. 使用Google Reverse Image实现。",
-                        "default": null
+                        "default": ""
                     },
                     "hl": {
                         "description": "语言 (Language)",
@@ -213,7 +213,7 @@
                         "description": "SauceNAO API密钥",
                         "type": "string",
                         "hint": "用于访问SauceNAO API，免费账户每日限制150次，每30秒4次",
-                        "default": null
+                        "default": ""
                     },
                     "hide": {
                         "description": "隐藏级别",

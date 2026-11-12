@@ -59,7 +59,7 @@ class SauceNAO(BaseSearchReq[SauceNAOResponse]):
             "db": db,
             "minsim": minsim,
         }
-        if api_key is not None:
+        if api_key:
             params["api_key"] = api_key
         if dbmask is not None:
             params["dbmask"] = dbmask

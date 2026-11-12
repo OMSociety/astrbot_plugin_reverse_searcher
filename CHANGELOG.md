@@ -10,6 +10,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-11-13
+
+### 修复
+
+- **配置默认值不再留空**：`serpapi_key`、`zenserp_key`、`saucenao.api_key` 的默认值由 `null` 改为空字符串，插件配置页可正常渲染；SauceNAO 未填密钥时请求不再附带空的 `api_key` 参数。
+
+### Fixed
+
+- **Config defaults are no longer null**: `serpapi_key`, `zenserp_key`, and `saucenao.api_key` now default to empty strings, so the plugin config page renders normally, and SauceNAO requests omit `api_key` entirely when no key is configured.
+
 ## [1.1.2] - 2026-09-25
 
 ### 修复
