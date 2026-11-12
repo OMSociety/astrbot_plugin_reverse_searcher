@@ -2,9 +2,7 @@
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/logo.png" width="120" alt="ReverseSearcher Logo" />
-
-# Ассистент обратного поиска изображений
+<h1><img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/logo.png" width="192" alt="ReverseSearcher Logo"><br>Ассистент обратного поиска изображений</h1>
 
 **Обратный поиск изображений на пяти движках** —— AnimeTrace узнаёт персонажа · SauceNAO находит первоисточник · Google Lens подстраховывает · Yandex ищет похожее · E-Hentai ищет додзинси
 

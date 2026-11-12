@@ -2,9 +2,7 @@
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/logo.png" width="120" alt="ReverseSearcher Logo" />
-
-# Reverse Image Search Assistant
+<h1><img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/logo.png" width="192" alt="ReverseSearcher Logo"><br>Reverse Image Search Assistant</h1>
 
 **Reverse image search powered by five engines** — AnimeTrace recognizes characters · SauceNAO finds the source · Google Lens as the catch-all · Yandex finds similar images · E-Hentai searches doujinshi
 

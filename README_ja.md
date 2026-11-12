@@ -2,9 +2,7 @@
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/logo.png" width="120" alt="ReverseSearcher Logo" />
-
-# 逆画像検索アシスタント
+<h1><img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/logo.png" width="192" alt="ReverseSearcher Logo"><br>逆画像検索アシスタント</h1>
 
 **5 つのエンジンによる逆画像検索** —— AnimeTrace でキャラ判定 · SauceNAO で出典特定 · Google Lens で総合フォロー · Yandex で類似画像検索 · E-Hentai で同人誌検索
 
