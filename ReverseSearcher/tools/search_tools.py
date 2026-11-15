@@ -197,7 +197,6 @@ class ReverseSearchTool(_BaseSearchTool):
 【引擎选择建议】
 - 想了解角色/人物 → animetrace（动漫角色识别最强，返回作品名+角色名）
 - 想找出处/来源/画师 → saucenao（综合出处搜索，返回作者+链接）
-- 想搜同人本/R18内容 → ehentai
 - 想找相似图片 → yandex
 - 想找原图/综合搜索 → google
 
@@ -237,7 +236,7 @@ class ReverseSearchWithEngineTool(_BaseSearchTool):
                 "engine": {
                     "type": "string",
                     "description": "搜索引擎名称",
-                    "enum": ["animetrace", "saucenao", "ehentai", "google", "yandex"],
+                    "enum": ["animetrace", "saucenao", "google", "yandex"],
                 },
             },
             "required": ["engine"],

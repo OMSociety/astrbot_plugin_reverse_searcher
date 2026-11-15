@@ -50,14 +50,6 @@ ENGINE_REGISTRY: dict[str, EngineDef] = {
         anime_focused=True,
         color=(30, 30, 46),  # #1E1E2E 暗炭黑
     ),
-    "ehentai": EngineDef(
-        name="ehentai",
-        label="E-Hentai",
-        desc="同人本/汉化组搜索",
-        url="https://e-hentai.org/",
-        anime_focused=True,
-        color=(220, 55, 75),  # #DC374B 绯红
-    ),
     "google": EngineDef(
         name="google",
         label="Google 图片",
@@ -121,16 +113,6 @@ INTENT_KEYWORD_WEIGHTS: dict[str, dict[str, int]] = {
         "pid": 6,
         "作品": 5,
         "原图": 4,
-    },
-    "ehentai": {
-        "同人": 10,
-        "本子": 10,
-        "汉化": 8,
-        "r18": 8,
-        "无修": 6,
-        "单行本": 6,
-        "漫画": 5,
-        "cg": 5,
     },
     "yandex": {
         "相似图": 10,
@@ -206,10 +188,9 @@ def inject_request_classes():
     """将 api_request 模块的请求类注入到 ENGINE_REGISTRY
     延迟导入以避免循环依赖
     """
-    from .utils.api_request import AnimeTrace, EHentai, GoogleLens, SauceNAO, Yandex
+    from .utils.api_request import AnimeTrace, GoogleLens, SauceNAO, Yandex
 
     ENGINE_REGISTRY["animetrace"].req_class = AnimeTrace
     ENGINE_REGISTRY["yandex"].req_class = Yandex
-    ENGINE_REGISTRY["ehentai"].req_class = EHentai
     ENGINE_REGISTRY["google"].req_class = GoogleLens
     ENGINE_REGISTRY["saucenao"].req_class = SauceNAO

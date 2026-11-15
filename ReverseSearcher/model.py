@@ -46,7 +46,7 @@ class BaseSearchModel:
             proxies: 代理服务器配置
             cookies: Cookie配置（兜底，各引擎 Cookie 优先在 default_params 对应栏目配置）
             timeout: 请求超时时间(秒)
-            default_params: 各引擎的默认参数（含 yandex/ehentai 的 cookies）
+            default_params: 各引擎的默认参数（含 yandex 的 cookies）
             allow_third_party_image_host: 是否允许把本地图上传到第三方临时图床（Google/Yandex 本地图搜需要）
         """
         self.proxies = proxies
@@ -58,7 +58,7 @@ class BaseSearchModel:
     def _prepare_engine_params(self, api: str, search_params: dict) -> dict:
         """从搜索参数中提取引擎专属配置。
 
-        每个引擎有各自的特殊参数（如 saucenao 的 dbmask、ehentai 的 is_ex），
+        每个引擎有各自的特殊参数（如 saucenao 的 dbmask、yandex 的 cookies），
         本方法将它们从 search_params 中 pop 出来，组装为引擎构造参数。
 
         参数:
@@ -74,14 +74,6 @@ class BaseSearchModel:
             engine_params = {
                 "is_multi": search_params.pop("is_multi", None),
                 "ai_detect": search_params.pop("ai_detect", None),
-            }
-        elif api == "ehentai":
-            engine_params = {
-                "is_ex": search_params.pop("is_ex", False),
-                "covers": search_params.pop("covers", False),
-                "similar": search_params.pop("similar", True),
-                "exp": search_params.pop("exp", False),
-                "cookies": search_params.pop("cookies", None),
             }
         elif api == "saucenao":
             engine_params = {
@@ -192,8 +184,7 @@ class BaseSearchModel:
             raise ValueError("必须提供 file 或 url 参数")
         if file and url:
             raise ValueError("file 和 url 参数不能同时提供")
-        # SSRF/本地文件读取防护：url 必须为公网图片地址（覆盖所有引擎，
-        # 包括会直接下载 url 的 ehentai 等）。DNS 校验放线程池避免阻塞事件循环。
+        # SSRF/本地文件读取防护：url 必须为公网图片地址（覆盖所有引擎）。
         if url and not await asyncio.to_thread(is_safe_image_ref, url):
             raise ValueError("图片地址不安全：仅支持公网图片 URL 或消息内图片")
         if file and not url and self._is_gif(file):
@@ -214,7 +205,7 @@ class BaseSearchModel:
         管道流程:
             1. 获取引擎类 & 合并默认参数 + kwargs
             2. 按引擎类型提取引擎专属参数 (如 saucenao 的 dbmask)
-            3. 解析 Cookie (yandex 动态获取 / ehentai 从参数取 / 全局默认)
+            3. 解析 Cookie (yandex 动态获取 / 全局默认)
             4. base64 → bytes 转换 (animetrace 除外，它直接接受 base64)
             5. 创建 Network 会话 → 实例化引擎 → 执行搜索
 
@@ -228,7 +219,7 @@ class BaseSearchModel:
         # 提取引擎专属参数 (api_key, dbmask 等)，从 search_params 中弹出
         engine_params = self._prepare_engine_params(api, dict(search_params))
 
-        # ── Cookie 解析（从 default_params 的 yandex/ehentai 栏目取）──
+        # ── Cookie 解析（从 default_params 的 yandex 栏目取）──
         network_kwargs = {}
         if self.proxies:
             network_kwargs["proxies"] = self.proxies

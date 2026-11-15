@@ -1,7 +1,7 @@
 {
   "metadata": {
     "display_name": "Reverse Image Search Assistant",
-    "desc": "Reverse image search across five engines — AnimeTrace, E-Hentai, Google Lens, Yandex, and SauceNAO. Results are rendered as polished card images, and an LLM tool for image search is provided."
+    "desc": "Reverse image search across four engines — AnimeTrace, Google Lens, Yandex, and SauceNAO. Results are rendered as polished card images, and an LLM tool for image search is provided."
   },
   "config": {
     "enable_keyword_trigger": {
@@ -36,9 +36,6 @@
         "animetrace": {
           "description": "AnimeTrace"
         },
-        "ehentai": {
-          "description": "E-Hentai"
-        },
         "google": {
           "description": "Google"
         },
@@ -54,9 +51,6 @@
       "description": "Enable/disable status",
       "animetrace": {
         "description": "AnimeTrace"
-      },
-      "ehentai": {
-        "description": "E-Hentai/ExHentai"
       },
       "google": {
         "description": "Google Lens"
@@ -83,26 +77,6 @@
         "ai_detect": {
           "description": "AI detection mode",
           "hint": "Detect whether the image is AI-generated"
-        }
-      },
-      "ehentai": {
-        "description": "EHentai",
-        "is_ex": {
-          "description": "Use ExHentai instead of E-Hentai",
-          "hint": "Requires an ExHentai account and a valid Cookie"
-        },
-        "covers": {
-          "description": "Include cover search results"
-        },
-        "similar": {
-          "description": "Include similar results"
-        },
-        "exp": {
-          "description": "Enable experimental search mode"
-        },
-        "cookies": {
-          "description": "E-Hentai Cookie",
-          "hint": "How to get it: log in to e-hentai.org (exhentai.org for ExHentai), press F12 → Console tab → type document.cookie and press Enter → copy the whole output line (including ipb_member_id/ipb_pass_hash/igneous). Can be left blank if you only search E-Hentai; required for ExHentai"
         }
       },
       "google": {

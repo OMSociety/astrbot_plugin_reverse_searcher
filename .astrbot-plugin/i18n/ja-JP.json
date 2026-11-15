@@ -1,7 +1,7 @@
 {
   "metadata": {
     "display_name": "画像逆検索アシスタント",
-    "desc": "AnimeTrace・E-Hentai・Google Lens・Yandex・SauceNAO の 5 エンジンによる画像逆検索に対応。検索結果は自動で美しいカード画像としてレンダリングされ、LLM による能動的な画像検索ツールも提供します。"
+    "desc": "AnimeTrace・Google Lens・Yandex・SauceNAO の 4 エンジンによる画像逆検索に対応。検索結果は自動で美しいカード画像としてレンダリングされ、LLM による能動的な画像検索ツールも提供します。"
   },
   "config": {
     "enable_keyword_trigger": {
@@ -36,9 +36,6 @@
         "animetrace": {
           "description": "AnimeTrace"
         },
-        "ehentai": {
-          "description": "E-Hentai"
-        },
         "google": {
           "description": "Google"
         },
@@ -54,9 +51,6 @@
       "description": "有効/無効状態",
       "animetrace": {
         "description": "AnimeTrace"
-      },
-      "ehentai": {
-        "description": "E-Hentai/ExHentai"
       },
       "google": {
         "description": "Google Lens"
@@ -83,26 +77,6 @@
         "ai_detect": {
           "description": "AI 検出モード",
           "hint": "画像が AI 生成かどうかを検出します"
-        }
-      },
-      "ehentai": {
-        "description": "EHentai",
-        "is_ex": {
-          "description": "E-Hentai ではなく ExHentai を使用する",
-          "hint": "ExHentai アカウントと有効な Cookie が必要です"
-        },
-        "covers": {
-          "description": "表紙の検索結果を含める"
-        },
-        "similar": {
-          "description": "類似結果を含める"
-        },
-        "exp": {
-          "description": "実験的な検索モードを有効にする"
-        },
-        "cookies": {
-          "description": "E-Hentai Cookie",
-          "hint": "取得方法：e-hentai.org（ExHentai の場合は exhentai.org）にログインし、F12 → Console タブ → document.cookie と入力して Enter → 出力された行全体（ipb_member_id/ipb_pass_hash/igneous を含む）をコピーします。E-Hentai のみの検索なら空欄で構いませんが、ExHentai の検索には必須です"
         }
       },
       "google": {

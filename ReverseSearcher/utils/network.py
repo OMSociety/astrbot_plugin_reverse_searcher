@@ -8,7 +8,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 import re
 import ssl
 from dataclasses import dataclass
@@ -16,11 +15,10 @@ from types import TracebackType
 from typing import Any
 from urllib.parse import urljoin
 
+from astrbot.api import logger
 from httpx import AsyncClient, Proxy
 
 from .security import is_safe_image_url
-
-logger = logging.getLogger(__name__)
 
 DEFAULT_HEADERS = {
     "User-Agent": (

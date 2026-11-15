@@ -1,13 +1,11 @@
 import json
-import logging
 from typing import Any, Iterator
 from urllib.parse import urlparse
 
+from astrbot.api import logger
 from typing_extensions import override
 
 from .base_parser import BaseResParser, BaseSearchResponse
-
-logger = logging.getLogger(__name__)
 
 
 def _iter_dict_items(container) -> Iterator[dict]:

@@ -4,9 +4,9 @@
 
 <h1><img src="https://raw.githubusercontent.com/OMSociety/astrbot_plugin_reverse_searcher/main/logo.png" width="192" alt="ReverseSearcher Logo"><br>图片反搜助手</h1>
 
-**五大引擎反向搜图** —— AnimeTrace 认角色 · SauceNAO 找出处 · Google Lens 兜底 · Yandex 找相似 · E-Hentai 搜本子
+**四大引擎反向搜图** —— AnimeTrace 认角色 · SauceNAO 找出处 · Google Lens 兜底 · Yandex 找相似
 
-[![Version](https://img.shields.io/badge/version-1.1.3-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher)
 [![AstrBot](https://img.shields.io/badge/AstrBot-%E2%89%A5v4-green.svg)](https://github.com/AstrBotDevs/AstrBot)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-orange.svg)](LICENSE)
 [![Stars](https://img.shields.io/github/stars/OMSociety/astrbot_plugin_reverse_searcher)](https://github.com/OMSociety/astrbot_plugin_reverse_searcher/stargazers)
@@ -24,8 +24,8 @@
 
 | 特性 | 说明 |
 |------|------|
-| **五大搜索引擎** | AnimeTrace 认角色、SauceNAO 找出处、Google Lens 综合兜底、Yandex 找相似、E-Hentai 搜本子，各司其职 |
-| **关键词触发** | 发送 `以图搜图` + 图片即可搜索，支持引擎别名快捷指定（`a`/`s`/`e`/`g`/`y`） |
+| **四大搜索引擎** | AnimeTrace 认角色、SauceNAO 找出处、Google Lens 综合兜底、Yandex 找相似，各司其职 |
+| **关键词触发** | 发送 `以图搜图` + 图片即可搜索，支持引擎别名快捷指定（`a`/`s`/`g`/`y`） |
 | **LLM 主动搜图** | 机器人根据对话意图自主判断何时搜图、用哪个引擎，无需手动指令 |
 | **意图路由** | 基于关键词加权匹配自动选择最优引擎——说「这是谁」自动走 AnimeTrace |
 | **精美结果卡片** | 搜索结果渲染为现代卡片图片（引擎色渐变 Header、相似度彩色徽章、AI 检测标签），云端文转图不可达时自动降级 PIL |
@@ -69,7 +69,6 @@
 | 「这是谁 / 哪个角色 / cos」 | → AnimeTrace |
 | 「找出处 / 找作者 / pixiv pid」 | → SauceNAO |
 | 「找相似图 / 像这个」 | → Yandex |
-| 「找本子 / 同人」 | → E-Hentai |
 | 「找原图 / 综合搜索」 | → Google |
 
 ---
@@ -82,12 +81,12 @@ AstrBot WebUI → 插件市场 → 搜索 `astrbot_plugin_reverse_searcher`
 
 ### 第二步：最小配置（装好即用）
 
-**无需任何配置**即可使用 AnimeTrace、Yandex、E-Hentai 三个免 Key 引擎：
+**无需任何配置**即可使用 AnimeTrace、Yandex 两个免 Key 引擎：
 
 1. 重启 AstrBot 后，直接发送 `以图搜图` + 图片
 2. 或直接对机器人说「帮我看看这个角色是谁」让 LLM 自动搜图
 
-> **提示**：可选增强：配置 SauceNAO `api_key`（[申请地址](https://saucenao.com/user.php)）解锁画师/出处搜索；Google 引擎需 [SerpAPI Key](https://serpapi.com/)；ExHentai 需有效 Cookie。
+> **提示**：可选增强：配置 SauceNAO `api_key`（[申请地址](https://saucenao.com/user.php)）解锁画师/出处搜索；Google 引擎需 [SerpAPI Key](https://serpapi.com/)。
 
 ### 依赖安装
 插件依赖 `httpx`、`Pillow`、`pyquery` 等，AstrBot 安装插件时自动处理。
@@ -100,7 +99,6 @@ AstrBot WebUI → 插件市场 → 搜索 `astrbot_plugin_reverse_searcher`
 |:----|:----|:----|
 | **animetrace** | 动漫角色识别（最强），返回作品名 + 角色名 | 免配置 |
 | **yandex** | 相似图片搜索 | 建议配 Cookie（Yandex 反爬严格，未配置时可能 CAPTCHA/无结果） |
-| **ehentai** | E-Hentai 同人本搜索 | 免配置（ExHentai 需 Cookie） |
 | **saucenao** | 综合出处搜索，Pixiv 插画首选 | 建议配 `api_key` |
 | **google** | Google Lens 综合兜底 | 需 SerpAPI Key |
 
@@ -127,13 +125,13 @@ AstrBot WebUI → 插件市场 → 搜索 `astrbot_plugin_reverse_searcher`
 | 配置项 | 类型 | 默认 | 说明 |
 |--------|------|------|------|
 | `trigger_keywords` | list | `["以图搜图", "image search"]` | 触发搜索的关键词列表 |
-| `engine_keywords` | object | `a/s/e/g/y` | 各引擎的自定义别名（animetrace=`a`、saucenao=`s`、ehentai=`e`、google=`g`、yandex=`y`） |
+| `engine_keywords` | object | `a/s/g/y` | 各引擎的自定义别名（animetrace=`a`、saucenao=`s`、google=`g`、yandex=`y`） |
 
 ### 引擎启用 `available_apis`
 
 | 配置项 | 类型 | 默认 | 说明 |
 |--------|------|------|------|
-| `animetrace` / `ehentai` / `google` / `yandex` / `saucenao` | bool | `true` | 各引擎启停开关 |
+| `animetrace` / `google` / `yandex` / `saucenao` | bool | `true` | 各引擎启停开关 |
 
 ### 引擎默认参数 `default_params`
 
@@ -141,13 +139,11 @@ AstrBot WebUI → 插件市场 → 搜索 `astrbot_plugin_reverse_searcher`
 |--------|------|
 | `animetrace.model` | 识别模型，默认 `full_game_model_kira` |
 | `animetrace.is_multi` / `ai_detect` | 多角色搜索 / AI 检测开关 |
-| `ehentai.is_ex` / `covers` / `similar` / `exp` | ExHentai 开关、封面/相似/实验模式 |
-| `ehentai.cookies` | **E-Hentai Cookie**（ExHentai 必需，获取方法见常见问题 Q5） |
 | `google.serpapi_key` / `zenserp_key` | SerpAPI（推荐）/ Zenserp（备用）Key |
 | `google.hl` / `country` / `max_results` | 语言 / 地区 / 最大结果数 |
 | `saucenao.api_key` / `minsim` / `numres` | API Key / 最低相似度 / 结果数 |
 | `yandex.max_results` / `use_ru_fallback` | 结果数 / `.ru` 域名回退 |
-| `yandex.cookies` | **Yandex Cookie**（反爬严格，不填可能 CAPTCHA 无结果，获取方法见 Q5） |
+| `yandex.cookies` | **Yandex Cookie**（反爬严格，不填可能 CAPTCHA 无结果，获取方法见 Q4） |
 
 > **隐私披露：本地图会上传第三方图床**——使用**本地图片**搜 **Google / Yandex** 时，插件需把图片先上传到临时图床（`tmpfiles.org` / `uguu.se` / `litterbox.catbox.moe` / `tmp.ninja`）再以 URL 形式搜索。**这意味着你的图片会被上传到公网临时图床**，保留时长由第三方决定。若需关闭，将 `allow_third_party_image_host` 设为 `false`（此时这两引擎不可用本地图搜，需改用图片 URL 或换用其他引擎）。
 
@@ -163,12 +159,11 @@ AstrBot WebUI → 插件市场 → 搜索 `astrbot_plugin_reverse_searcher`
   },
   "keyword": {
     "trigger_keywords": ["以图搜图", "image search"],
-    "engine_keywords": { "animetrace": "a", "ehentai": "e", "google": "g", "yandex": "y", "saucenao": "s" }
+    "engine_keywords": { "animetrace": "a", "google": "g", "yandex": "y", "saucenao": "s" }
   },
-  "available_apis": { "animetrace": true, "ehentai": true, "google": true, "yandex": true, "saucenao": true },
+  "available_apis": { "animetrace": true, "google": true, "yandex": true, "saucenao": true },
   "default_params": {
     "animetrace": { "model": "full_game_model_kira", "is_multi": false, "ai_detect": false },
-    "ehentai": { "is_ex": false, "covers": false, "similar": true, "exp": false, "cookies": "" },
     "google": { "serpapi_key": "", "zenserp_key": "", "hl": "zh-CN", "country": "HK", "max_results": 10 },
     "saucenao": { "api_key": "", "hide": 3, "numres": 5, "minsim": 30, "output_type": 2 },
     "yandex": { "max_results": 10, "use_ru_fallback": true, "cookies": "" }
@@ -209,7 +204,7 @@ AstrBot WebUI → 插件市场 → 搜索 `astrbot_plugin_reverse_searcher`
 | 参数 | 类型 | 说明 |
 |------|------|------|
 | `image_base64` / `image_url` | string? | 图片来源（二选一） |
-| `engine` | string | **必填**，引擎名：`animetrace` / `saucenao` / `ehentai` / `google` / `yandex` |
+| `engine` | string | **必填**，引擎名：`animetrace` / `saucenao` / `google` / `yandex` |
 
 ---
 
@@ -219,35 +214,31 @@ AstrBot WebUI → 插件市场 → 搜索 `astrbot_plugin_reverse_searcher`
 
 | 引擎 | 需要配置 |
 |------|---------|
-| AnimeTrace / Yandex / E-Hentai | 不需要，装好即用 |
+| AnimeTrace / Yandex | 不需要，装好即用 |
 | SauceNAO | 建议配置 `api_key`（[免费申请](https://saucenao.com/user.php)，每日 150 次） |
 | Google | 需要 [SerpAPI Key](https://serpapi.com/)（推荐）或 Zenserp Key |
 
-### Q2：E-Hentai 搜不了 / 想看 ExHentai 内容？
-
-- E-Hentai 免配置可搜；**ExHentai** 需要账号 Cookie（`ipb_member_id`、`ipb_pass_hash`、`igneous`），填在 `default_params.ehentai.cookies`，并开启 `is_ex`
-
-### Q3：国内服务器搜图很慢 / 搜不到？
+### Q2：国内服务器搜图很慢 / 搜不到？
 
 在 `proxies` 配置代理（如 `http://127.0.0.1:7890`）。SauceNAO、Google、Yandex 等引擎对国内 IP 有风控，代理是必需的。
 
-### Q4：搜索结果卡片图没生成？
+### Q3：搜索结果卡片图没生成？
 
 插件优先走 AstrBot 云端文转图（t2i）渲染 HTML 卡片；若云端不可达/超时，**自动降级为内置 PIL 渲染**（仍会出图）。若两者都失败才回退纯文本。升级 AstrBot 到最新版可改善云端渲染稳定性。
 
-### Q5：Yandex / E-Hentai 的 Cookie 怎么获取、填什么？
+### Q4：Yandex 的 Cookie 怎么获取、填什么？
 
 Cookie 就是浏览器登录网站后自动保存的一段身份凭证。要填的是**一整行 `name1=value1; name2=value2` 格式的字符串**。两种获取方法（任选其一）：
 
 **方法一：控制台一键获取（最简单，先试这个）**
-1. 浏览器访问目标网站并**登录**（E-Hentai 用 https://e-hentai.org；ExHentai 用 https://exhentai.org；Yandex 用 https://yandex.com/images）
+1. 浏览器访问 https://yandex.com/images 并**登录**
 2. 按 **F12** → 点顶部 **Console（控制台）** 标签页
 3. 在下方输入框输入 `document.cookie` 然后**回车**
-4. 控制台会直接输出一整行 Cookie 字符串 → **复制它**（形如 `ipb_member_id=123; ipb_pass_hash=abc; ...`）
-5. 局限：拿不到 **HttpOnly** 的字段——**E-Hentai 够用**；**Yandex 部分关键字段是 HttpOnly，建议用方法二**
+4. 控制台会直接输出一整行 Cookie 字符串 → **复制它**（形如 `yandexuid=1587138991653; ymex=1986384493.yrts.159; ...`）
+5. 局限：拿不到 **HttpOnly** 的字段——**Yandex 部分关键字段是 HttpOnly，建议用方法二**
 
 **方法二：Network 面板（完整版，Yandex 建议）**
-1. 登录目标网站后按 **F12** → 点 **Network（网络）** 标签页
+1. 登录 https://yandex.com/images 后按 **F12** → 点 **Network（网络）** 标签页
 2. **注意：顶部那个过滤输入框不要填任何东西**（填了会过滤掉请求，列表变空！），保持空白
 3. **刷新页面**（F5）→ 左侧出现请求列表 → **点击第一条请求**
 4. 右侧打开 **Headers（标头）** → 往下找 **Request Headers（请求标头）** 区域
@@ -257,9 +248,9 @@ Cookie 就是浏览器登录网站后自动保存的一段身份凭证。要填�
 ```
 yandexuid=1587138991653; ymex=1986384493.yrts.159; Session_id=3:163...:0
 ```
-把整行粘贴到插件配置 `default_params.yandex.cookies` / `default_params.ehentai.cookies` 即可。
+把整行粘贴到插件配置 `default_params.yandex.cookies` 即可。
 
-> **提示**：Yandex 反爬严格，不填 Cookie 可能触发验证码导致搜索无结果；E-Hentai 搜索 ExHentai 内容必须填 Cookie（含 `ipb_member_id`、`ipb_pass_hash`、`igneous` 三个关键字段）。从插件实际请求的域名（yandex.com）获取最稳妥。
+> **提示**：Yandex 反爬严格，不填 Cookie 可能触发验证码导致搜索无结果。从插件实际请求的域名（yandex.com）获取最稳妥。
 
 ## 更新日志
 

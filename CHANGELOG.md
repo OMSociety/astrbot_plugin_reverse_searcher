@@ -10,6 +10,32 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-11-16
+
+### 变更
+
+- **搜索面收敛为四个引擎**：AnimeTrace、SauceNAO、Google Lens、Yandex。插件简介、配置项、LLM 工具说明与四语 README 的引擎清单同步对齐；意图路由权重、默认别名 `a`/`s`/`g`/`y`、`available_apis` 与 `default_params` 均按四引擎重构。
+
+### 移除
+
+- **E-Hentai/ExHentai 引擎整体移除**：不再分发 `ehentai` 引擎的请求类、响应解析器与标签翻译表（`ehviewer_translations.json`）；`keyword.engine_keywords`、`available_apis`、`default_params` 中的 `ehentai` 配置项一并删除，升级后由宿主按新 schema 重建配置项。
+
+### 修复
+
+- **日志记录统一走 AstrBot 通道**：`ReverseSearcher/utils/network.py` 与 `ReverseSearcher/utils/response_parser/google_lens_parser.py` 不再使用 Python 内置 `logging`，统一为 `from astrbot.api import logger`。
+
+### Changed
+
+- **The search surface is now four engines**: AnimeTrace, SauceNAO, Google Lens, and Yandex. The plugin description, config entries, LLM tool descriptions, and the engine lists in all four READMEs are aligned accordingly; intent-routing weights, the default aliases `a`/`s`/`g`/`y`, `available_apis`, and `default_params` are rebuilt around the four engines.
+
+### Removed
+
+- **The E-Hentai/ExHentai engine is removed in full**: the `ehentai` request class, response parser, and tag translation table (`ehviewer_translations.json`) are no longer distributed; the `ehentai` entries in `keyword.engine_keywords`, `available_apis`, and `default_params` are gone, and the host rebuilds those config entries from the new schema on upgrade.
+
+### Fixed
+
+- **Logging now goes through AstrBot's channel**: `ReverseSearcher/utils/network.py` and `ReverseSearcher/utils/response_parser/google_lens_parser.py` no longer use Python's built-in `logging` and import `from astrbot.api import logger` instead.
+
 ## [1.1.3] - 2026-11-13
 
 ### 修复

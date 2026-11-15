@@ -1,7 +1,7 @@
 {
   "metadata": {
     "display_name": "Помощник обратного поиска изображений",
-    "desc": "Обратный поиск изображений по пяти движкам — AnimeTrace, E-Hentai, Google Lens, Yandex и SauceNAO. Результаты автоматически отрисовываются в виде аккуратных карточек-изображений; также доступен LLM-инструмент активного поиска картинок."
+    "desc": "Обратный поиск изображений по четырём движкам — AnimeTrace, Google Lens, Yandex и SauceNAO. Результаты автоматически отрисовываются в виде аккуратных карточек-изображений; также доступен LLM-инструмент активного поиска картинок."
   },
   "config": {
     "enable_keyword_trigger": {
@@ -36,9 +36,6 @@
         "animetrace": {
           "description": "AnimeTrace"
         },
-        "ehentai": {
-          "description": "E-Hentai"
-        },
         "google": {
           "description": "Google"
         },
@@ -54,9 +51,6 @@
       "description": "Статус включения",
       "animetrace": {
         "description": "AnimeTrace"
-      },
-      "ehentai": {
-        "description": "E-Hentai/ExHentai"
       },
       "google": {
         "description": "Google Lens"
@@ -83,26 +77,6 @@
         "ai_detect": {
           "description": "Режим обнаружения ИИ",
           "hint": "Определять, сгенерировано ли изображение ИИ"
-        }
-      },
-      "ehentai": {
-        "description": "EHentai",
-        "is_ex": {
-          "description": "Использовать ExHentai вместо E-Hentai",
-          "hint": "Требуется аккаунт ExHentai и действующий Cookie"
-        },
-        "covers": {
-          "description": "Включать результаты поиска по обложкам"
-        },
-        "similar": {
-          "description": "Включать похожие результаты"
-        },
-        "exp": {
-          "description": "Включить экспериментальный режим поиска"
-        },
-        "cookies": {
-          "description": "E-Hentai Cookie",
-          "hint": "Как получить: войдите в e-hentai.org (для ExHentai — exhentai.org), нажмите F12 → вкладка Console → введите document.cookie и нажмите Enter → скопируйте всю выведенную строку (включая ipb_member_id/ipb_pass_hash/igneous). Можно оставить пустым, если ищете только по E-Hentai; для ExHentai обязательно"
         }
       },
       "google": {

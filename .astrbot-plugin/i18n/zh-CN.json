@@ -1,7 +1,7 @@
 {
   "metadata": {
     "display_name": "图片反搜助手",
-    "desc": "支持 AnimeTrace、E-Hentai、Google Lens、Yandex、SauceNAO 五大引擎的图片反向搜索，搜索结果自动渲染为精美卡片图片，同时提供 LLM 主动搜图工具"
+    "desc": "支持 AnimeTrace、Google Lens、Yandex、SauceNAO 四大引擎的图片反向搜索，搜索结果自动渲染为精美卡片图片，同时提供 LLM 主动搜图工具"
   },
   "config": {
     "enable_keyword_trigger": {
@@ -36,9 +36,6 @@
         "animetrace": {
           "description": "AnimeTrace"
         },
-        "ehentai": {
-          "description": "E-Hentai"
-        },
         "google": {
           "description": "Google"
         },
@@ -54,9 +51,6 @@
       "description": "启用状态",
       "animetrace": {
         "description": "AnimeTrace"
-      },
-      "ehentai": {
-        "description": "E-Hentai/ExHentai"
       },
       "google": {
         "description": "Google Lens"
@@ -83,26 +77,6 @@
         "ai_detect": {
           "description": "AI检测模式",
           "hint": "检测图片是否为AI生成"
-        }
-      },
-      "ehentai": {
-        "description": "EHentai",
-        "is_ex": {
-          "description": "是否使用ExHentai而不是E-Hentai",
-          "hint": "需要ExHentai账号和有效Cookie"
-        },
-        "covers": {
-          "description": "是否包含封面搜索结果"
-        },
-        "similar": {
-          "description": "是否包含相似结果"
-        },
-        "exp": {
-          "description": "是否启用实验性搜索模式"
-        },
-        "cookies": {
-          "description": "E-Hentai Cookie",
-          "hint": "获取：登录 e-hentai.org（ExHentai 需 exhentai.org）后 F12 → Console 标签 → 输入 document.cookie 回车 → 复制输出的整行（含 ipb_member_id/ipb_pass_hash/igneous）。仅搜 E-Hentai 可留空，搜 ExHentai 必需"
         }
       },
       "google": {

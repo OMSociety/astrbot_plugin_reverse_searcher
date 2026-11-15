@@ -130,25 +130,6 @@ class TestPrepareEngineParams:
     def model(self):
         return BaseSearchModel.__new__(BaseSearchModel)
 
-    def test_ehentai_pop_params(self, model):
-        params = {
-            "url": "test",
-            "is_ex": True,
-            "covers": False,
-            "similar": True,
-            "exp": False,
-            "cookies": "ipb_member_id=1; ipb_pass_hash=2",
-            "keep_this": 42,
-        }
-        engine_params = model._prepare_engine_params("ehentai", params)
-        assert engine_params["is_ex"] is True
-        assert engine_params["covers"] is False
-        assert engine_params["similar"] is True
-        assert engine_params["exp"] is False
-        assert engine_params["cookies"] == "ipb_member_id=1; ipb_pass_hash=2"
-        assert "is_ex" not in params
-        assert params["keep_this"] == 42
-
     def test_animetrace_pop_params(self, model):
         params = {"url": "test", "is_multi": True, "ai_detect": "l2"}
         engine_params = model._prepare_engine_params("animetrace", params)
